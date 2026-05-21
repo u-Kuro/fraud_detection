@@ -1,0 +1,14 @@
+.env
+.venv/
+.idea
+
+# MLflow
+models
+mlflow.db
+
+# Postgres
+postgres/sample-queries.sql
+postgres/fraud_detection/raw_data/creditcard_transactions.csv
+
+# Temporary
+/*.md
