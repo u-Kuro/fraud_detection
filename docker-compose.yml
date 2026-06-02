@@ -1,86 +1,414 @@
 services:
-  # PostgreSQL Initialization
   postgres:
-    build:
-      dockerfile: postgres/Dockerfile
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: postgres
-      FRAUD_DETECTION_DB: ${FRAUD_DETECTION_DB}
-      MLFLOW_DB: ${MLFLOW_DB}
+    image: postgres:15
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    secrets:
+      - postgres_password
+      - postgres_ca
+      - postgres_server_cert
+      - source: postgres_server_key
+        uid: "999"
+        gid: "999"
+        mode: 0400
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: ${POSTGRES_PASSWORD_PATH}
     volumes:
-      - data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/pg_hba.conf:/postgres/pg_hba.conf:ro
+    command: [
+      "-c", "ssl=on",
+      "-c", "ssl_ca_file='${POSTGRES_CA_CERT_PATH}'",
+      "-c", "ssl_cert_file='${POSTGRES_SERVER_CERT_PATH}'",
+      "-c", "ssl_key_file='${POSTGRES_SERVER_KEY_PATH}'",
+      "-c", "hba_file='/postgres/pg_hba.conf'"
+    ]
     healthcheck:
-      test: >
-        CMD-SHELL
-          psql -U $$POSTGRES_USER -d $$FRAUD_DETECTION_DB -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='deployed_models'" | grep -q 1 &&
-          psql -U $$POSTGRES_USER -d $$FRAUD_DETECTION_DB -tAc "SELECT 1 FROM model_training_metadata LIMIT 1" | grep -q 1 &&
-          psql -U $$POSTGRES_USER -d $$FRAUD_DETECTION_DB -tAc "SELECT 1 FROM transaction_inferences LIMIT 1" | grep -q 1 &&
-          psql -U $$POSTGRES_USER -d $$MLFLOW_DB -tAc "SELECT 1"
+      test: [ "CMD", "pg_isready" ]
+      start_period: 15s
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 120s
-
-  # MLflow Tracking Server
-  mlflow:
-    build:
-      dockerfile: mlflow/Dockerfile
     restart: unless-stopped
-    ports:
-      - "${MLFLOW_PORT}:${MLFLOW_PORT}"
-    volumes:
-      - ./models:/mlflow/models
-    command: >
-      mlflow server
-        --host 0.0.0.0
-        --port ${MLFLOW_PORT}
-        --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${MLFLOW_DB}
-        --artifacts-destination /mlflow/models
-        --serve-artifacts
-        --allowed-hosts ${MLFLOW_ALLOWED_HOSTS}
-        --cors-allowed-origins ${MLFLOW_CORS_ORIGINS}
+
+  postgres_init_db:
+    image: postgres:15-alpine
     depends_on:
       postgres:
         condition: service_healthy
+    secrets:
+      - postgres_pgpass
+      - postgres_ca
+      - postgres_client_cert
+      - source: postgres_client_key
+        uid: "70"
+        gid: "70"
+        mode: 0400
+    environment:
+      PGPASSFILE: "${POSTGRES_PGPASS_PATH}"
+      PGSSLROOTCERT: "${POSTGRES_CA_CERT_PATH}"
+      PGSSLCERT: "${POSTGRES_CLIENT_CERT_PATH}"
+      PGSSLKEY: "${POSTGRES_CLIENT_KEY_PATH}"
+      PGSSLMODE: "${POSTGRES_SSL_MODE}"
+      PGHOST: "${POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+      MLFLOW_DB_NAME: "${MLFLOW_DB_NAME}"
+      GRAFANA_DB_NAME: "${GRAFANA_DB_NAME}"
+    volumes:
+      - ./infra/postgres/init_db.sql:/postgres/init_db.sql:ro
+    command: [ "psql", "-f", "/postgres/init_db.sql" ]
+    restart: "no"
+
+  atlas:
+    image: arigaio/atlas:1.2.0-community
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres_init_db:
+        condition: service_completed_successfully
+    secrets:
+      - postgres_pgpass
+      - postgres_ca
+      - postgres_client_cert
+      - source: postgres_client_key
+        mode: 0400
+    environment:
+      POSTGRES_CONNECTION_URI: "postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${FRAUD_DETECTION_DB_NAME}?passfile=${POSTGRES_PGPASS_PATH}&sslrootcert=${POSTGRES_CA_CERT_PATH}&sslcert=${POSTGRES_CLIENT_CERT_PATH}&sslkey=${POSTGRES_CLIENT_KEY_PATH}&sslmode=${POSTGRES_SSL_MODE}"
+      POSTGRES_VERSION: "${POSTGRES_VERSION}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+    volumes:
+      - ./services/atlas:/atlas
+    command: ["migrate", "apply", "--env", "production"]
+    restart: "no"
+
+  postgres_fraud_detection_seeder:
+    image: postgres:15-alpine
+    depends_on:
+      atlas:
+        condition: service_completed_successfully
+    secrets:
+      - postgres_pgpass
+      - postgres_ca
+      - postgres_client_cert
+      - source: postgres_client_key
+        uid: "70"
+        gid: "70"
+        mode: 0400
+    environment:
+      PGPASSFILE: "${POSTGRES_PGPASS_PATH}"
+      PGSSLROOTCERT: "${POSTGRES_CA_CERT_PATH}"
+      PGSSLCERT: "${POSTGRES_CLIENT_CERT_PATH}"
+      PGSSLKEY: "${POSTGRES_CLIENT_KEY_PATH}"
+      PGSSLMODE: "${POSTGRES_SSL_MODE}"
+      PGHOST: "${POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+    volumes:
+      - ./infra/postgres/fraud_detection:/postgres/fraud_detection:ro
+    command: [ "psql", "-f", "/postgres/fraud_detection/seeder.sql" ]
+    restart: "no"
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:3.68
+    ports:
+      - "${SEAWEEDFS_MASTER_PORT}:${SEAWEEDFS_MASTER_PORT}"
+      - "${SEAWEEDFS_S3_PORT}:${SEAWEEDFS_S3_PORT}"
+      - "${SEAWEEDFS_VOLUME_PORT}:${SEAWEEDFS_VOLUME_PORT}"
+    secrets:
+      - seaweedfs_s3_config
+    volumes:
+      - seaweedfs_data:/data
+    command: ["server", "-s3", "-dir=/data", "-s3.config=${SEAWEEDFS_S3_CONFIG_PATH}"]
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:${MLFLOW_PORT}/health')"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:${SEAWEEDFS_MASTER_PORT}/cluster/status" ]
+      start_period: 15s
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # Prediction API
-  api:
-    build:
-      dockerfile: api/Dockerfile
-      args:
-        - API_PORT=${API_PORT}
     restart: unless-stopped
-    ports:
-      - "${API_PORT}:${API_PORT}"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: postgres
-      FRAUD_DETECTION_DB: ${FRAUD_DETECTION_DB}
-      MLFLOW_TRACKING_URI: http://mlflow:${MLFLOW_PORT}
-      MLFLOW_MODEL_URI: ${MLFLOW_MODEL_URI}
-      MLFLOW_MODEL_FLAVOR: ${MLFLOW_MODEL_FLAVOR}
-    volumes:
-      - ./models:/mlflow/models
+
+  mlflow:
+    build:
+      dockerfile: infra/mlflow/Dockerfile
     depends_on:
-      mlflow:
+      postgres:
         condition: service_healthy
+      postgres_init_db:
+        condition: service_completed_successfully
+      seaweedfs:
+        condition: service_healthy
+    ports:
+      - "${MLFLOW_PORT}:${MLFLOW_PORT}"
+    secrets:
+      - postgres_ca
+      - postgres_client_cert
+      - source: postgres_client_key
+        mode: 0400
+      - postgres_pgpass
+      - seaweedfs_access_key
+      - seaweedfs_secret_key
+    environment:
+      MLFLOW_BACKEND_STORE_URI: "postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${MLFLOW_DB_NAME}?passfile=${POSTGRES_PGPASS_PATH}&sslrootcert=${POSTGRES_CA_CERT_PATH}&sslcert=${POSTGRES_CLIENT_CERT_PATH}&sslkey=${POSTGRES_CLIENT_KEY_PATH}&sslmode=${POSTGRES_SSL_MODE}"
+      MLFLOW_HOST: "0.0.0.0"
+      MLFLOW_PORT: "${MLFLOW_PORT}"
+      MLFLOW_SERVER_ALLOWED_HOSTS: "${MLFLOW_SERVER_ALLOWED_HOSTS}"
+      MLFLOW_SERVER_CORS_ALLOWED_ORIGINS: "${MLFLOW_SERVER_CORS_ALLOWED_ORIGINS}"
+      MLFLOW_ARTIFACTS_DESTINATION: "s3://${SEAWEEDFS_MLFLOW_ARTIFACTS_BUCKET}"
+      MLFLOW_S3_ENDPOINT_URL: "${SEAWEEDFS_S3_URL}"
+      AWS_ACCESS_KEY_ID: "${SEAWEEDFS_ACCESS_KEY_PATH}"
+      AWS_SECRET_ACCESS_KEY: "${SEAWEEDFS_SECRET_KEY_PATH}"
+    command: ["mlflow", "server", "--serve-artifacts"]
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:${API_PORT}/health')"]
+      test: [ "CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:${MLFLOW_PORT}/health')" ]
+      start_period: 15s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.0.0
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    ports:
+      - "${LOKI_HTTP_PORT}:${LOKI_HTTP_PORT}"
+    environment:
+      LOKI_HTTP_PORT: "${LOKI_HTTP_PORT}"
+      LOKI_GRPC_PORT: "${LOKI_GRPC_PORT}"
+    volumes:
+      - loki_data:/loki
+      - ./infra/loki/config.yaml:/etc/loki/config.yaml:ro
+    command:
+      - "-config.file=/etc/loki/config.yaml"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:${LOKI_HTTP_PORT}/ready" ]
       interval: 15s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    ports:
+      - "${TEMPO_PORT}:${TEMPO_PORT}"
+      - "${TEMPO_OTLP_GRPC_PORT}:${OTEL_GRPC_PORT}"
+    environment:
+      TEMPO_PORT: "${TEMPO_PORT}"
+      OTEL_GRPC_PORT: "${OTEL_GRPC_PORT}"
+      OTEL_HTTP_PORT: "${OTEL_HTTP_PORT}"
+      SEAWEEDFS_S3_URL: "${SEAWEEDFS_S3_URL}"
+      SEAWEEDFS_TEMPO_TRACES_BUCKET: "${SEAWEEDFS_TEMPO_TRACES_BUCKET}"
+      SEAWEEDFS_ACCESS_KEY_PATH: "${SEAWEEDFS_ACCESS_KEY_PATH}"
+      SEAWEEDFS_SECRET_KEY_PATH: "${SEAWEEDFS_SECRET_KEY_PATH}"
+    volumes:
+      - tempo_data:/var/tempo
+      - ./infra/tempo/config.yaml:/etc/tempo/config.yaml:ro
+    command:
+      - "-config.file=/etc/tempo/config.yaml"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:${TEMPO_PORT}/status" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  otel_collector:
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+    environment:
+      OTEL_HEALTH_CHECK_PORT: "${OTEL_HEALTH_CHECK_PORT}"
+      OTEL_PPROF_PORT: "${OTEL_PPROF_PORT}"
+      OTEL_GRPC_PORT: "${OTEL_GRPC_PORT}"
+      OTEL_HTTP_PORT: "${OTEL_HTTP_PORT}"
+      OTEL_PROMETHEUS_PORT: "${OTEL_PROMETHEUS_PORT}"
+      LOKI_HTTP_PORT: "${LOKI_HTTP_PORT}"
+    ports:
+      - "${OTEL_GRPC_PORT}:${OTEL_GRPC_PORT}"
+      - "${OTEL_HTTP_PORT}:${OTEL_HTTP_PORT}"
+      - "${OTEL_PROMETHEUS_PORT}:${OTEL_PROMETHEUS_PORT}"
+    volumes:
+      - ./infra/otel_collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    command:
+      - "-config=/etc/otelcol-contrib/config.yaml"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${OTEL_HEALTH_CHECK_PORT}"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+      otel_collector:
+        condition: service_healthy
+    ports:
+      - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
+    environment:
+      OTEL_PROMETHEUS_PORT: "${OTEL_PROMETHEUS_PORT}"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./infra/prometheus/config.yaml:/etc/prometheus/config.yaml:ro
+    command:
+      - "--config.file=/etc/prometheus/config.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+      - "--enable-feature=exemplar-storage"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:${PROMETHEUS_PORT}/-/healthy" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    ports:
+      - "${GRAFANA_PORT}:${GRAFANA_PORT}"
+    secrets:
+      - grafana_user
+      - grafana_password
+      - postgres_ca_cert
+      - postgres_client_cert
+      - source: postgres_client_key
+        uid: "472"
+        mode: 0400
+      - postgres_user
+      - postgres_password
+      - source: postgres_pgpass
+        target: /home/grafana/.pgpass
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - type: bind
+        source: ./infra/grafana/dashboards
+        target: "${GRAFANA_DASHBOARDS_PATH}"
+        read_only: true
+    environment:
+      GF_SECURITY_ADMIN_USER__FILE: "${GRAFANA_USER_PATH}"
+      GF_SECURITY_ADMIN_PASSWORD__FILE: "${GRAFANA_PASSWORD_PATH}"
+      GF_DATABASE_USER__FILE: "${POSTGRES_USER_PATH}"
+      GF_DATABASE_PASSWORD__FILE: "${POSTGRES_PASSWORD_PATH}"
+      GF_DATABASE_CA_CERT_PATH: "${POSTGRES_CA_CERT_PATH}"
+      GF_DATABASE_CLIENT_CERT_PATH: "${POSTGRES_CLIENT_CERT_PATH}"
+      GF_DATABASE_CLIENT_KEY_PATH: "${POSTGRES_CLIENT_KEY_PATH}"
+      GF_DATABASE_SSL_MODE: "${POSTGRES_SSL_MODE}"
+      GF_DATABASE_TYPE: "${GRAFANA_DATABASE_TYPE}"
+      GF_DATABASE_HOST: "${POSTGRES_HOST}:${POSTGRES_PORT}"
+      GF_DATABASE_NAME: "${GRAFANA_DB_NAME}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      GRAFANA_DASHBOARDS_PATH: "${GRAFANA_DASHBOARDS_PATH}"
+      LOKI_URL: "${LOKI_URL}"
+      PROMETHEUS_URL: "${PROMETHEUS_URL}"
+      TEMPO_URL: "${TEMPO_URL}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${GRAFANA_PORT}/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  fraud_api:
+    build:
+      dockerfile: services/fraud_api/Dockerfile
+      args:
+        - FRAUD_API_PORT=${FRAUD_API_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+      atlas:
+        condition: service_completed_successfully
+      postgres_fraud_detection_seeder:
+        condition: service_completed_successfully
+      otel_collector:
+        condition: service_started
+    ports:
+      - "${FRAUD_API_PORT}:${FRAUD_API_PORT}"
+    secrets:
+      - postgres_pgpass
+      - postgres_ca
+      - postgres_client_cert
+      - source: postgres_client_key
+        mode: 0400
+    environment:
+      PGPASSFILE: "${POSTGRES_PGPASS_PATH}"
+      PGSSLROOTCERT: "${POSTGRES_CA_CERT_PATH}"
+      PGSSLCERT: "${POSTGRES_CLIENT_CERT_PATH}"
+      PGSSLKEY: "${POSTGRES_CLIENT_KEY_PATH}"
+      PGSSLMODE: "${POSTGRES_SSL_MODE}"
+      PGHOST: "${POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+      MLFLOW_TRACKING_URI: "${MLFLOW_TRACKING_URI}"
+      MLFLOW_MODEL_URI: "${MLFLOW_MODEL_URI}"
+      MLFLOW_MODEL_FLAVOR: "${MLFLOW_MODEL_FLAVOR}"
+      OTEL_SERVICE_NAME: "${OTEL_FRAUD_API_SERVICE_NAME}"
+      OTEL_SERVICE_VERSION: "${OTEL_FRAUD_API_SERVICE_VERSION}"
+      OTEL_DEPLOYMENT_ENVIRONMENT: "${OTEL_FRAUD_API_DEPLOYMENT_ENVIRONMENT}"
+      OTEL_ENABLED: "true"
+      OTEL_URL: "${OTEL_URL}"
+      OTEL_METRIC_EXPORT_INTERVAL_MS: "${OTEL_METRIC_EXPORT_INTERVAL_MS}"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:${FRAUD_API_PORT}/health/ready')" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
 volumes:
-  data:
+  postgres_data:
+  seaweedfs_data:
+  loki_data:
+  tempo_data:
+  prometheus_data:
+  grafana_data:
+
+secrets:
+  postgres_user:
+    file: secrets/postgres/user
+  postgres_password:
+    file: secrets/postgres/password
+  postgres_pgpass:
+    file: secrets/postgres/pgpass
+  postgres_ca_cert:
+    file: secrets/postgres/certs/ca.crt
+  postgres_server_cert:
+    file: secrets/postgres/certs/server.crt
+  postgres_server_key:
+    file: secrets/postgres/certs/server.key
+  postgres_client_cert:
+    file: secrets/postgres/certs/client.crt
+  postgres_client_key:
+    file: secrets/postgres/certs/client.key
+  seaweedfs_s3_config:
+    file: secrets/seaweedfs/s3_config.json
+  seaweedfs_access_key:
+    file: secrets/seaweedfs/access_key
+  seaweedfs_secret_key:
+    file: secrets/seaweedfs/secret_key
+  grafana_user:
+    file: secrets/grafana/user
+  grafana_password:
+    file: secrets/grafana/password

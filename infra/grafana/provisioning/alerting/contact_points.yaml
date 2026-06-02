@@ -1,0 +1,17 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: slack-alerts
+    receivers:
+      - uid: slack-fraud-alerts
+        type: slack
+        settings:
+          url: $SLACK_WEBHOOK_URL
+          title: "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+          text: |
+            {{ range .Alerts -}}
+            *Alert:* {{ .Annotations.summary }}
+            *Details:* {{ .Annotations.description }}
+            *Status:* {{ .Status | title }}
+            {{ end -}}
+        disableResolveMessage: false

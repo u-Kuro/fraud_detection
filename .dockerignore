@@ -1,5 +1,5 @@
 **/Dockerfile*
 
 # postgres
-postgres/sample-queries.sql
-postgres/fraud_detection/raw_data/creditcard_transactions.csv
+infra/postgres/sample-queries.sql
+infra/postgres/fraud_detection/raw_data/creditcard_transactions.csv

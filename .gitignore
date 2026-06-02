@@ -1,14 +1,32 @@
+# Environment
 .env
+
+# Docker secrets
+/secrets
+
+# Github actions secrets
+.secrets
+
+# Kubernetes secrets
+**/secret.yaml
+
+# Python dependencies
 .venv/
-.idea
 
 # MLflow
 models
 mlflow.db
 
 # Postgres
-postgres/sample-queries.sql
-postgres/fraud_detection/raw_data/creditcard_transactions.csv
+infra/postgres/sample-queries.sql
+infra/postgres/fraud_detection/raw_data/creditcard_transactions.csv
+
+# Others
+.idea
+.mypy_cache
+.pytest-cache
+.ruff-cache
+__pycache__
 
 # Temporary
 /*.md
