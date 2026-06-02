@@ -1,9 +1,21 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    cluster: local
+    replica: 0
 
 scrape_configs:
   - job_name: "otel_collector"
     static_configs:
       - targets: ["otel_collector:${OTEL_PROMETHEUS_PORT}"]
     scrape_interval: 15s
+
+remote_write:
+  - url: http://thanos-receive:19291/api/v1/receive
+    # Thanos Receive is optional for local compose.
+    # In K8s, use Thanos Sidecar instead (no remote_write needed).
+
+# Enable exemplar storage
+feature_flags:
+  - exemplar-storage

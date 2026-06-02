@@ -2,6 +2,11 @@ apiVersion: 1
 datasources:
   - name: Prometheus
     type: prometheus
-    url: $PROMETHEUS_URL
-    isDefault: true
+    url: $THANOS_QUERY_URL
     access: proxy
+    isDefault:
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+          urlDisplayLabel: View in Tempo

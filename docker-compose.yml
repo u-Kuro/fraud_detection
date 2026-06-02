@@ -180,11 +180,19 @@ services:
     environment:
       LOKI_HTTP_PORT: "${LOKI_HTTP_PORT}"
       LOKI_GRPC_PORT: "${LOKI_GRPC_PORT}"
+      # TODO: Find actual way to insert these
+      SEAWEEDFS_HOST: seaweedfs          # hostname for Loki S3 URL
+      SEAWEEDFS_S3_PORT: "${SEAWEEDFS_S3_PORT}"
+      SEAWEEDFS_ACCESS_KEY: "${SEAWEEDFS_ACCESS_KEY}"    # or use secret file
+      SEAWEEDFS_SECRET_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      SEAWEEDFS_LOKI_CHUNKS_BUCKET: loki-chunks
+      SEAWEEDFS_LOKI_RULES_BUCKET: loki-rules
+      SEAWEEDFS_S3_URL: "${SEAWEEDFS_S3_URL}"
     volumes:
-      - loki_data:/loki
       - ./infra/loki/config.yaml:/etc/loki/config.yaml:ro
     command:
       - "-config.file=/etc/loki/config.yaml"
+      - "-config.expand-env=true"
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:${LOKI_HTTP_PORT}/ready" ]
       interval: 15s
@@ -273,6 +281,44 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
+
+  # TODO - Recheck All
+  thanos-receive:
+    image: thanosio/thanos:v0.36.1
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      SEAWEEDFS_ACCESS_KEY: "${SEAWEEDFS_ACCESS_KEY}"
+      SEAWEEDFS_SECRET_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      SEAWEEDFS_HOST: seaweedfs
+      SEAWEEDFS_S3_PORT: "${SEAWEEDFS_S3_PORT}"
+    volumes:
+      - ./infra/thanos/objstore.yaml:/etc/thanos/objstore.yaml:ro
+      - thanos_receive_data:/thanos/receive
+    command:
+      - receive
+      - --http-address=0.0.0.0:10902
+      - --grpc-address=0.0.0.0:10901
+      - --remote-write.address=0.0.0.0:19291
+      - --objstore.config-file=/etc/thanos/objstore.yaml
+      - --tsdb.path=/thanos/receive
+      - --label=receive_replica="0"
+    restart: unless-stopped
+
+  # TODO - Recheck All
+  thanos-query:
+    image: thanosio/thanos:v0.36.1
+    depends_on:
+      - thanos-receive
+    command:
+      - query
+      - --http-address=0.0.0.0:10902
+      - --grpc-address=0.0.0.0:10901
+      - --store=thanos-receive:10901
+    ports:
+      - "10902:10902"
     restart: unless-stopped
 
   grafana:
@@ -377,10 +423,92 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # TODO - Recheck All
+  drift_monitor:
+    build:
+      dockerfile: services/drift_monitor/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "${POSTGRES_PORT}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD_VAL}"   # use secret file
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+      SEAWEEDFS_S3_URL: "${SEAWEEDFS_S3_URL}"
+      SEAWEEDFS_ACCESS_KEY: "${SEAWEEDFS_ACCESS_KEY}"
+      SEAWEEDFS_SECRET_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      OTEL_ENABLED: "true"
+      OTEL_URL: "${OTEL_URL}"
+      OTEL_SERVICE_NAME: "${OTel_DRIFT_MONITOR_SERVICE_NAME}"
+      OTEL_SERVICE_VERSION: "${OTel_DRIFT_MONITOR_SERVICE_VERSION}"
+      OTEL_DEPLOYMENT_ENVIRONMENT: "${OTel_DRIFT_MONITOR_DEPLOYMENT_ENVIRONMENT}"
+    restart: "no"
+
+  # TODO - Recheck All
+  training_pipeline:
+    build:
+      dockerfile: services/training_pipeline/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "${POSTGRES_PORT}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD_VAL}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+      MLFLOW_TRACKING_URI: "${MLFLOW_TRACKING_URI}"
+      SEAWEEDFS_S3_URL: "${SEAWEEDFS_S3_URL}"
+      SEAWEEDFS_ACCESS_KEY: "${SEAWEEDFS_ACCESS_KEY}"
+      SEAWEEDFS_SECRET_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      OTEL_ENABLED: "true"
+      OTEL_URL: "${OTEL_URL}"
+      OTEL_SERVICE_NAME: "${OTel_TRAINING_PIPELINE_SERVICE_NAME}"
+      OTEL_SERVICE_VERSION: "${OTel_TRAINING_PIPELINE_SERVICE_VERSION}"
+      OTEL_DEPLOYMENT_ENVIRONMENT: "${OTel_TRAINING_PIPELINE_DEPLOYMENT_ENVIRONMENT}"
+      AWS_ACCESS_KEY_ID: "${SEAWEEDFS_ACCESS_KEY}"
+      AWS_SECRET_ACCESS_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      MLFLOW_S3_ENDPOINT_URL: "${SEAWEEDFS_S3_URL}"
+    restart: "no"
+
+  # TODO - Recheck All
+  archiving:
+    build:
+      dockerfile: services/archiving/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "${POSTGRES_PORT}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD_VAL}"
+      FRAUD_DETECTION_DB_NAME: "${FRAUD_DETECTION_DB_NAME}"
+      SEAWEEDFS_S3_URL: "${SEAWEEDFS_S3_URL}"
+      SEAWEEDFS_ACCESS_KEY: "${SEAWEEDFS_ACCESS_KEY}"
+      SEAWEEDFS_SECRET_KEY: "${SEAWEEDFS_SECRET_KEY}"
+      OTEL_ENABLED: "true"
+      OTEL_URL: "${OTEL_URL}"
+      OTEL_SERVICE_NAME: "${OTel_ARCHIVING_SERVICE_NAME}"
+      OTEL_SERVICE_VERSION: "${OTel_ARCHIVING_SERVICE_VERSION}"
+      OTEL_DEPLOYMENT_ENVIRONMENT: "${OTel_ARCHIVING_DEPLOYMENT_ENVIRONMENT}"
+    restart: "no"
+
 volumes:
   postgres_data:
   seaweedfs_data:
-  loki_data:
   tempo_data:
   prometheus_data:
   grafana_data:

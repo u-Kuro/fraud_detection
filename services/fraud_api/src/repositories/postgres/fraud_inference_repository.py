@@ -20,11 +20,12 @@ class FraudInferenceRepository:
         with self.engine.connect() as connection:
             connection.execute(
                 text(f"""
-                    WITH deployed_model AS (
-                        INSERT INTO deployed_models (model_name, model_version)
-                        VALUES (:model_name, :model_version)
-                        ON CONFLICT (model_name, model_version) DO UPDATE SET model_name = EXCLUDED.model_name
-                        RETURNING model_id
+                    WITH active_model AS (
+                        SELECT model_id FROM deployed_models
+                        WHERE model_name = :model_name
+                          AND model_version = :model_version
+                          AND status = 'active'
+                        LIMIT 1
                     )
                     INSERT INTO transaction_inferences(
                         transaction_id,

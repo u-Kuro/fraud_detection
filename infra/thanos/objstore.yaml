@@ -1,0 +1,8 @@
+type: S3
+config:
+  bucket: thanos
+  endpoint: ${SEAWEEDFS_HOST}:${SEAWEEDFS_S3_PORT}
+  access_key: ${SEAWEEDFS_ACCESS_KEY}
+  secret_key: ${SEAWEEDFS_SECRET_KEY}
+  insecure: true
+  signature_version2: false
