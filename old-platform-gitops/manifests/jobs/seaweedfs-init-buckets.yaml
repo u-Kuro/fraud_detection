@@ -1,0 +1,53 @@
+# Runs after SeaweedFS is Ready; creates all S3 buckets every service needs.
+# Uses MinIO Client (mc) — S3-compatible and works with SeaweedFS.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seaweedfs-init-buckets
+  namespace: storage
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:RELEASE.2024-11-17T19-35-25Z
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              echo "Waiting for SeaweedFS Filer S3 Gateway..."
+              until nc -z -v -w5 seaweedfs-filer.storage.svc.cluster.local 8333; do
+                echo "SeaweedFS S3 port not ready yet, sleeping 3 seconds..."
+                sleep 3
+              done
+              echo "SeaweedFS S3 is reachable."
+              
+              # Configure mc alias pointing to SeaweedFS S3 gateway
+              mc alias set swfs \
+                http://seaweedfs-filer.storage.svc.cluster.local:8333 \
+                local-access-key \
+                fraud_detection \
+                --api S3v4
+
+              # Create all required buckets (--ignore-existing = idempotent)
+              mc mb --ignore-existing swfs/loki-chunks
+              mc mb --ignore-existing swfs/loki-ruler
+              mc mb --ignore-existing swfs/loki-admin
+              mc mb --ignore-existing swfs/tempo-traces
+              mc mb --ignore-existing swfs/thanos-data
+              mc mb --ignore-existing swfs/mlflow-artifacts
+              mc mb --ignore-existing swfs/airflow-logs
+
+              echo "All buckets created successfully."
+              mc ls swfs
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

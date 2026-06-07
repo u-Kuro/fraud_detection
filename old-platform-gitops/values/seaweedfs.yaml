@@ -1,0 +1,63 @@
+global:
+  createClusterRole: true
+  imagePullPolicy: IfNotPresent
+
+master:
+  enabled: true
+  replicas: 1
+  port: 9333
+  grpcPort: 19333
+  metricsPort: 9325
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: standard
+
+volume:
+  enabled: true
+  replicas: 1
+  port: 8080
+  grpcPort: 18080
+  metricsPort: 9325
+  dataDirs:
+    - name: data1
+      type: "persistentVolumeClaim"
+      size: "25Gi"
+      storageClass: standard
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+filer:
+  enabled: true
+  replicas: 1
+  port: 8888
+  grpcPort: 18888
+  metricsPort: 9325
+  s3:
+    enabled: true
+    port: 8333
+    enableAuth: true
+    existingConfigSecret: seaweedfs-s3-secret
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard

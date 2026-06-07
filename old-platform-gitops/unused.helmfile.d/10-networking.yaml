@@ -1,0 +1,16 @@
+releases:
+  - name: traefik
+    namespace: networking
+    chart: traefik/traefik
+    version: "30.1.0"
+    values:
+      - values/traefik.yaml
+
+  - name: cert-manager
+    namespace: networking
+    chart: jetstack/cert-manager
+    version: "1.15.3"
+    values:
+      - values/cert-manager.yaml
+#    needs:
+#      - networking/traefik

@@ -1,0 +1,139 @@
+# --- Grafana -----------------------------------------------------------------
+grafana:
+  adminPassword: "fraud_detection"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+
+  sidecar:
+    datasources:
+      defaultDatasourceEnabled: false
+
+  # Point the default Prometheus datasource to Thanos Query for global/long-term view
+  additionalDataSources:
+    - name: Thanos
+      type: prometheus
+      url: http://thanos-query.observability.svc.cluster.local:9090
+      access: proxy
+      isDefault: true
+      jsonData:
+        timeInterval: "5s"
+    - name: Loki
+      type: loki
+      url: http://loki.observability.svc.cluster.local:3100
+      access: proxy
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: Tempo
+            matcherRegex: "traceID=(\\w+)"
+            name: TraceID
+            url: '$${__value.raw}'
+    - name: Tempo
+      type: tempo
+      url: http://tempo.observability.svc.cluster.local:3100
+      access: proxy
+      uid: Tempo
+      jsonData:
+        httpMethod: GET
+        tracesToLogsV2:
+          datasourceUid: Loki
+        lokiSearch:
+          datasourceUid: Loki
+
+# --- AlertManager ------------------------------------------------------------
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+# --- Prometheus + Thanos Sidecar ---------------------------------------------
+prometheus:
+  prometheusSpec:
+    # REQUIRED: Thanos Compactor owns block compaction; Prometheus must not do it.
+    disableCompaction: true
+
+    # Keep only recent data in Prometheus local TSDB; Thanos Store GW serves older blocks.
+    retention: 6h
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: standard
+          resources:
+            requests:
+              storage: 10Gi
+
+    # Enable remote write receiver so OTel Collector can push metrics
+    enableRemoteWriteReceiver: true
+
+    # Thanos sidecar — injected into every Prometheus pod
+    thanos:
+      image: "quay.io/thanos/thanos:v0.36.1"
+      # Sidecar uploads TSDB blocks to SeaweedFS S3
+      objectStorageConfig:
+        existingSecret:
+          name: thanos-objstore-secret
+          key: objstore.yml
+
+  # Expose the sidecar's gRPC port so Thanos Query can reach it
+  thanosService:
+    enabled: true
+    type: ClusterIP
+    portName: grpc
+    port: 10901
+    targetPort: grpc
+
+  thanosServiceMonitor:
+    enabled: true
+
+# --- Node exporter / kube-state-metrics --------------------------------------
+nodeExporter:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

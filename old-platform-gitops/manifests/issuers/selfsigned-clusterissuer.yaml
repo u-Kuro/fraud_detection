@@ -1,0 +1,7 @@
+# Step 1: self-signed issuer used only to bootstrap the local CA certificate
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}

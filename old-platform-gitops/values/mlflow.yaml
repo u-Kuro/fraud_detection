@@ -1,0 +1,45 @@
+# --- Backend store -> PostgreSQL -----------------------------------------------
+backendStore:
+  databaseMigration: true
+  postgres:
+    enabled: true
+    host: postgresql.storage.svc.cluster.local
+    port: "5432"
+    database: mlflow
+    user: mlflow
+    password: fraud_detection
+    driver: psycopg2
+
+# --- Artifact store -> SeaweedFS S3 -------------------------------------------
+artifactRoot:
+  proxiedArtifactStorage: true
+  s3:
+    enabled: true
+    bucket: mlflow-artifacts
+    awsAccessKeyId: local-access-key
+    awsSecretAccessKey: fraud_detection
+
+# SeaweedFS endpoint and region injected as env vars
+extraEnvVars:
+    MLFLOW_S3_ENDPOINT_URL: "http://seaweedfs-filer.storage.svc.cluster.local:8333"
+    AWS_DEFAULT_REGION: "us-east-1"
+
+# --- Service ------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: "5000"
+
+# --- Resources ----------------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# --- Metrics -----------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack

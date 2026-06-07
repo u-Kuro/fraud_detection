@@ -1,0 +1,1296 @@
+minikube profile list
+┌──────────┬────────┬─────────┬──────────────┬─────────┬────────┬───────┬────────────────┬────────────────────┐
+│ PROFILE  │ DRIVER │ RUNTIME │      IP      │ VERSION │ STATUS │ NODES │ ACTIVE PROFILE │ ACTIVE KUBECONTEXT │
+├──────────┼────────┼─────────┼──────────────┼─────────┼────────┼───────┼────────────────┼────────────────────┤
+│ minikube │ docker │ docker  │ 192.168.49.2 │ v1.34.1 │ OK     │ 1     │ *              │ *                  │
+└──────────┴────────┴─────────┴──────────────┴─────────┴────────┴───────┴────────────────┴────────────────────┘
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> kubectl get nodes
+NAME       STATUS   ROLES           AGE     VERSION
+minikube   Ready    control-plane   3h15m   v1.34.1
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> kubectl get pods -A
+NAMESPACE              NAME                                                        READY   STATUS         RESTARTS         AGE
+data-platform          airflow-run-airflow-migrations-tm88x                        0/1     Completed      0                19m
+data-platform          airflow-scheduler-0                                         0/2     OOMKilled      4                54m
+data-platform          airflow-statsd-5b66d465df-ccz6d                             1/1     Running        9 (2m53s ago)    167m
+data-platform          airflow-triggerer-0                                         0/2     Error          8                75m
+data-platform          airflow-webserver-54c776d475-v525j                          0/1     Error          15               75m
+data-platform          airflow-webserver-68454599d9-tdthr                          0/1     Error          20               94m
+data-platform          mlflow-99b676557-6b9fr                                      0/1     Error          25               120m
+kube-system            coredns-66bc5c9577-qlswf                                    1/1     Running        5 (2m53s ago)    3h15m
+kube-system            etcd-minikube                                               1/1     Running        5 (2m53s ago)    3h15m
+kube-system            kube-apiserver-minikube                                     1/1     Running        7 (2m53s ago)    3h15m
+kube-system            kube-controller-manager-minikube                            0/1     Error          6                3h15m
+kube-system            kube-proxy-xnqqs                                            1/1     Running        5 (2m53s ago)    3h15m
+kube-system            kube-scheduler-minikube                                     1/1     Running        6 (2m53s ago)    3h15m
+kube-system            storage-provisioner                                         0/1     Error          26 (10m ago)     3h15m
+kubernetes-dashboard   dashboard-metrics-scraper-77bf4d6c4c-45f2g                  1/1     Running        2 (2m53s ago)    35m
+kubernetes-dashboard   kubernetes-dashboard-855c9754f9-dlw2x                       1/1     Running        3 (8m9s ago)     35m
+networking             cert-manager-587c587ccd-x8j7h                               1/1     Running        8 (9m35s ago)    169m
+networking             cert-manager-cainjector-544cdb9d95-zcqzj                    1/1     Running        13 (2m53s ago)   169m
+networking             cert-manager-webhook-646bc4f585-x4pz6                       1/1     Running        14 (2m53s ago)   169m
+networking             traefik-5b5cc6665d-txr6p                                    0/1     Running        23 (4m49s ago)   170m
+observability          alertmanager-kube-prometheus-stack-alertmanager-0           0/2     Error          11               169m
+observability          kube-prometheus-stack-grafana-67dd6f58d6-jwz6z              0/3     Error          12               170m
+observability          kube-prometheus-stack-kube-state-metrics-84d89c5bd4-sqbq2   0/1     Error          23               170m
+observability          kube-prometheus-stack-operator-7bc9c76b94-9hr6l             1/1     Running        27 (2m53s ago)   170m
+observability          kube-prometheus-stack-prometheus-node-exporter-2h75t        1/1     Running        14 (2m53s ago)   170m
+observability          loki-0                                                      0/2     Running        15 (2m53s ago)   120m
+observability          loki-gateway-5957bb9476-rbfqf                               1/2     Error          19 (2m53s ago)   120m
+observability          otel-collector-opentelemetry-collector-8464b7b5cd-26299     0/1     ErrImagePull   0                85m
+observability          otel-collector-opentelemetry-collector-8b556989d-bh2b7      0/1     ErrImagePull   0                49m
+observability          prometheus-kube-prometheus-stack-prometheus-0               0/3     Error          7                50m
+observability          tempo-compactor-655bf7f985-42wjj                            0/1     Error          32 (13m ago)     120m
+observability          tempo-distributor-78c57df6b9-5jd2t                          0/1     Running        31 (2m53s ago)   120m
+observability          tempo-ingester-0                                            0/1     Error          31 (13m ago)     120m
+observability          tempo-memcached-0                                           1/1     Running        10 (2m53s ago)   120m
+observability          tempo-querier-58fcbb999d-7m4hl                              0/1     Running        31 (13m ago)     120m
+observability          tempo-query-frontend-74cf8ccbc9-cs8gx                       0/1     Error          32 (13m ago)     120m
+observability          thanos-query-965bb57cb-fk2m4                                1/1     Running        7 (2m53s ago)    120m
+observability          thanos-storegateway-0                                       0/1     Error          15               120m
+storage                postgresql-0                                                1/2     Running        4 (2m53s ago)    28m
+storage                seaweedfs-filer-0                                           0/1     Error          3                63m
+storage                seaweedfs-init-buckets-p2bq6                                0/1     Error          4                167m
+storage                seaweedfs-master-0                                          0/1     Running        6 (2m53s ago)    167m
+storage                seaweedfs-volume-0                                          0/1     Running        5 (2m53s ago)    167m
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> kubectl get pods -n kube-system                                                  
+NAME                               READY   STATUS    RESTARTS        AGE
+coredns-66bc5c9577-qlswf           1/1     Running   5 (2m54s ago)   3h15m
+etcd-minikube                      1/1     Running   5 (2m54s ago)   3h15m
+kube-apiserver-minikube            1/1     Running   7 (2m54s ago)   3h15m
+kube-controller-manager-minikube   0/1     Error     6               3h15m
+kube-proxy-xnqqs                   1/1     Running   5 (2m54s ago)   3h15m
+kube-scheduler-minikube            1/1     Running   6 (2m54s ago)   3h15m
+storage-provisioner                0/1     Error     26 (10m ago)    3h15m
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> kubectl describe node
+Name:               minikube
+Roles:              control-plane
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=minikube
+                    kubernetes.io/os=linux
+                    minikube.k8s.io/commit=c93a4cb9311efc66b90d33ea03f75f2c4120e9b0
+                    minikube.k8s.io/name=minikube
+                    minikube.k8s.io/primary=true
+                    minikube.k8s.io/updated_at=2026_06_05T17_44_49_0700
+                    minikube.k8s.io/version=v1.38.1
+                    node-role.kubernetes.io/control-plane=
+                    node.kubernetes.io/exclude-from-external-load-balancers=
+Annotations:        node.alpha.kubernetes.io/ttl: 0
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Fri, 05 Jun 2026 17:44:47 +0800
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  minikube
+  AcquireTime:     <unset>
+  RenewTime:       Fri, 05 Jun 2026 21:00:49 +0800
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Fri, 05 Jun 2026 20:57:56 +0800   Fri, 05 Jun 2026 19:32:39 +0800   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Fri, 05 Jun 2026 20:57:56 +0800   Fri, 05 Jun 2026 19:32:39 +0800   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Fri, 05 Jun 2026 20:57:56 +0800   Fri, 05 Jun 2026 19:32:39 +0800   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Fri, 05 Jun 2026 20:57:56 +0800   Fri, 05 Jun 2026 19:52:48 +0800   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.49.2
+  Hostname:    minikube
+Capacity:
+  cpu:                16
+  ephemeral-storage:  1055762868Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4194496Ki
+  pods:               110
+Allocatable:
+  cpu:                16
+  ephemeral-storage:  1055762868Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             4194496Ki
+  pods:               110
+System Info:
+  Machine ID:                 86e0bfeb3f77427722393c2969964edb
+  System UUID:                86e0bfeb3f77427722393c2969964edb
+  Boot ID:                    7a62df69-6ab5-4782-8c3f-9a8956ad6c62
+  Kernel Version:             6.6.87.2-microsoft-standard-WSL2
+  OS Image:                   Debian GNU/Linux 12 (bookworm)
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  docker://29.2.1
+  Kubelet Version:            v1.34.1
+  Kube-Proxy Version:         
+PodCIDR:                      10.244.0.0/24
+PodCIDRs:                     10.244.0.0/24
+Non-terminated Pods:          (42 in total)
+  Namespace                   Name                                                         CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                                         ------------  ----------  ---------------  -------------  ---
+  data-platform               airflow-scheduler-0                                          100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    55m
+  data-platform               airflow-statsd-5b66d465df-ccz6d                              20m (0%)      100m (0%)   32Mi (0%)        64Mi (1%)      168m
+  data-platform               airflow-triggerer-0                                          50m (0%)      200m (1%)   128Mi (3%)       256Mi (6%)     75m
+  data-platform               airflow-webserver-54c776d475-v525j                           100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    76m
+  data-platform               airflow-webserver-68454599d9-tdthr                           100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    94m
+  data-platform               mlflow-99b676557-6b9fr                                       100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    121m
+  kube-system                 coredns-66bc5c9577-qlswf                                     100m (0%)     0 (0%)      70Mi (1%)        170Mi (4%)     3h16m
+  kube-system                 etcd-minikube                                                100m (0%)     0 (0%)      100Mi (2%)       0 (0%)         3h16m
+  kube-system                 kube-apiserver-minikube                                      250m (1%)     0 (0%)      0 (0%)           0 (0%)         3h16m
+  kube-system                 kube-controller-manager-minikube                             200m (1%)     0 (0%)      0 (0%)           0 (0%)         3h16m
+  kube-system                 kube-proxy-xnqqs                                             0 (0%)        0 (0%)      0 (0%)           0 (0%)         3h16m
+  kube-system                 kube-scheduler-minikube                                      100m (0%)     0 (0%)      0 (0%)           0 (0%)         3h16m
+  kube-system                 storage-provisioner                                          0 (0%)        0 (0%)      0 (0%)           0 (0%)         3h16m
+  kubernetes-dashboard        dashboard-metrics-scraper-77bf4d6c4c-45f2g                   0 (0%)        0 (0%)      0 (0%)           0 (0%)         35m
+  kubernetes-dashboard        kubernetes-dashboard-855c9754f9-dlw2x                        0 (0%)        0 (0%)      0 (0%)           0 (0%)         35m
+  networking                  cert-manager-587c587ccd-x8j7h                                50m (0%)      200m (1%)   64Mi (1%)        128Mi (3%)     170m
+  networking                  cert-manager-cainjector-544cdb9d95-zcqzj                     20m (0%)      100m (0%)   64Mi (1%)        128Mi (3%)     170m
+  networking                  cert-manager-webhook-646bc4f585-x4pz6                        20m (0%)      100m (0%)   32Mi (0%)        64Mi (1%)      170m
+  networking                  traefik-5b5cc6665d-txr6p                                     50m (0%)      200m (1%)   64Mi (1%)        128Mi (3%)     170m
+  observability               alertmanager-kube-prometheus-stack-alertmanager-0            50m (0%)      200m (1%)   64Mi (1%)        128Mi (3%)     170m
+  observability               kube-prometheus-stack-grafana-67dd6f58d6-jwz6z               100m (0%)     500m (3%)   128Mi (3%)       256Mi (6%)     170m
+  observability               kube-prometheus-stack-kube-state-metrics-84d89c5bd4-sqbq2    20m (0%)      100m (0%)   64Mi (1%)        128Mi (3%)     170m
+  observability               kube-prometheus-stack-operator-7bc9c76b94-9hr6l              50m (0%)      200m (1%)   64Mi (1%)        128Mi (3%)     170m
+  observability               kube-prometheus-stack-prometheus-node-exporter-2h75t         0 (0%)        0 (0%)      0 (0%)           0 (0%)         170m
+  observability               loki-0                                                       100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    121m
+  observability               loki-gateway-5957bb9476-rbfqf                                0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               otel-collector-opentelemetry-collector-8464b7b5cd-26299      50m (0%)      300m (1%)   128Mi (3%)       256Mi (6%)     85m
+  observability               otel-collector-opentelemetry-collector-8b556989d-bh2b7       50m (0%)      300m (1%)   128Mi (3%)       256Mi (6%)     49m
+  observability               prometheus-kube-prometheus-stack-prometheus-0                200m (1%)     1 (6%)      256Mi (6%)       1Gi (24%)      51m
+  observability               tempo-compactor-655bf7f985-42wjj                             0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               tempo-distributor-78c57df6b9-5jd2t                           0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               tempo-ingester-0                                             100m (0%)     500m (3%)   256Mi (6%)       512Mi (12%)    121m
+  observability               tempo-memcached-0                                            0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               tempo-querier-58fcbb999d-7m4hl                               0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               tempo-query-frontend-74cf8ccbc9-cs8gx                        0 (0%)        0 (0%)      0 (0%)           0 (0%)         121m
+  observability               thanos-query-965bb57cb-fk2m4                                 50m (0%)      300m (1%)   128Mi (3%)       256Mi (6%)     121m
+  observability               thanos-storegateway-0                                        50m (0%)      300m (1%)   128Mi (3%)       256Mi (6%)     121m
+  storage                     postgresql-0                                                 120m (0%)     600m (3%)   160Mi (3%)       320Mi (7%)     29m
+  storage                     seaweedfs-filer-0                                            50m (0%)      300m (1%)   128Mi (3%)       512Mi (12%)    64m
+  storage                     seaweedfs-init-buckets-p2bq6                                 20m (0%)      100m (0%)   32Mi (0%)        64Mi (1%)      168m
+  storage                     seaweedfs-master-0                                           50m (0%)      300m (1%)   128Mi (3%)       512Mi (12%)    168m
+  storage                     seaweedfs-volume-0                                           100m (0%)     500m (3%)   256Mi (6%)       1Gi (24%)      168m
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests      Limits
+  --------           --------      ------
+  cpu                2520m (15%)   8900m (55%)
+  memory             3882Mi (94%)  9130Mi (222%)
+  ephemeral-storage  0 (0%)        0 (0%)
+  hugepages-1Gi      0 (0%)        0 (0%)
+  hugepages-2Mi      0 (0%)        0 (0%)
+Events:
+  Type     Reason                   Age                    From             Message
+  ----     ------                   ----                   ----             -------
+  Normal   Starting                 101m                   kube-proxy       
+  Normal   Starting                 2m39s                  kube-proxy       
+  Normal   Starting                 19m                    kube-proxy       
+  Normal   Starting                 37m                    kube-proxy       
+  Normal   Starting                 97m                    kube-proxy       
+  Normal   NodeNotReady             104m (x2 over 112m)    kubelet          Node minikube status is now: NodeNotReady
+  Warning  ContainerGCFailed        103m                   kubelet          rpc error: code = Unknown desc = Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+  Normal   NodeReady                102m (x3 over 3h16m)   kubelet          Node minikube status is now: NodeReady
+  Normal   Starting                 99m                    kubelet          Starting kubelet.
+  Normal   NodeHasSufficientPID     99m (x7 over 99m)      kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  99m                    kubelet          Updated Node Allocatable limit across pods
+  Normal   RegisteredNode           98m                    node-controller  Node minikube event: Registered Node minikube in Controller
+  Normal   NodeHasSufficientMemory  88m (x36 over 99m)     kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    88m (x36 over 99m)     kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal   NodeNotReady             68m                    kubelet          Node minikube status is now: NodeNotReady
+  Normal   NodeReady                68m (x2 over 88m)      kubelet          Node minikube status is now: NodeReady
+  Normal   NodeHasSufficientMemory  37m (x8 over 37m)      kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    37m (x8 over 37m)      kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID     37m (x7 over 37m)      kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  37m                    kubelet          Updated Node Allocatable limit across pods
+  Normal   Starting                 37m                    kubelet          Starting kubelet.
+  Normal   RegisteredNode           37m                    node-controller  Node minikube event: Registered Node minikube in Controller
+  Normal   NodeNotReady             32m                    kubelet          Node minikube status is now: NodeNotReady
+  Normal   NodeHasSufficientPID     21m (x7 over 21m)      kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal   NodeHasNoDiskPressure    21m (x8 over 21m)      kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientMemory  21m (x8 over 21m)      kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal   NodeAllocatableEnforced  21m                    kubelet          Updated Node Allocatable limit across pods
+  Normal   Starting                 21m                    kubelet          Starting kubelet.
+  Normal   RegisteredNode           21m                    node-controller  Node minikube event: Registered Node minikube in Controller
+  Normal   Starting                 3m16s                  kubelet          Starting kubelet.
+  Normal   NodeHasSufficientMemory  3m16s (x8 over 3m16s)  kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    3m16s (x8 over 3m16s)  kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID     3m16s (x7 over 3m16s)  kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  3m16s                  kubelet          Updated Node Allocatable limit across pods
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> helm list --all-namespaces
+
+NAME                    NAMESPACE       REVISION      UPDATED                                  STATUS        CHART                            APP VERSION
+airflow                 data-platform   9             2026-06-05 20:41:10.7361305 +0800 +08    failed        airflow-1.15.0                   2.9.3      
+cert-manager            networking      1             2026-06-05 18:10:27.7467415 +0800 +08    deployed      cert-manager-v1.15.3             v1.15.3    
+kube-prometheus-stack   observability   3             2026-06-05 20:09:03.7643087 +0800 +08    deployed      kube-prometheus-stack-86.1.1     v0.91.0    
+loki                    observability   1             2026-06-05 18:59:22.3171817 +0800 +08    deployed      loki-17.1.6                      3.7.2      
+mlflow                  data-platform   1             2026-06-05 18:59:21.9350869 +0800 +08    failed        mlflow-0.7.19                    2.1.1      
+otel-collector          observability   2             2026-06-05 20:10:59.7395097 +0800 +08    deployed      opentelemetry-collector-0.115.0  0.118.0    
+postgresql              storage         2             2026-06-05 20:30:58.2628633 +0800 +08    deployed      postgresql-15.5.19               16.3.0     
+seaweedfs               storage         7             2026-06-05 20:41:10.6438322 +0800 +08    deployed      seaweedfs-4.31.0                 4.31       
+tempo                   observability   1             2026-06-05 18:59:22.2523555 +0800 +08    deployed      tempo-distributed-2.23.4         2.10.5     
+thanos                  observability   1             2026-06-05 18:59:28.1784805 +0800 +08    deployed      thanos-17.3.1                    0.39.2     
+traefik                 networking      1             2026-06-05 18:10:00.4132796 +0800 +08    deployed      traefik-30.1.0                   v3.1.2     
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> helmfile status
+Getting status kube-prometheus-stack
+Getting status traefik
+NAME: traefik
+LAST DEPLOYED: Fri Jun  5 18:10:00 2026
+NAMESPACE: networking
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ClusterRole
+NAME                 CREATED AT
+traefik-networking   2026-06-05T10:10:01Z
+
+==> v1/ClusterRoleBinding
+NAME                 ROLE                             AGE
+traefik-networking   ClusterRole/traefik-networking   171m
+
+==> v1/Service
+NAME      TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+traefik   LoadBalancer   10.96.176.105   <pending>     80:31999/TCP,443:31907/TCP   171m
+
+==> v1/Deployment
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+traefik   0/1     1            0           171m
+
+==> v1/Pod(related)
+NAME                       READY   STATUS    RESTARTS         AGE
+traefik-5b5cc6665d-txr6p   0/1     Running   23 (5m46s ago)   171m
+
+==> v1/IngressClass
+NAME      CONTROLLER                      PARAMETERS   AGE
+traefik   traefik.io/ingress-controller   <none>       171m
+
+==> v1/ServiceAccount
+NAME      SECRETS   AGE
+traefik   0         171m
+
+
+TEST SUITE: None
+NOTES:
+traefik with docker.io/traefik:v3.1.2 has been deployed successfully on networking namespace !
+
+NAME: kube-prometheus-stack
+LAST DEPLOYED: Fri Jun  5 20:09:03 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 3
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/ConfigMap
+NAME                                              DATA   AGE
+kube-prometheus-stack-grafana-config-dashboards   1      170m
+kube-prometheus-stack-grafana   1     170m
+kube-prometheus-stack-grafana-datasource   1     170m
+kube-prometheus-stack-alertmanager-overview   1     170m
+kube-prometheus-stack-apiserver   1     171m
+kube-prometheus-stack-cluster-total   1     171m
+kube-prometheus-stack-controller-manager   1     171m
+kube-prometheus-stack-etcd   1     171m
+kube-prometheus-stack-grafana-overview   1     171m
+kube-prometheus-stack-k8s-coredns   1     171m
+kube-prometheus-stack-k8s-resources-cluster   1     171m
+kube-prometheus-stack-k8s-resources-multicluster   1     171m
+kube-prometheus-stack-k8s-resources-namespace   1     171m
+kube-prometheus-stack-k8s-resources-node   1     171m
+kube-prometheus-stack-k8s-resources-pod   1     171m
+kube-prometheus-stack-k8s-resources-workload   1     171m
+kube-prometheus-stack-k8s-resources-workloads-namespace   1     171m
+kube-prometheus-stack-kubelet   1     171m
+kube-prometheus-stack-namespace-by-pod   1     171m
+kube-prometheus-stack-namespace-by-workload   1     171m
+kube-prometheus-stack-node-cluster-rsrc-use   1     171m
+kube-prometheus-stack-node-rsrc-use   1     171m
+kube-prometheus-stack-nodes-aix   1     171m
+kube-prometheus-stack-nodes-darwin   1     171m
+kube-prometheus-stack-nodes   1     171m
+kube-prometheus-stack-persistentvolumesusage   1     171m
+kube-prometheus-stack-pod-total   1     171m
+kube-prometheus-stack-prometheus   1     171m
+kube-prometheus-stack-proxy   1     171m
+kube-prometheus-stack-scheduler   1     171m
+kube-prometheus-stack-workload-total   1     171m
+
+==> v1/Pod(related)
+NAME                                                   READY   STATUS    RESTARTS      AGE
+kube-prometheus-stack-prometheus-node-exporter-2h75t   1/1     Running   14 (4m ago)   171m
+kube-prometheus-stack-grafana-67dd6f58d6-jwz6z   0/3   Error   12    171m
+kube-prometheus-stack-kube-state-metrics-84d89c5bd4-sqbq2   1/1   Running   24 (4m2s ago)   171m
+kube-prometheus-stack-operator-7bc9c76b94-9hr6l   1/1   Running   27 (4m3s ago)   171m
+
+==> v1/Deployment
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+kube-prometheus-stack-grafana   0/1     1            0           171m
+kube-prometheus-stack-kube-state-metrics   0/1   1     0     171m
+kube-prometheus-stack-operator   0/1   1     0     171m
+
+==> v1/MutatingWebhookConfiguration
+NAME                              WEBHOOKS   AGE
+kube-prometheus-stack-admission   1          171m
+
+==> v1/PrometheusRule
+NAME                                       AGE
+kube-prometheus-stack-alertmanager.rules   171m
+kube-prometheus-stack-config-reloaders   171m
+kube-prometheus-stack-etcd   171m
+kube-prometheus-stack-general.rules   171m
+kube-prometheus-stack-k8s.rules.container-cpu-usage-seconds-tot   171m
+kube-prometheus-stack-k8s.rules.container-memory-cache   171m
+kube-prometheus-stack-k8s.rules.container-memory-rss   171m
+kube-prometheus-stack-k8s.rules.container-memory-swap   171m
+kube-prometheus-stack-k8s.rules.container-memory-working-set-by   171m
+kube-prometheus-stack-k8s.rules.container-resource   171m
+kube-prometheus-stack-k8s.rules.pod-owner   171m
+kube-prometheus-stack-kube-apiserver-availability.rules   171m
+kube-prometheus-stack-kube-apiserver-burnrate.rules   171m
+kube-prometheus-stack-kube-apiserver-histogram.rules   171m
+kube-prometheus-stack-kube-apiserver-slos   171m
+kube-prometheus-stack-kube-prometheus-general.rules   171m
+kube-prometheus-stack-kube-prometheus-node-recording.rules   171m
+kube-prometheus-stack-kube-scheduler.rules   171m
+kube-prometheus-stack-kube-state-metrics   171m
+kube-prometheus-stack-kubelet.rules   171m
+kube-prometheus-stack-kubernetes-apps   171m
+kube-prometheus-stack-kubernetes-resources   171m
+kube-prometheus-stack-kubernetes-storage   171m
+kube-prometheus-stack-kubernetes-system-apiserver   171m
+kube-prometheus-stack-kubernetes-system-controller-manager   171m
+kube-prometheus-stack-kubernetes-system-kube-proxy   171m
+kube-prometheus-stack-kubernetes-system-kubelet   171m
+kube-prometheus-stack-kubernetes-system-scheduler   171m
+kube-prometheus-stack-kubernetes-system   171m
+kube-prometheus-stack-node-exporter.rules   171m
+kube-prometheus-stack-node-exporter   171m
+kube-prometheus-stack-node-network   171m
+kube-prometheus-stack-node.rules   171m
+kube-prometheus-stack-prometheus-operator   171m
+kube-prometheus-stack-prometheus   171m
+
+==> v1/ServiceMonitor
+kube-prometheus-stack-grafana   171m
+kube-prometheus-stack-kube-state-metrics   171m
+kube-prometheus-stack-prometheus-node-exporter   171m
+kube-prometheus-stack-alertmanager   171m
+kube-prometheus-stack-coredns   171m
+kube-prometheus-stack-apiserver   171m
+kube-prometheus-stack-kube-controller-manager   171m
+kube-prometheus-stack-kube-etcd   171m
+kube-prometheus-stack-kube-proxy   171m
+kube-prometheus-stack-kube-scheduler   171m
+kube-prometheus-stack-kubelet   171m
+kube-prometheus-stack-operator   171m
+kube-prometheus-stack-prometheus   171m
+kube-prometheus-stack-thanos-sidecar   171m
+
+==> v1/Secret
+NAME                            TYPE     DATA   AGE
+kube-prometheus-stack-grafana   Opaque   3      170m
+alertmanager-kube-prometheus-stack-alertmanager   Opaque   1     170m
+
+==> v1/PersistentVolumeClaim
+NAME                            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+kube-prometheus-stack-grafana   Bound    pvc-2825a017-7b9c-4bd7-8e87-6033a59065e0   5Gi        RWO            standard       <unset>                 171m
+
+==> v1/Service
+NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kube-prometheus-stack-grafana   ClusterIP   10.99.106.174   <none>        80/TCP    171m
+kube-prometheus-stack-kube-state-metrics   ClusterIP   10.99.204.209   <none>   8080/TCP   171m
+kube-prometheus-stack-prometheus-node-exporter   ClusterIP   10.96.207.112   <none>   9100/TCP   171m
+kube-prometheus-stack-alertmanager   ClusterIP   10.99.122.39   <none>   9093/TCP,8080/TCP   171m
+kube-prometheus-stack-coredns   ClusterIP   None   <none>   9153/TCP   171m
+kube-prometheus-stack-kube-controller-manager   ClusterIP   None   <none>   10257/TCP   171m
+kube-prometheus-stack-kube-etcd   ClusterIP   None   <none>   2381/TCP   171m
+kube-prometheus-stack-kube-proxy   ClusterIP   None   <none>   10249/TCP   171m
+kube-prometheus-stack-kube-scheduler   ClusterIP   None   <none>   10259/TCP   171m
+kube-prometheus-stack-operator   ClusterIP   10.109.13.114   <none>   443/TCP   171m
+kube-prometheus-stack-prometheus   ClusterIP   10.105.197.201   <none>   9090/TCP,8080/TCP   171m
+kube-prometheus-stack-thanos-discovery   ClusterIP   None   <none>   10901/TCP,10902/TCP   171m
+
+==> v1/DaemonSet
+NAME                                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-prometheus-stack-prometheus-node-exporter   1         1         0       1            0           kubernetes.io/os=linux   171m
+
+==> v1/ValidatingWebhookConfiguration
+NAME                              WEBHOOKS   AGE
+kube-prometheus-stack-admission   2          171m
+
+==> v1/Alertmanager
+NAME                                 VERSION   REPLICAS   READY   RECONCILED   AVAILABLE   AGE
+kube-prometheus-stack-alertmanager   v0.32.1   1          1       True         True        171m
+
+==> v1/Prometheus
+NAME                               VERSION              DESIRED   READY   RECONCILED   AVAILABLE   AGE
+kube-prometheus-stack-prometheus   v3.12.0-distroless   1         0       True         False       171m
+
+==> v1/ServiceAccount
+NAME                            SECRETS   AGE
+kube-prometheus-stack-grafana   0         170m
+kube-prometheus-stack-kube-state-metrics   0     170m
+kube-prometheus-stack-prometheus-node-exporter   0     170m
+kube-prometheus-stack-alertmanager   0     170m
+kube-prometheus-stack-operator   0     170m
+kube-prometheus-stack-prometheus   0     170m
+
+==> v1/ClusterRole
+NAME                                        CREATED AT
+kube-prometheus-stack-grafana-clusterrole   2026-06-05T10:10:20Z
+kube-prometheus-stack-kube-state-metrics   2026-06-05T10:10:20Z
+kube-prometheus-stack-operator   2026-06-05T10:10:20Z
+kube-prometheus-stack-prometheus   2026-06-05T10:10:20Z
+
+==> v1/ClusterRoleBinding
+NAME                                               ROLE                                                    AGE
+kube-prometheus-stack-grafana-clusterrolebinding   ClusterRole/kube-prometheus-stack-grafana-clusterrole   171m
+kube-prometheus-stack-kube-state-metrics   ClusterRole/kube-prometheus-stack-kube-state-metrics   171m
+kube-prometheus-stack-operator   ClusterRole/kube-prometheus-stack-operator   171m
+kube-prometheus-stack-prometheus   ClusterRole/kube-prometheus-stack-prometheus   171m
+
+
+TEST SUITE: None
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace observability get pods -l "release=kube-prometheus-stack"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace observability get secrets kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace observability get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack" -oname)
+  kubectl --namespace observability port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace observability -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+
+Getting status cert-manager
+Getting status postgresql
+NAME: postgresql
+LAST DEPLOYED: Fri Jun  5 20:30:58 2026
+NAMESPACE: storage
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME         SECRETS   AGE
+postgresql   0         171m
+
+==> v1/Secret
+NAME         TYPE     DATA   AGE
+postgresql   Opaque   2      171m
+
+==> v1/Service
+NAME                 TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+postgresql-metrics   ClusterIP   10.96.19.34   <none>        9187/TCP   171m
+postgresql-hl   ClusterIP   None   <none>   5432/TCP   171m
+postgresql   ClusterIP   10.109.226.47   <none>   5432/TCP   171m
+
+==> v1/StatefulSet
+NAME         READY   AGE
+postgresql   1/1     171m
+
+==> v1/Pod(related)
+NAME           READY   STATUS    RESTARTS        AGE
+postgresql-0   2/2     Running   4 (4m52s ago)   30m
+
+==> v1/ServiceMonitor
+NAME         AGE
+postgresql   171m
+
+==> v1/NetworkPolicy
+NAME         POD-SELECTOR                                                                                                  AGE
+postgresql   app.kubernetes.io/component=primary,app.kubernetes.io/instance=postgresql,app.kubernetes.io/name=postgresql   171m
+
+==> v1/PodDisruptionBudget
+NAME         MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+postgresql   N/A             1                 1                     171m
+
+
+TEST SUITE: None
+NOTES:
+CHART NAME: postgresql
+CHART VERSION: 15.5.19
+APP VERSION: 16.3.0
+
+** Please be patient while the chart is being deployed **
+
+PostgreSQL can be accessed via port 5432 on the following DNS names from within your cluster:
+
+    postgresql.storage.svc.cluster.local - Read/Write connection
+
+To get the password for "postgres" run:
+
+    export POSTGRES_ADMIN_PASSWORD=$(kubectl get secret --namespace storage postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
+
+To get the password for "pguser" run:
+
+    export POSTGRES_PASSWORD=$(kubectl get secret --namespace storage postgresql -o jsonpath="{.data.password}" | base64 -d)
+
+To connect to your database run the following command:
+
+    kubectl run postgresql-client --rm --tty -i --restart='Never' --namespace storage --image docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r22 --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+      --command -- psql --host postgresql -U pguser -d platform -p 5432
+
+    > NOTE: If you access the container using bash, make sure that you execute "/opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash" in order to avoid the error "psql: local user with ID 1001} does not exist"
+
+To connect to your database from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace storage svc/postgresql 5432:5432 &
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U pguser -d platform -p 5432
+
+WARNING: The configured password will be ignored on new installation in case when previous PostgreSQL release was deleted through the helm command. In that case, old PVC will have an old password, and setting it through helm won't take effect. Deleting persistent volumes (PVs) will solve the issue.
+
+⚠ SECURITY WARNING: Original containers have been substituted. This Helm chart was designed, tested, and validated on multiple platforms using a specific set of Bitnami and Tanzu Application Catalog containers. Substituting other containers is likely to cause degraded security and performance, broken chart features, and missing environment variables.
+
+Substituted images detected:
+  - docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r22
+  - docker.io/bitnamilegacy/postgres-exporter:0.15.0-debian-12-r43
+
+NAME: cert-manager
+LAST DEPLOYED: Fri Jun  5 18:10:27 2026
+NAMESPACE: networking
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ClusterRole
+NAME                      CREATED AT
+cert-manager-cainjector   2026-06-05T10:10:28Z
+cert-manager-controller-issuers   2026-06-05T10:10:28Z
+cert-manager-controller-clusterissuers   2026-06-05T10:10:28Z
+cert-manager-controller-certificates   2026-06-05T10:10:28Z
+cert-manager-controller-orders   2026-06-05T10:10:28Z
+cert-manager-controller-challenges   2026-06-05T10:10:28Z
+cert-manager-controller-ingress-shim   2026-06-05T10:10:28Z
+cert-manager-cluster-view   2026-06-05T10:10:28Z
+cert-manager-view   2026-06-05T10:10:28Z
+cert-manager-edit   2026-06-05T10:10:28Z
+cert-manager-controller-approve:cert-manager-io   2026-06-05T10:10:28Z
+cert-manager-controller-certificatesigningrequests   2026-06-05T10:10:28Z
+cert-manager-webhook:subjectaccessreviews   2026-06-05T10:10:28Z
+
+==> v1/RoleBinding
+NAME                                     ROLE                                          AGE
+cert-manager-cainjector:leaderelection   Role/cert-manager-cainjector:leaderelection   171m
+cert-manager:leaderelection   Role/cert-manager:leaderelection   171m
+cert-manager-webhook:dynamic-serving   Role/cert-manager-webhook:dynamic-serving   171m
+
+==> v1/Pod(related)
+NAME                                       READY   STATUS    RESTARTS         AGE
+cert-manager-cainjector-544cdb9d95-zcqzj   1/1     Running   13 (4m58s ago)   171m
+cert-manager-587c587ccd-x8j7h   1/1   Running   8 (11m ago)   171m
+cert-manager-webhook-646bc4f585-x4pz6   1/1   Running   14 (4m58s ago)   171m
+
+==> v1/MutatingWebhookConfiguration
+NAME                   WEBHOOKS   AGE
+cert-manager-webhook   1          171m
+
+==> v1/ValidatingWebhookConfiguration
+cert-manager-webhook   1     171m
+
+==> v1/ClusterRoleBinding
+NAME                      ROLE                                  AGE
+cert-manager-cainjector   ClusterRole/cert-manager-cainjector   171m
+cert-manager-controller-issuers   ClusterRole/cert-manager-controller-issuers   171m
+cert-manager-controller-clusterissuers   ClusterRole/cert-manager-controller-clusterissuers   171m
+cert-manager-controller-certificates   ClusterRole/cert-manager-controller-certificates   171m
+cert-manager-controller-orders   ClusterRole/cert-manager-controller-orders   171m
+cert-manager-controller-challenges   ClusterRole/cert-manager-controller-challenges   171m
+cert-manager-controller-ingress-shim   ClusterRole/cert-manager-controller-ingress-shim   171m
+cert-manager-controller-approve:cert-manager-io   ClusterRole/cert-manager-controller-approve:cert-manager-io   171m
+cert-manager-controller-certificatesigningrequests   ClusterRole/cert-manager-controller-certificatesigningrequests   171m
+cert-manager-webhook:subjectaccessreviews   ClusterRole/cert-manager-webhook:subjectaccessreviews   171m
+
+==> v1/Role
+NAME                                     CREATED AT
+cert-manager-cainjector:leaderelection   2026-06-05T10:10:28Z
+cert-manager:leaderelection   2026-06-05T10:10:28Z
+cert-manager-webhook:dynamic-serving   2026-06-05T10:10:28Z
+
+==> v1/Service
+NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+cert-manager   ClusterIP   10.97.118.41   <none>        9402/TCP   171m
+cert-manager-webhook   ClusterIP   10.107.116.83   <none>   443/TCP   171m
+
+==> v1/Deployment
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+cert-manager-cainjector   1/1     1            1           171m
+cert-manager   1/1   1     1     171m
+cert-manager-webhook   1/1   1     1     171m
+
+==> v1/ServiceAccount
+NAME                      SECRETS   AGE
+cert-manager-cainjector   0         171m
+cert-manager   0     171m
+cert-manager-webhook   0     171m
+
+==> v1/CustomResourceDefinition
+NAME                                  CREATED AT
+certificaterequests.cert-manager.io   2026-06-05T10:10:28Z
+certificates.cert-manager.io   2026-06-05T10:10:28Z
+challenges.acme.cert-manager.io   2026-06-05T10:10:28Z
+clusterissuers.cert-manager.io   2026-06-05T10:10:28Z
+issuers.cert-manager.io   2026-06-05T10:10:28Z
+orders.acme.cert-manager.io   2026-06-05T10:10:28Z
+
+
+TEST SUITE: None
+NOTES:
+cert-manager v1.15.3 has been deployed successfully!
+
+In order to begin issuing certificates, you will need to set up a ClusterIssuer
+or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
+
+More information on the different types of issuers and how to configure them
+can be found in our documentation:
+
+https://cert-manager.io/docs/configuration/
+
+For information on how to configure cert-manager to automatically provision
+Certificates for Ingress resources, take a look at the `ingress-shim`
+documentation:
+
+https://cert-manager.io/docs/usage/ingress/
+
+Getting status seaweedfs
+Getting status airflow
+NAME: seaweedfs
+LAST DEPLOYED: Fri Jun  5 20:41:10 2026
+NAMESPACE: storage
+STATUS: deployed
+REVISION: 7
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/Pod(related)
+NAME                READY   STATUS    RESTARTS       AGE
+seaweedfs-filer-0   0/1     Running   4 (5m2s ago)   65m
+seaweedfs-master-0   1/1   Running   6 (5m2s ago)   169m
+seaweedfs-volume-0   1/1   Running   5 (5m3s ago)   170m
+
+==> v1/ServiceAccount
+NAME        SECRETS   AGE
+seaweedfs   0         169m
+
+==> v1/ConfigMap
+NAME                      DATA   AGE
+seaweedfs-master-config   1      169m
+
+==> v1/ClusterRole
+NAME              CREATED AT
+seaweedfs-rw-cr   2026-06-05T10:12:31Z
+
+==> v1/ClusterRoleBinding
+NAME               ROLE                          AGE
+seaweedfs-rw-crb   ClusterRole/seaweedfs-rw-cr   169m
+
+==> v1/Service
+NAME                     TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                       AGE
+seaweedfs-filer-client   ClusterIP   None         <none>        8888/TCP,18888/TCP,9325/TCP   169m
+seaweedfs-filer   ClusterIP   None   <none>   8888/TCP,18888/TCP,8333/TCP,9325/TCP   169m
+seaweedfs-master   ClusterIP   None   <none>   9333/TCP,19333/TCP,9325/TCP   169m
+seaweedfs-s3   ClusterIP   10.98.27.216   <none>   8333/TCP   169m
+seaweedfs-volume   ClusterIP   None   <none>   8080/TCP,18080/TCP,9325/TCP   169m
+
+==> v1/StatefulSet
+NAME              READY   AGE
+seaweedfs-filer   0/1     169m
+seaweedfs-master   1/1   169m
+seaweedfs-volume   1/1   169m
+
+
+TEST SUITE: None
+
+NAME: airflow
+LAST DEPLOYED: Fri Jun  5 20:41:10 2026
+NAMESPACE: data-platform
+STATUS: failed
+REVISION: 9
+DESCRIPTION: Upgrade "airflow" failed: context canceled
+RESOURCES:
+==> v1/StatefulSet
+NAME                READY   AGE
+airflow-scheduler   0/1     169m
+airflow-triggerer   0/1   169m
+
+==> v1/ServiceAccount
+NAME                      SECRETS   AGE
+airflow-create-user-job   0         169m
+airflow-migrate-database-job   0     169m
+airflow-scheduler   0     169m
+airflow-statsd   0     169m
+airflow-triggerer   0     169m
+airflow-webserver   0     169m
+
+==> v1/Secret
+NAME               TYPE     DATA   AGE
+airflow-metadata   Opaque   1      169m
+airflow-webserver-secret-key   Opaque   1     169m
+
+==> v1/ConfigMap
+NAME             DATA   AGE
+airflow-config   2      169m
+airflow-statsd   1     169m
+
+==> v1/PersistentVolumeClaim
+NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+airflow-dags   Bound    pvc-6821bac9-3e49-43db-8a7e-937cdacf3997   5Gi        RWO            standard       <unset>                 169m
+
+==> v1/RoleBinding
+NAME                               ROLE                             AGE
+airflow-pod-launcher-rolebinding   Role/airflow-pod-launcher-role   169m
+airflow-pod-log-reader-rolebinding   Role/airflow-pod-log-reader-role   169m
+
+==> v1/Service
+NAME                TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)    AGE
+airflow-scheduler   ClusterIP   None         <none>        8793/TCP   169m
+airflow-statsd   ClusterIP   10.96.175.37   <none>   9125/UDP,9102/TCP   169m
+airflow-triggerer   ClusterIP   None   <none>   8794/TCP   169m
+airflow-webserver   ClusterIP   10.101.222.78   <none>   8080/TCP   169m
+
+==> v1/Role
+NAME                        CREATED AT
+airflow-pod-launcher-role   2026-06-05T10:12:35Z
+airflow-pod-log-reader-role   2026-06-05T10:12:35Z
+
+==> v1/Deployment
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+airflow-statsd   1/1     1            1           169m
+airflow-webserver   0/1   1     0     169m
+
+==> v1/Pod(related)
+NAME                              READY   STATUS    RESTARTS       AGE
+airflow-statsd-5b66d465df-ccz6d   1/1     Running   9 (5m4s ago)   169m
+airflow-webserver-54c776d475-v525j   0/1   Error   15    78m
+airflow-webserver-68454599d9-tdthr   0/1   Error   20    96m
+airflow-scheduler-0   0/2   OOMKilled   4     57m
+airflow-triggerer-0   0/2   Error   8     77m
+
+
+TEST SUITE: None
+NOTES:
+Thank you for installing Apache Airflow 2.9.3!
+
+Your release is named airflow.
+You can now access your dashboard(s) by executing the following command(s) and visiting the corresponding port at localhost in your browser:
+
+Airflow Webserver:     kubectl port-forward svc/airflow-webserver 8080:8080 --namespace data-platform
+Default Webserver (Airflow UI) Login credentials:
+    username: admin
+    password: fraud_detection
+
+You can get Fernet Key value by running the following:
+
+    echo Fernet Key: $(kubectl get secret --namespace data-platform airflow-fernet-key -o jsonpath="{.data.fernet-key}" | base64 --decode)
+
+Getting status loki
+Getting status tempo
+Getting status thanos
+Getting status mlflow
+NAME: mlflow
+LAST DEPLOYED: Fri Jun  5 18:59:21 2026
+NAMESPACE: data-platform
+STATUS: failed
+REVISION: 1
+DESCRIPTION: Release "mlflow" failed: server-side apply failed for object monitoring/mlflow monitoring.coreos.com/v1, Kind=ServiceMonitor: namespaces "monitoring" not found
+RESOURCES:
+==> v1/Pod(related)
+NAME                     READY   STATUS   RESTARTS   AGE
+mlflow-99b676557-6b9fr   0/1     Error    25         123m
+
+==> v1/ServiceAccount
+NAME     SECRETS   AGE
+mlflow   0         123m
+
+==> v1/Secret
+NAME                TYPE     DATA   AGE
+mlflow-env-secret   Opaque   4      123m
+
+==> v1/ConfigMap
+NAME                   DATA   AGE
+mlflow-env-configmap   3      123m
+mlflow-migrations   1     123m
+
+==> v1/Service
+NAME     TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+mlflow   ClusterIP   10.109.191.170   <none>        5000/TCP   123m
+
+==> v1/Deployment
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+mlflow   0/1     1            0           123m
+
+
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace data-platform -l "app.kubernetes.io/name=mlflow,app.kubernetes.io/instance=mlflow" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace data-platform $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace data-platform port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+NAME: thanos
+LAST DEPLOYED: Fri Jun  5 18:59:28 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/NetworkPolicy
+NAME           POD-SELECTOR                                                                                        AGE
+thanos-query   app.kubernetes.io/component=query,app.kubernetes.io/instance=thanos,app.kubernetes.io/name=thanos   122m
+thanos-storegateway   app.kubernetes.io/component=storegateway,app.kubernetes.io/instance=thanos,app.kubernetes.io/name=thanos   122m
+
+==> v1/PodDisruptionBudget
+NAME           MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+thanos-query   N/A             1                 1                     122m
+thanos-storegateway   N/A   1     0     122m
+
+==> v1/ServiceAccount
+NAME           SECRETS   AGE
+thanos-query   0         122m
+thanos-storegateway   0     122m
+
+==> v1/Service
+NAME                TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)     AGE
+thanos-query-grpc   ClusterIP   10.98.184.94   <none>        10901/TCP   122m
+thanos-query   ClusterIP   10.103.32.100   <none>   9090/TCP   122m
+thanos-storegateway   ClusterIP   10.96.93.202   <none>   9090/TCP,10901/TCP   122m
+
+==> v1/Deployment
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+thanos-query   1/1     1            1           122m
+
+==> v1/Pod(related)
+NAME                           READY   STATUS    RESTARTS       AGE
+thanos-query-965bb57cb-fk2m4   1/1     Running   7 (5m7s ago)   122m
+thanos-storegateway-0   0/1   Running   17 (2m38s ago)   122m
+
+==> v1/StatefulSet
+NAME                  READY   AGE
+thanos-storegateway   0/1     122m
+
+
+TEST SUITE: None
+NOTES:
+CHART NAME: thanos
+CHART VERSION: 17.3.1
+APP VERSION: 0.39.2
+
+⚠ WARNING: Since August 28th, 2025, only a limited subset of images/charts are available for free.
+    Subscribe to Bitnami Secure Images to receive continued support and security updates.
+    More info at https://bitnami.com and https://github.com/bitnami/containers/issues/83267
+
+** Please be patient while the chart is being deployed **
+
+Thanos chart was deployed enabling the following components:
+- Thanos Query
+- Thanos Store Gateway
+
+Thanos Query can be accessed through following DNS name from within your cluster:
+
+    thanos-query.observability.svc.cluster.local (port 9090)
+
+To access Thanos Query from outside the cluster execute the following commands:
+
+1. Get the Thanos Query URL by running these commands:
+
+    export SERVICE_PORT=$(kubectl get --namespace observability -o jsonpath="{.spec.ports[0].port}" services thanos-query)
+    kubectl port-forward --namespace observability svc/thanos-query ${SERVICE_PORT}:${SERVICE_PORT} &
+    echo "http://127.0.0.1:${SERVICE_PORT}"
+
+2. Open a browser and access Thanos Query using the obtained URL.
+
+⚠ SECURITY WARNING: Original containers have been substituted. This Helm chart was designed, tested, and validated on multiple platforms using a specific set of Bitnami and Tanzu Application Catalog containers. Substituting other containers is likely to cause degraded security and performance, broken chart features, and missing environment variables.
+
+Substituted images detected:
+  - docker.io/bitnamilegacy/thanos:0.39.2-debian-12-r2
+
+⚠ WARNING: Original containers have been substituted for unrecognized ones. Deploying this chart with non-standard containers is likely to cause degraded security and performance, broken chart features, and missing environment variables.
+
+Unrecognized images:
+  - docker.io/bitnamilegacy/thanos:0.39.2-debian-12-r2
+
+NAME: loki
+LAST DEPLOYED: Fri Jun  5 18:59:22 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ClusterRole
+NAME               CREATED AT
+loki-clusterrole   2026-06-05T10:59:26Z
+
+==> v1/Service
+NAME                    TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+loki-gateway-exporter   ClusterIP   10.97.18.111   <none>        4040/TCP   123m
+loki-gateway   ClusterIP   10.99.177.242   <none>   80/TCP   123m
+loki   ClusterIP   10.111.64.100   <none>   3100/TCP,9095/TCP,9096/TCP   123m
+loki-headless   ClusterIP   None   <none>   3100/TCP,9095/TCP,9096/TCP   123m
+loki-memberlist   ClusterIP   None   <none>   7946/TCP   123m
+
+==> v1/Deployment
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+loki-gateway   0/1     1            0           123m
+
+==> v1/StatefulSet
+NAME   READY   AGE
+loki   0/1     123m
+
+==> v1/ServiceMonitor
+NAME   AGE
+loki   123m
+
+==> v1/ServiceAccount
+NAME           SECRETS   AGE
+loki-gateway   0         123m
+loki-memcached   0     123m
+loki   0     123m
+
+==> v1/ConfigMap
+NAME   DATA   AGE
+loki   1      123m
+loki-gateway   2     123m
+loki-runtime   1     123m
+
+==> v1/ClusterRoleBinding
+NAME                      ROLE                           AGE
+loki-clusterrolebinding   ClusterRole/loki-clusterrole   123m
+
+==> v1/Pod(related)
+NAME                            READY   STATUS             RESTARTS       AGE
+loki-gateway-5957bb9476-rbfqf   1/2     CrashLoopBackOff   21 (13s ago)   123m
+loki-0   1/2   Running   15 (5m7s ago)   123m
+
+
+TEST SUITE: None
+NOTES:
+***********************************************************************
+ Welcome to Grafana Loki
+ Chart version: 17.1.6
+ Chart Name: loki
+ Loki version: 3.7.2
+***********************************************************************
+
+** Please be patient while the chart is being deployed **
+
+Tip:
+
+  Watch the deployment status using the command: kubectl get pods -w --namespace observability
+
+If pods are taking too long to schedule make sure pod affinity can be fulfilled in the current cluster.
+
+***********************************************************************
+Installed components:
+***********************************************************************
+* loki
+
+Loki has been deployed as a single binary.
+This means a single pod is handling reads and writes. You can scale that pod vertically by adding more CPU and memory resources.
+
+
+***********************************************************************
+Sending logs to Loki
+***********************************************************************
+
+Loki has been configured with a gateway (nginx) to support reads and writes from a single component.
+
+You can send logs from inside the cluster using the cluster DNS:
+
+http://loki-gateway.observability.svc.cluster.local/loki/api/v1/push
+
+You can test to send data from outside the cluster by port-forwarding the gateway to your local machine:
+
+  kubectl port-forward --namespace observability svc/loki-gateway 3100:80 &
+
+And then using http://127.0.0.1:3100/loki/api/v1/push URL as shown below:
+
+```
+curl -H "Content-Type: application/json" -XPOST -s "http://127.0.0.1:3100/loki/api/v1/push"  \
+--data-raw "{\"streams\": [{\"stream\": {\"job\": \"test\"}, \"values\": [[\"$(date +%s)000000000\", \"fizzbuzz\"]]}]}"
+```
+
+Then verify that Loki did receive the data using the following command:
+
+```
+curl "http://127.0.0.1:3100/loki/api/v1/query_range" --data-urlencode 'query={job="test"}' | jq .data.result
+```
+
+***********************************************************************
+Connecting Grafana to Loki
+***********************************************************************
+
+If Grafana operates within the cluster, you'll set up a new Loki datasource by utilizing the following URL:
+
+http://loki-gateway.observability.svc.cluster.local/
+
+NAME: tempo
+LAST DEPLOYED: Fri Jun  5 18:59:22 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME    SECRETS   AGE
+tempo   0         123m
+
+==> v1/ConfigMap
+NAME            DATA   AGE
+tempo-runtime   1      123m
+tempo-config   2     123m
+
+==> v1/Service
+NAME              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+tempo-compactor   ClusterIP   10.107.196.51   <none>        3200/TCP   123m
+tempo-distributor-discovery   ClusterIP   None   <none>   3200/TCP,4318/TCP,4317/TCP,55680/TCP   123m
+tempo-distributor   ClusterIP   10.98.83.249   <none>   3200/TCP,9095/TCP,4318/TCP,4317/TCP,55680/TCP   123m
+tempo-gossip-ring   ClusterIP   None   <none>   7946/TCP   123m
+tempo-ingester-discovery   ClusterIP   None   <none>   3200/TCP,9095/TCP   123m
+tempo-ingester   ClusterIP   10.96.72.101   <none>   3200/TCP,9095/TCP   123m
+tempo-memcached   ClusterIP   None   <none>   11211/TCP,9150/TCP   123m
+tempo-querier   ClusterIP   10.102.230.63   <none>   3200/TCP,9095/TCP   123m
+tempo-query-frontend-discovery   ClusterIP   None   <none>   3200/TCP,9095/TCP,9096/TCP   123m
+tempo-query-frontend   ClusterIP   10.110.201.209   <none>   3200/TCP,9095/TCP   123m
+
+==> v1/Deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+tempo-compactor   0/1     1            0           123m
+tempo-distributor   0/1   1     0     123m
+tempo-querier   0/1   1     0     123m
+tempo-query-frontend   0/1   1     0     123m
+
+==> v1/Pod(related)
+NAME                               READY   STATUS   RESTARTS   AGE
+tempo-compactor-655bf7f985-42wjj   0/1     Error    34         123m
+tempo-distributor-78c57df6b9-5jd2t   0/1   Running   33    123m
+tempo-querier-58fcbb999d-7m4hl   0/1   Running   33    123m
+tempo-query-frontend-74cf8ccbc9-cs8gx   0/1   Running   34 (60s ago)   123m
+tempo-ingester-0   0/1   Error   33    123m
+tempo-memcached-0   1/1   Running   10 (5m9s ago)   123m
+
+==> v1/StatefulSet
+NAME             READY   AGE
+tempo-ingester   0/1     123m
+tempo-memcached   1/1   123m
+
+==> v1/ServiceMonitor
+NAME              AGE
+tempo-compactor   123m
+tempo-distributor   123m
+tempo-ingester   123m
+tempo-querier   123m
+tempo-query-frontend   123m
+
+
+TEST SUITE: None
+NOTES:
+***********************************************************************
+ Welcome to Grafana Tempo
+ Chart version: 2.23.4
+ Tempo version: 2.10.5
+***********************************************************************
+
+Installed components:
+* ingester
+* distributor
+* querier
+* query-frontend
+* compactor
+* memcached
+
+Getting status otel-collector
+NAME: otel-collector
+LAST DEPLOYED: Fri Jun  5 20:10:59 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME                                     SECRETS   AGE
+otel-collector-opentelemetry-collector   0         87m
+
+==> v1/ConfigMap
+NAME                                     DATA   AGE
+otel-collector-opentelemetry-collector   1      87m
+
+==> v1/Service
+NAME                                     TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                                   AGE
+otel-collector-opentelemetry-collector   ClusterIP   10.103.232.177   <none>        6831/UDP,14250/TCP,14268/TCP,4317/TCP,4318/TCP,9411/TCP   87m
+
+==> v1/Deployment
+NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
+otel-collector-opentelemetry-collector   0/1     1            0           87m
+
+==> v1/Pod(related)
+NAME                                                      READY   STATUS             RESTARTS   AGE
+otel-collector-opentelemetry-collector-8464b7b5cd-26299   0/1     ImagePullBackOff   0          87m
+otel-collector-opentelemetry-collector-8b556989d-bh2b7    0/1     ErrImagePull       0          51m
+
+==> v1/ServiceMonitor
+NAME                                     AGE
+otel-collector-opentelemetry-collector   87m
+
+
+TEST SUITE: None
+NOTES:
+
+
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\platform-gitops> helmfile diff
+Adding repo traefik https://traefik.github.io/charts
+"traefik" has been added to your repositories
+
+Adding repo jetstack https://charts.jetstack.io
+"jetstack" has been added to your repositories
+
+Adding repo bitnami https://charts.bitnami.com/bitnami
+"bitnami" has been added to your repositories
+
+Adding repo seaweedfs https://seaweedfs.github.io/seaweedfs/helm
+"seaweedfs" has been added to your repositories
+
+Adding repo prometheus-community https://prometheus-community.github.io/helm-charts
+"prometheus-community" has been added to your repositories
+
+Adding repo grafana-community https://grafana-community.github.io/helm-charts
+"grafana-community" has been added to your repositories
+
+Adding repo open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+"open-telemetry" has been added to your repositories
+
+Adding repo apache-airflow https://airflow.apache.org
+"apache-airflow" has been added to your repositories
+
+Adding repo community-charts https://community-charts.github.io/helm-charts
+"community-charts" has been added to your repositories
+
+Listing releases matching ^postgresql$
+Listing releases matching ^otel-collector$
+Listing releases matching ^kube-prometheus-stack$
+Listing releases matching ^tempo$
+Listing releases matching ^loki$
+Listing releases matching ^airflow$
+Listing releases matching ^mlflow$
+postgresql      storage         2               2026-06-05 20:30:58.2628633 +0800 +08  deployed        postgresql-15.5.19     16.3.0     
+
+kube-prometheus-stack   observability   3             2026-06-05 20:09:03.7643087 +0800 +08    deployed      kube-prometheus-stack-86.1.1     v0.91.0    
+
+loki    observability   1               2026-06-05 18:59:22.3171817 +0800 +08  deployed        loki-17.1.6   3.7.2      
+
+otel-collector  observability   2               2026-06-05 20:10:59.7395097 +0800 +08  deployed        opentelemetry-collector-0.115.0        0.118.0    
+
+tempo   observability   1               2026-06-05 18:59:22.2523555 +0800 +08  deployed        tempo-distributed-2.23.4       2.10.5     
+
+airflow data-platform   9               2026-06-05 20:41:10.7361305 +0800 +08  failed  airflow-1.15.0  2.9.3      
+
+mlflow  data-platform   1               2026-06-05 18:59:21.9350869 +0800 +08  failed  mlflow-0.7.19   2.1.1      
+
+Comparing release=traefik, chart=traefik/traefik, namespace=networking
+Comparing release=kube-prometheus-stack, chart=prometheus-community/kube-prometheus-stack, namespace=observability
+Comparing release=cert-manager, chart=jetstack/cert-manager, namespace=networking
+Comparing release=postgresql, chart=bitnami/postgresql, namespace=storage
+Comparing release=seaweedfs, chart=seaweedfs/seaweedfs, namespace=storage
+storage, seaweedfs-db-secret, Secret (v1) has changed:
+  # Source: seaweedfs/templates/shared/secret-seaweedfs-db.yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    annotations:
+      helm.sh/hook: pre-install
+      helm.sh/resource-policy: keep
+    labels:
+      app.kubernetes.io/instance: seaweedfs
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: seaweedfs
+      helm.sh/chart: seaweedfs-4.31.0
+    name: seaweedfs-db-secret
+    namespace: storage
+  data:
+-   password: '-------- # (32 bytes)'
++   password: '++++++++ # (32 bytes)'
+    user: 'REDACTED # (10 bytes)'
+  type: Opaque
+
+
+Comparing release=airflow, chart=apache-airflow/airflow, namespace=data-platform
+data-platform, airflow-broker-url, Secret (v1) has changed:                                                   
+  # Source: airflow/templates/secrets/redis-secrets.yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    annotations:
+      helm.sh/hook: pre-install
+      helm.sh/hook-delete-policy: before-hook-creation
+      helm.sh/hook-weight: "0"
+    labels:
+      chart: airflow
+      component: redis
+      heritage: Helm
+      release: airflow
+      tier: airflow
+    name: airflow-broker-url
+  data:
+-   connection: '-------- # (40 bytes)'
++   connection: '++++++++ # (40 bytes)'
+  type: Opaque
+
+data-platform, airflow-fernet-key, Secret (v1) has changed:                                                   
+  # Source: airflow/templates/secrets/fernetkey-secret.yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    annotations:
+      helm.sh/hook: pre-install
+      helm.sh/hook-delete-policy: before-hook-creation
+      helm.sh/hook-weight: "0"
+    labels:
+      chart: airflow
+      heritage: Helm
+      release: airflow
+      tier: airflow
+    name: airflow-fernet-key
+  data:
+-   fernet-key: '-------- # (44 bytes)'
++   fernet-key: '++++++++ # (44 bytes)'
+  type: Opaque
+
+data-platform, airflow-redis-password, Secret (v1) has changed:                                               
+  # Source: airflow/templates/secrets/redis-secrets.yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    annotations:
+      helm.sh/hook: pre-install
+      helm.sh/hook-delete-policy: before-hook-creation
+      helm.sh/hook-weight: "0"
+    labels:
+      chart: airflow
+      component: redis
+      heritage: Helm
+      release: airflow
+      tier: airflow
+    name: airflow-redis-password
+  data:
+-   password: '-------- # (10 bytes)'
++   password: '++++++++ # (10 bytes)'
+  type: Opaque
+
+
+Comparing release=thanos, chart=bitnami/thanos, namespace=observability
+Comparing release=loki, chart=grafana-community/loki, namespace=observability
+Comparing release=tempo, chart=grafana-community/tempo-distributed, namespace=observability
+Comparing release=mlflow, chart=community-charts/mlflow, namespace=data-platform
+Comparing release=otel-collector, chart=open-telemetry/opentelemetry-collector, namespace=observability

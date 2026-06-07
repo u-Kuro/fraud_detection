@@ -1,0 +1,48 @@
+image:
+  repository: bitnamilegacy/thanos
+  tag: "0.39.2-debian-12-r2"
+
+# Shared object store config — references the same secret as the sidecar
+existingObjstoreSecret: thanos-objstore-secret
+
+# --- Query (global query layer — queries sidecar + store gateway) -------------
+query:
+  enabled: true
+  replicaLabel: replica
+  stores:
+    # Thanos Sidecar endpoint (created by kube-prometheus-stack thanosService)
+    - kube-prometheus-stack-thanos.observability.svc.cluster.local:10901
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+# --- Query Frontend (caching layer) — disabled to save RAM -------------------
+queryFrontend:
+  enabled: false
+
+# --- Store Gateway (reads historical blocks from SeaweedFS S3) ---------------
+storegateway:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: standard
+
+# --- Compactor — disabled locally (no need, single Prometheus source) ---------
+compactor:
+  enabled: false
+
+# --- Ruler — disabled locally -------------------------------------------------
+ruler:
+  enabled: false

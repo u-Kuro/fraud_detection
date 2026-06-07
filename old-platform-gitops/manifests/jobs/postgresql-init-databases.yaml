@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgresql-init-databases
+  namespace: storage
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql
+          image: postgres:16
+          env:
+            - name: PGPASSWORD
+              value: "fraud_detection"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              PSQL="psql -h postgresql.storage.svc.cluster.local -U postgres -d postgres"
+
+              echo "Waiting for PostgreSQL..."
+              until pg_isready -h postgresql.storage.svc.cluster.local -p 5432 -U postgres; do
+                echo "Not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready."
+
+              $PSQL -c "CREATE ROLE IF NOT EXISTS airflow WITH LOGIN PASSWORD 'fraud_detection';"
+              $PSQL -c "ALTER ROLE airflow WITH PASSWORD 'fraud_detection';"
+              $PSQL -tc "SELECT 1 FROM pg_database WHERE datname='airflow'" | grep -q 1 || $PSQL -c "CREATE DATABASE airflow OWNER airflow;"
+              $PSQL -c "GRANT ALL PRIVILEGES ON DATABASE airflow TO airflow;"
+
+              $PSQL -c "CREATE ROLE IF NOT EXISTS mlflow WITH LOGIN PASSWORD 'fraud_detection';"
+              $PSQL -c "ALTER ROLE mlflow WITH PASSWORD 'fraud_detection';"
+              $PSQL -tc "SELECT 1 FROM pg_database WHERE datname='mlflow'" | grep -q 1 || $PSQL -c "CREATE DATABASE mlflow OWNER mlflow;"
+              $PSQL -c "GRANT ALL PRIVILEGES ON DATABASE mlflow TO mlflow;"
+
+              echo "Done."
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

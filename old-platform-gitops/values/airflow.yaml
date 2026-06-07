@@ -1,0 +1,113 @@
+webserverSecretKey: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+executor: LocalExecutor
+
+# --- Disable built-in postgresql (using external one in storage namespace) ---
+postgresql:
+  enabled: false
+
+# --- Metadata DB (PostgreSQL in storage namespace) ---------------------------
+data:
+  metadataConnection:
+    user: airflow
+    pass: fraud_detection
+    protocol: postgresql
+    host: postgresql.storage.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+
+# --- Webserver ----------------------------------------------------------------
+webserver:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    email: admin@example.com
+    firstName: Admin
+    lastName: User
+    password: fraud_detection
+
+# --- Scheduler ----------------------------------------------------------------
+scheduler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# --- Triggerer ----------------------------------------------------------------
+triggerer:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# --- LocalExecutor has no separate workers ------------------------------------
+workers:
+  replicas: 0
+
+# --- DAG storage (PVC mounted to scheduler) -----------------------------------
+dags:
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: standard
+    accessMode: ReadWriteOnce
+
+# --- Task logs -> SeaweedFS S3 -------------------------------------------------
+# boto3 reads AWS_ENDPOINT_URL_S3 as the S3 endpoint override (boto3 >= 1.28)
+env:
+  - name: AWS_ENDPOINT_URL_S3
+    value: "http://seaweedfs-filer.storage.svc.cluster.local:8333"
+  - name: AWS_ACCESS_KEY_ID
+    value: "local-access-key"
+  - name: AWS_SECRET_ACCESS_KEY
+    value: "fraud_detection"
+  - name: AWS_DEFAULT_REGION
+    value: "us-east-1"
+  # Declare the connection type; actual credentials come from the AWS_ env vars above
+  - name: AIRFLOW_CONN_AWS_DEFAULT
+    value: "aws://"
+
+config:
+  core:
+    dags_are_paused_at_creation: "True"
+    load_examples: "False"
+    remote_logging: "True"
+  logging:
+    remote_log_conn_id: "aws_default"
+    remote_base_log_folder: "s3://airflow-logs/"
+    encrypt_s3_logs: "False"
+
+# --- Metrics (statsd -> prometheus) -------------------------------------------
+statsd:
+  enabled: true
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# Expose statsd-exporter as a ServiceMonitor
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
