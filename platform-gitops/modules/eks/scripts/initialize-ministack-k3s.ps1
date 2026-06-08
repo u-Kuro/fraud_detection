@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory)][string]$cluster_name,
     [Parameter(Mandatory)][string]$kubeconfig_host_directory_path,
     [Parameter(Mandatory)][string]$k3s_mount_directory_path,
-    [Parameter(Mandatory)][string]$kubeconfig_mount_file_name
+    [Parameter(Mandatory)][string]$k3s_mount_file_name
 )
 
 Set-StrictMode -Version Latest
@@ -41,21 +41,21 @@ Write-Host "[EKS] k3s container: $eks_container_name"
 # the real host port directly from Docker.
 $default_k3s_port = 6443;
 $port_line = docker port $eks_container_name $default_k3s_port | Select-Object -First 1
-$host_port  = $port_line -replace '.*:', ''
+$host_port = $port_line -replace '.*:', ''
 Write-Host "[EKS] k3s API host port: $host_port"
 
 # Copy eks container's kubeconfig.yaml to host
 New-Item -ItemType Directory -Force -Path "$kubeconfig_host_directory_path" | Out-Null
-$kubeconfig_path = Join-Path "$kubeconfig_host_directory_path" "$kubeconfig_mount_file_name"
+$kubeconfig_file_path = Join-Path "$kubeconfig_host_directory_path" "$k3s_mount_file_name"
 
-docker exec $eks_container_name cat "$k3s_mount_directory_path/$kubeconfig_mount_file_name" | Out-File $kubeconfig_path -Encoding utf8
+docker exec $eks_container_name cat "$k3s_mount_directory_path/$k3s_mount_file_name" | Out-File $kubeconfig_file_path -Encoding utf8
 
 # Replace Docker-internal 127.0.0.1:6443 with the actual host port.
-(Get-Content $kubeconfig_path) `
+(Get-Content $kubeconfig_file_path) `
     -replace "https://127\.0\.0\.1:$default_k3s_port", "https://127.0.0.1:$host_port" |
-    Set-Content $kubeconfig_path
+    Set-Content $kubeconfig_file_path
 
-Write-Host "[EKS] Kubeconfig written: $kubeconfig_path"
+Write-Host "[EKS] Kubeconfig written: $kubeconfig_file_path"
 
 # Set containerd to pull from MiniStack ECR
 # k3s uses containerd, not Docker daemon. docker login has no effect on k3s.
@@ -81,7 +81,7 @@ Write-Host "[EKS] containerd registry configured. Waiting for reload..."
 Start-Sleep -Seconds 3
 
 # Create ECR imagePullSecret in k3s
-$env:KUBECONFIG = $kubeconfig_path
+$env:KUBECONFIG = $kubeconfig_file_path
 
 kubectl create secret docker-registry ecr-secret `
     --docker-server=localhost:4566 `

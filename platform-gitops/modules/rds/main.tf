@@ -1,4 +1,4 @@
-resource "aws_db_instance" "rds" {
+resource "aws_db_instance" "main" {
   identifier          = var.db_name
   engine              = "postgres"
   instance_class      = "db.t3.micro"

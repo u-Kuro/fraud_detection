@@ -1,17 +1,31 @@
-output "rds_endpoint" {
-  description = "RDS container IP on ministack_network (routable from k3s pods and Airflow)"
-  value       = module.rds.endpoint
+output "aws_ecr_repository_url" {
+  value = module.ecr_repository.repository_url
 }
 
-output "ecr_registry" {
-  value = module.ecr.repository_url
+output "aws_eks_cluster_name" {
+  value = module.eks_cluster.name
 }
 
-output "mwaa_webserver_url" {
-  value = module.mwaa.webserver_url
+output "aws_eks_cluster_endpoint" {
+  value = module.eks_cluster.endpoint
 }
 
-output "kubeconfig_path" {
-  description = "Host-patched kubeconfig for kubectl from Windows host"
-  value       = "${path.root}/kubeconfig/k3s.yaml"
+output "aws_rds_db_instance_address" {
+  value = module.rds_db_instance.address
+}
+
+output "aws_rds_db_instance_port" {
+  value = module.rds_db_instance.port
+}
+
+output "aws_s3_dags_bucket_name" {
+  value = module.s3.dags_bucket_name
+}
+
+output "aws_s3_mlflow_bucket_name" {
+  value = module.s3.mlflow_bucket_name
+}
+
+output "aws_mwaa_environment_webserver_url" {
+  value = module.aws_mwaa_environment.webserver_url
 }

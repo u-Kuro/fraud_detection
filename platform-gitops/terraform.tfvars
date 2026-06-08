@@ -1,7 +1,7 @@
 aws_access_key              = "test"
 aws_secret_key              = "test"
 aws_region                  = "us-east-1"
-
+aws_account_id              = "000000000000"
 eks_cluster_name            = "cluster"
 
 rds_db_name                 = "postgresql"

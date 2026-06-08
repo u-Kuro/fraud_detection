@@ -12,6 +12,10 @@ variable "aws_region" {
   description = "The target AWS region where all infrastructure components will be provisioned."
 }
 
+variable "aws_account_id" {
+  type        = string
+}
+
 variable "eks_cluster_name" {
   type        = string
   description = "The unique identifier name for the managed EKS/Kubernetes cluster."
