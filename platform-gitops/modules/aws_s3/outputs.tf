@@ -3,5 +3,5 @@ output "dags_bucket_name" {
 }
 
 output "mlflow_bucket_name" {
-  value = aws_s3_bucket.mlflow_artifacts.bucket_name
+  value = aws_s3_bucket.mlflow.bucket_name
 }

@@ -1,65 +1,99 @@
+variable "kubeconfig_host_directory_path" {
+  type      = string
+  default   = "./kubeconfig"
+}
+variable "k3s_mount_file_name" {
+  type      = string
+  default   = "k3s.yaml"
+}
+
+variable "eks_service_endpoint_url" {
+  type      = string
+  default   = "http://localhost:4566"
+}#
+variable "s3_service_endpoint_url" {
+  type      = string
+  default   = "http://localhost:4566"
+}
+
+variable "ecr_registry_endpoint" {
+  type      = string
+  default   = "localhost:4566"
+}
+variable "ecr_registry_mirror_endpoint" {
+  type      = string
+  default   = "ministack:4566"
+}
+variable "ecr_registry_mirror_endpoint_url" {
+  type      = string
+  default   = "http://ministack:4566"
+}
+
+variable "s3_internal_endpoint_url" {
+  type      = string
+  default   = "http://ministack:4566"
+}
+
+# service endpoint url for eks s3
+# registry endpoint url for ecr (mini
+#
 variable "aws_access_key" {
-  type        = string
+  type      = string
+  sensitive = true
 }
-
 variable "aws_secret_key" {
-  type        = string
-  sensitive   = true
+  type      = string
+  sensitive = true
 }
-
 variable "aws_region" {
-  type        = string
-  description = "The target AWS region where all infrastructure components will be provisioned."
+  type      = string
 }
-
 variable "aws_account_id" {
-  type        = string
-}
-
-variable "eks_cluster_name" {
-  type        = string
-  description = "The unique identifier name for the managed EKS/Kubernetes cluster."
-}
-
-variable "rds_db_name" {
-  type        = string
-  description = "The database name to be automatically created inside the RDS database instance."
-}
-
-variable "rds_db_username" {
-  type        = string
-  description = "The administrative username used to authenticate against the RDS database instance."
-}
-
-variable "rds_db_password" {
-  type        = string
-  sensitive   = true
-  description = "The administrative password for the RDS database instance."
-}
-
-variable "s3_dags_bucket" {
-  type        = string
-  description = "The name of the S3 bucket designated to store and sync Apache Airflow DAG code files."
-}
-
-variable "s3_mlflow_artifacts_bucket" {
-  type        = string
-  description = "The name of the S3 bucket designated to store and track MLflow artifacts."
+  type      = string
 }
 
 variable "ecr_repository_name" {
-  type        = string
-  description = "The name of the ECR repository used to hold built container images."
+  type      = string
+  default   = "fraud_detection_ecr"
+}
+
+variable "eks_cluster_name" {
+  type      = string
+  default   = "fraud_detection_eks"
+}
+
+variable "mwaa_environment_name" {
+  type      = string
+  default   = "fraud_detection_mwaa"
+}
+
+variable "rds_db_identifier" {
+  type      = string
+  default   = "fraud_detection_rds"
+}
+variable "rds_db_username" {
+  type      = string
+  sensitive = true
+}
+variable "rds_db_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "s3_dags_bucket_name" {
+  type      = string
+  default   = "dags"
+}
+variable "s3_mlflow_bucket_name" {
+  type      = string
+  default   = "mlflow"
 }
 
 variable "slack_bot_token" {
-  type        = string
-  sensitive   = true
-  description = "The OAuth bot user token (xoxb-...) used by the application to send notifications to Slack channels."
+  type      = string
+  sensitive = true
 }
-
 variable "slack_app_token" {
-  type        = string
-  sensitive   = true
-  description = "The WebSocket App-Level Token (xapp-...) required to manage connections via Slack's Socket Mode API."
+  type      = string
+  sensitive = true
 }

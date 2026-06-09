@@ -25,6 +25,10 @@ resource "terraform_data" "init" {
     command     = join(" ", [
       "& '${path.module}/scripts/initialize-ministack-k3s.ps1'",
       "-cluster_name '${var.cluster_name}'",
+      "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
+      "-ecr_registry_endpoint '${var.ecr_registry_endpoint}'",
+      "-ecr_registry_mirror_endpoint '${var.ecr_registry_mirror_endpoint}'",
+      "-ecr_registry_mirror_endpoint_url '${var.ecr_registry_mirror_endpoint_url}'",
       "-kubeconfig_host_directory_path '${var.kubeconfig_host_directory_path}'",
       "-k3s_mount_directory_path '${var.k3s_mount_directory_path}'",
       "-k3s_mount_file_name '${var.k3s_mount_file_name}'"

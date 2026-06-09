@@ -18,14 +18,16 @@ resource "aws_s3_object" "requirements" {
 # from the Windows host (that version lives in /kubeconfig/k3s.yaml).
 resource "terraform_data" "upload_airflow_kubeconfig" {
   triggers_replace = {
-    cluster_name = var.cluster_name
+    eks_cluster_name = var.eks_cluster_name
   }
 
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command     = join(" ", [
       "& '${path.module}/scripts/upload-airflow-kubeconfig.ps1'",
-      "-cluster_name '${var.cluster_name}'",
+      "-cluster_name '${var.eks_cluster_name}'",
+      "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
+      "-s3_service_endpoint_url '${var.s3_service_endpoint_url}'",
       "-temporary_kubeconfig_file_path '${local.temporary_kubeconfig_file_path}'",
       "-airflow_kubeconfig_s3_uri '${local.airflow_kubeconfig_s3_uri}'"
     ])
@@ -33,7 +35,7 @@ resource "terraform_data" "upload_airflow_kubeconfig" {
 }
 
 resource "aws_mwaa_environment" "main" {
-  name                  = var.env_name
+  name                  = var.environment_name
   airflow_version       = "2.10.3"
   source_bucket_arn     = "arn:aws:s3:::${var.s3_dags_bucket}"
   execution_role_arn    = "arn:aws:iam::${var.aws_account_id}:role/mwaa-role"

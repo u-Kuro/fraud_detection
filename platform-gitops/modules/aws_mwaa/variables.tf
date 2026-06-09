@@ -1,0 +1,22 @@
+variable "environment_name" {
+  type = string
+}
+
+variable "aws_account_id" {
+  type = string
+}
+
+variable "eks_service_endpoint_url" {
+  type = string
+}
+variable "s3_service_endpoint_url" {
+  type = string
+}
+
+variable "eks_cluster_name" {
+  type = string
+}
+
+variable "s3_dags_bucket" {
+  type = string
+}

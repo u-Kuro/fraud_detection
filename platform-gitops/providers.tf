@@ -5,11 +5,11 @@ provider "aws" {
   region     = var.aws_region
 
   endpoints {
-    eks  = "http://localhost:4566"
-    rds  = "http://localhost:4566"
-    s3   = "http://localhost:4566"
+    eks  = var.eks_service_endpoint_url
+    s3   = var.s3_service_endpoint_url
     ecr  = "http://localhost:4566"
     mwaa = "http://localhost:4566"
+    rds  = "http://localhost:4566"
     iam  = "http://localhost:4566"
   }
 
@@ -23,12 +23,14 @@ provider "aws" {
 
 # Both providers read the kubeconfig written by the EKS module's
 # PowerShell script during Phase 1 apply (see §4).
-provider "kubernetes" {
-  config_path = "${path.root}/kubeconfig/k3s.yaml"
+locals {
+  kubeconfig_file_path = "${var.kubeconfig_host_directory_path}/${var.k3s_mount_file_name}"
 }
-
+provider "kubernetes" {
+  config_path = local.kubeconfig_file_path
+}
 provider "helm" {
   kubernetes {
-    config_path = "${path.root}/kubeconfig/k3s.yaml"
+    config_path = local.kubeconfig_file_path
   }
 }

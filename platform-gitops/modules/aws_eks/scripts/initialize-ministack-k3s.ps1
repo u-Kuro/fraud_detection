@@ -1,5 +1,9 @@
 param(
     [Parameter(Mandatory)][string]$cluster_name,
+    [Parameter(Mandatory)][string]$eks_service_endpoint_url,
+    [Parameter(Mandatory)][string]$ecr_registry_endpoint,
+    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
+    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
     [Parameter(Mandatory)][string]$kubeconfig_host_directory_path,
     [Parameter(Mandatory)][string]$k3s_mount_directory_path,
     [Parameter(Mandatory)][string]$k3s_mount_file_name
@@ -13,7 +17,7 @@ Write-Host "`n[EKS] Waiting for cluster '$cluster_name' to become ACTIVE..."
 $max_wait = 120; $waited = 0
 do {
     Start-Sleep -Seconds 5; $waited += 5
-    $status = aws --endpoint-url http://localhost:4566 eks describe-cluster `
+    $status = aws --endpoint-url "${eks_service_endpoint_url}" eks describe-cluster `
                 --name "$cluster_name" `
                 --query "cluster.status" `
                 --output text 2>$null
@@ -62,11 +66,11 @@ Write-Host "[EKS] Kubeconfig written: $kubeconfig_file_path"
 # registries.yaml tells containerd where to find the MiniStack ECR mirror.
 $registries_yaml = @"
 mirrors:
-  "localhost:4566":
+  "${ecr_registry_endpoint}":
     endpoint:
-      - "http://ministack:4566"
+      - "${ecr_registry_mirror_endpoint_url}"
 configs:
-  "ministack:4566":
+  "${ecr_registry_mirror_endpoint}":
     auth:
       username: AWS
       password: test
@@ -84,7 +88,7 @@ Start-Sleep -Seconds 3
 $env:KUBECONFIG = $kubeconfig_file_path
 
 kubectl create secret docker-registry ecr-secret `
-    --docker-server=localhost:4566 `
+    --docker-server="${ecr_registry_endpoint}" `
     --docker-username=AWS `
     --docker-password=test `
     --dry-run=client -o yaml | kubectl apply -f -
