@@ -45,7 +45,7 @@ resource "aws_mwaa_environment" "main" {
 
   network_configuration {
     security_group_ids = ["sg-00000000000000001"]
-    subnet_ids         = ["subnet-00000000000000001"]
+    subnet_ids         = ["subnet-00000000000000001", "subnet-00000000000000002"]
   }
 
   depends_on = [

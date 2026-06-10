@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][string]$ecr_registry_endpoint,
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
+    [Parameter(Mandatory)][string]$ecr_registry_secret_name,
     [Parameter(Mandatory)][string]$kubeconfig_host_directory_path,
     [Parameter(Mandatory)][string]$k3s_mount_directory_path,
     [Parameter(Mandatory)][string]$k3s_mount_file_name
@@ -61,6 +62,27 @@ docker exec $eks_container_name cat "$k3s_mount_directory_path/$k3s_mount_file_n
 
 Write-Host "[EKS] Kubeconfig written: $kubeconfig_file_path"
 
+# Wait for k3s API server to be ready
+# Ministack returns ACTIVE the instant the EKS record is created — it has no
+# knowledge of whether the k3s container has actually finished bootstrapping.
+# K3s needs 30-90 s to start flannel, CoreDNS, and the API server. Terraform's
+# helm_apps module depends_on eks_cluster, so blocking here until kubectl can
+# reach the cluster guarantees Helm never hits a "connection refused".
+$env:KUBECONFIG = $kubeconfig_file_path
+Write-Host "[EKS] Waiting for k3s API server to become ready at 127.0.0.1:${host_port}..."
+$max_api_wait = 120; $api_waited = 0; $api_ready = $false
+do {
+    Start-Sleep -Seconds 5; $api_waited += 5
+    kubectl get nodes --request-timeout=5s 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { $api_ready = $true }
+    Write-Host "[EKS] API ready check (${api_waited}s elapsed, exitCode=$LASTEXITCODE)"
+} while (-not $api_ready -and $api_waited -lt $max_api_wait)
+
+if (-not $api_ready) {
+    Write-Error "[EKS] k3s API did not become ready within ${max_api_wait}s."; exit 1
+}
+Write-Host "[EKS] k3s API is ready."
+
 # Set containerd to pull from MiniStack ECR
 # k3s uses containerd, not Docker daemon. docker login has no effect on k3s.
 # registries.yaml tells containerd where to find the MiniStack ECR mirror.
@@ -81,17 +103,29 @@ $registries_yaml | Set-Content $temp_registries -Encoding utf8
 
 docker cp $temp_registries "${eks_container_name}:$k3s_mount_directory_path/registries.yaml"
 docker exec $eks_container_name kill -HUP 1 # SIGHUP reloads containerd config
-Write-Host "[EKS] containerd registry configured. Waiting for reload..."
-Start-Sleep -Seconds 3
+Write-Host "[EKS] containerd registry configured. Waiting for API to recover after reload..."
+$max_hup_wait = 120; $hup_waited = 0; $hup_ready = $false
+do {
+    Start-Sleep -Seconds 5; $hup_waited += 5
+    kubectl get nodes --request-timeout=5s 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { $hup_ready = $true }
+    Write-Host "[EKS] Post-HUP API check (${hup_waited}s elapsed, exitCode=$LASTEXITCODE)"
+} while (-not $hup_ready -and $hup_waited -lt $max_hup_wait)
+
+if (-not $hup_ready) {
+    Write-Error "[EKS] k3s API did not recover after HUP within ${max_hup_wait}s."; exit 1
+}
 
 # Create ECR imagePullSecret in k3s
-$env:KUBECONFIG = $kubeconfig_file_path
-
-kubectl create secret docker-registry ecr-secret `
+# $env:KUBECONFIG is already set from the readiness block above.
+kubectl create secret docker-registry "${ecr_registry_secret_name}" `
     --docker-server="${ecr_registry_endpoint}" `
     --docker-username=AWS `
     --docker-password=test `
     --dry-run=client -o yaml | kubectl apply -f -
 
-Write-Host "[EKS] ecr-secret applied."
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "[EKS] Failed to apply ${ecr_registry_secret_name}. kubectl exited $LASTEXITCODE."; exit 1
+}
+Write-Host "[EKS] ${ecr_registry_secret_name} applied."
 Write-Host "[EKS] Setup complete."

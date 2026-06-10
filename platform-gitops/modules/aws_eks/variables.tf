@@ -19,6 +19,9 @@ variable "ecr_registry_mirror_endpoint" {
 variable "ecr_registry_mirror_endpoint_url" {
   type = string
 }
+variable "ecr_registry_secret_name" {
+  type = string
+}
 
 variable "kubeconfig_host_directory_path" {
   type = string

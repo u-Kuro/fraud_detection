@@ -28,6 +28,10 @@ variable "ecr_registry_mirror_endpoint_url" {
   type      = string
   default   = "http://ministack:4566"
 }
+variable "ecr_registry_secret_name" {
+  type      = string
+  default   = "ecr-secret"
+}
 
 variable "s3_internal_endpoint_url" {
   type      = string
@@ -69,7 +73,7 @@ variable "mwaa_environment_name" {
 
 variable "rds_db_identifier" {
   type      = string
-  default   = "fraud_detection_rds"
+  default   = "fraud-detection-rds"
 }
 variable "rds_db_username" {
   type      = string

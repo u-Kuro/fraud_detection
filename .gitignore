@@ -10,6 +10,9 @@
 # Kubernetes secrets
 **/secret.yaml
 
+# Terraform
+platform-gitops/.terraform
+
 # Python dependencies
 .venv/
 
@@ -31,3 +34,4 @@ __pycache__
 # Temporary
 /*.md
 my_current_codes.zip
+platform-gitops/terraform.zip

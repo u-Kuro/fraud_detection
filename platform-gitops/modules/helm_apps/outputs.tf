@@ -3,5 +3,5 @@ output "mlflow_release"  {
 }
 
 output "fastapi_release" {
-  value = helm_release.fastapi.status
+  value = helm_release.fraud_detection.status
 }

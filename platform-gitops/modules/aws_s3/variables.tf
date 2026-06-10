@@ -1,3 +1,7 @@
+variable "aws_region" {
+  type = string
+}
+
 variable "dags_bucket_name" {
   type = string
 }
