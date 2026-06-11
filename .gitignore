@@ -12,6 +12,11 @@
 
 # Terraform
 platform-gitops/.terraform
+platform-gitops/.terraform.lock.hcl
+platform-gitops/*.tfstate
+platform-gitops/*.tfstate.backup
+platform-gitops/.terraform.tfstate.lock.info
+platform-gitops/terraform.tfvars
 
 # Python dependencies
 .venv/
