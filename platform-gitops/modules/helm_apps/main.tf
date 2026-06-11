@@ -4,7 +4,7 @@ locals {
   mlflow_host = "mlflow"
   mlflow_port = 5000
 
-  fraud_detection_host = "fraud_detection"
+  fraud_detection_host = "fraud-detection"
   fraud_detection_port = 30000
   fraud_detection_secret = "fraud-detection-secret"
 }
@@ -74,8 +74,7 @@ resource "helm_release" "fraud_detection" {
   chart             = "${path.root}/helm/fraud_detection"
   namespace         = local.shared_namespace
   create_namespace  = true
-  timeout           = 300
-  wait              = true
+  wait              = false
 
   values = [file("${path.root}/helm/fraud_detection/values.yaml")]
 

@@ -22,6 +22,9 @@ module "s3" {
 module "eks_cluster" {
   source                            = "./modules/aws_eks"
   cluster_name                      = var.eks_cluster_name
+  aws_access_key                    = var.aws_access_key
+  aws_secret_key                    = var.aws_secret_key
+  aws_region                        = var.aws_region
   aws_account_id                    = var.aws_account_id
   eks_service_endpoint_url          = var.eks_service_endpoint_url
   ecr_registry_endpoint             = var.ecr_registry_endpoint
@@ -66,6 +69,9 @@ module "helm_apps" {
 module "aws_mwaa_environment" {
   source                    = "./modules/aws_mwaa"
   environment_name          = var.mwaa_environment_name
+  aws_access_key            = var.aws_access_key
+  aws_secret_key            = var.aws_secret_key
+  aws_region                = var.aws_region
   aws_account_id            = var.aws_account_id
   eks_service_endpoint_url  = var.eks_service_endpoint_url
   s3_service_endpoint_url   = var.s3_service_endpoint_url

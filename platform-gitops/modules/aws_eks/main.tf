@@ -24,6 +24,9 @@ resource "terraform_data" "init" {
     interpreter = ["PowerShell", "-Command"]
     command     = join(" ", [
       "& '${path.module}/scripts/initialize-ministack-k3s.ps1'",
+      "-aws_access_key '${var.aws_access_key}'",
+      "-aws_secret_key '${var.aws_secret_key}'",
+      "-aws_region '${var.aws_region}'",
       "-cluster_name '${var.cluster_name}'",
       "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
       "-ecr_registry_endpoint '${var.ecr_registry_endpoint}'",

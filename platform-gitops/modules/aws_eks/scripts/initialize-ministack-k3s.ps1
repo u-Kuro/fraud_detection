@@ -1,4 +1,7 @@
 param(
+    [Parameter(Mandatory)][string]$aws_access_key,
+    [Parameter(Mandatory)][string]$aws_secret_key,
+    [Parameter(Mandatory)][string]$aws_region,
     [Parameter(Mandatory)][string]$cluster_name,
     [Parameter(Mandatory)][string]$eks_service_endpoint_url,
     [Parameter(Mandatory)][string]$ecr_registry_endpoint,
@@ -13,20 +16,25 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Configure aws in host
+aws configure set aws_access_key_id "${aws_access_key}"
+aws configure set aws_secret_access_key "${aws_secret_key}"
+aws configure set region "${aws_region}"
+
 # Wait for cluster to be active
-Write-Host "`n[EKS] Waiting for cluster '$cluster_name' to become ACTIVE..."
+Write-Host "`n[EKS] Waiting for cluster '${cluster_name}' to become ACTIVE..."
 $max_wait = 120; $waited = 0
 do {
     Start-Sleep -Seconds 5; $waited += 5
     $status = aws --endpoint-url "${eks_service_endpoint_url}" eks describe-cluster `
-                --name "$cluster_name" `
+                --name "${cluster_name}" `
                 --query "cluster.status" `
                 --output text 2>$null
     Write-Host "[EKS] Status: $status (${waited}s elapsed)"
 } while ($status -ne "ACTIVE" -and $waited -lt $max_wait)
 
 if ($status -ne "ACTIVE") {
-    Write-Error "[EKS] Cluster did not become ACTIVE within ${max_wait}s."; exit 1
+    Write-Error "[EKS] Cluster did not become ACTIVE within ${max_waits}."; exit 1
 }
 
 # Find the eks container name
@@ -50,10 +58,10 @@ $host_port = $port_line -replace '.*:', ''
 Write-Host "[EKS] k3s API host port: $host_port"
 
 # Copy eks container's kubeconfig.yaml to host
-New-Item -ItemType Directory -Force -Path "$kubeconfig_host_directory_path" | Out-Null
-$kubeconfig_file_path = Join-Path "$kubeconfig_host_directory_path" "$k3s_mount_file_name"
+New-Item -ItemType Directory -Force -Path "${kubeconfig_host_directory_path}" | Out-Null
+$kubeconfig_file_path = Join-Path "${kubeconfig_host_directory_path}" "${k3s_mount_file_name}"
 
-docker exec $eks_container_name cat "$k3s_mount_directory_path/$k3s_mount_file_name" | Out-File $kubeconfig_file_path -Encoding utf8
+docker exec $eks_container_name cat "${k3s_mount_directory_path}/${k3s_mount_file_name}" | Out-File $kubeconfig_file_path -Encoding utf8
 
 # Replace Docker-internal 127.0.0.1:6443 with the actual host port.
 (Get-Content $kubeconfig_file_path) `
@@ -73,9 +81,9 @@ Write-Host "[EKS] Waiting for k3s API server to become ready at 127.0.0.1:${host
 $max_api_wait = 120; $api_waited = 0; $api_ready = $false
 do {
     Start-Sleep -Seconds 5; $api_waited += 5
-    kubectl get nodes --request-timeout=5s 2>&1 | Out-Null
+    try { kubectl get nodes --request-timeout=5s 2>&1 | Out-Null } catch {}
     if ($LASTEXITCODE -eq 0) { $api_ready = $true }
-    Write-Host "[EKS] API ready check (${api_waited}s elapsed, exitCode=$LASTEXITCODE)"
+    Write-Host "[EKS] API ready check (${api_waited}s elapsed, exitCode=${LASTEXITCODE})"
 } while (-not $api_ready -and $api_waited -lt $max_api_wait)
 
 if (-not $api_ready) {
@@ -101,19 +109,19 @@ configs:
 $temp_registries = Join-Path $env:TEMP "ministack-registries.yaml"
 $registries_yaml | Set-Content $temp_registries -Encoding utf8
 
-docker cp $temp_registries "${eks_container_name}:$k3s_mount_directory_path/registries.yaml"
-docker exec $eks_container_name kill -HUP 1 # SIGHUP reloads containerd config
-Write-Host "[EKS] containerd registry configured. Waiting for API to recover after reload..."
-$max_hup_wait = 120; $hup_waited = 0; $hup_ready = $false
+docker cp $temp_registries "${eks_container_name}:${k3s_mount_directory_path}/registries.yaml"
+docker restart $eks_container_name
+Write-Host "[EKS] containerd registry configured. Restarting k3s container, waiting for API to recover..."
+$max_recovery_wait = 120; $recovery_waited = 0; $api_recovered = $false
 do {
-    Start-Sleep -Seconds 5; $hup_waited += 5
-    kubectl get nodes --request-timeout=5s 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { $hup_ready = $true }
-    Write-Host "[EKS] Post-HUP API check (${hup_waited}s elapsed, exitCode=$LASTEXITCODE)"
-} while (-not $hup_ready -and $hup_waited -lt $max_hup_wait)
+    Start-Sleep -Seconds 5; $recovery_waited += 5
+    try { kubectl get nodes --request-timeout=5s 2>&1 | Out-Null } catch {}
+    if ($LASTEXITCODE -eq 0) { $api_recovered = $true }
+    Write-Host "[EKS] Post-restart API check (${recovery_waited}s elapsed, exitCode=$LASTEXITCODE)"
+} while (-not $api_recovered -and $recovery_waited -lt $max_recovery_wait)
 
-if (-not $hup_ready) {
-    Write-Error "[EKS] k3s API did not recover after HUP within ${max_hup_wait}s."; exit 1
+if (-not $api_recovered) {
+    Write-Error "[EKS] k3s API did not recover after restart within ${max_recovery_wait}s."; exit 1
 }
 
 # Create ECR imagePullSecret in k3s

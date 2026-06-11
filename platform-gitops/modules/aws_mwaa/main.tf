@@ -25,6 +25,9 @@ resource "terraform_data" "upload_airflow_kubeconfig" {
     interpreter = ["PowerShell", "-Command"]
     command     = join(" ", [
       "& '${path.module}/scripts/upload-airflow-kubeconfig.ps1'",
+      "-aws_access_key '${var.aws_access_key}'",
+      "-aws_secret_key '${var.aws_secret_key}'",
+      "-aws_region '${var.aws_region}'",
       "-cluster_name '${var.eks_cluster_name}'",
       "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
       "-s3_service_endpoint_url '${var.s3_service_endpoint_url}'",
