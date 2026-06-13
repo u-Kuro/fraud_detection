@@ -1,2 +1,0 @@
-import fraud_inference_repository as FraudInferenceRepository
-from postgres import engine

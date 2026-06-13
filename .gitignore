@@ -38,6 +38,7 @@ __pycache__
 
 # Temporary
 /*.md
+delete
 my_current_codes.zip
 platform-gitops/terraform.zip
 platform-gitops.zip
