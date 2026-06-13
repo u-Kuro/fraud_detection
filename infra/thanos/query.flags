@@ -1,4 +1,0 @@
---http-address=0.0.0.0:10902
---grpc-address=0.0.0.0:10901
---store=thanos-store:10901
---store=thanos-sidecar:10901

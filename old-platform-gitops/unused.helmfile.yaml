@@ -1,6 +1,0 @@
-bases:
-  - helmfile-bases/repositories.yaml
-  - helmfile-bases/10-networking.yaml
-  - helmfile-bases/20-storage.yaml
-  - helmfile-bases/30-observability.yaml
-  - helmfile-bases/40-data-platform.yaml

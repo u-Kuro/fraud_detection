@@ -5,7 +5,7 @@ resource "aws_db_instance" "main" {
   allocated_storage   = 20
   username            = var.db_username
   password            = var.db_password
-  db_name             = "fraud_detection"
+  db_name             = "main"
   skip_final_snapshot = true
   apply_immediately   = true
 }

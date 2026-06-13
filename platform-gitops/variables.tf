@@ -2,7 +2,7 @@ variable "kubeconfig_host_directory_path" {
   type      = string
   default   = "./kubeconfig"
 }
-variable "k3s_mount_file_name" {
+variable "kubeconfig_host_file_name" {
   type      = string
   default   = "k3s.yaml"
 }
@@ -10,7 +10,7 @@ variable "k3s_mount_file_name" {
 variable "eks_service_endpoint_url" {
   type      = string
   default   = "http://localhost:4566"
-}#
+}
 variable "s3_service_endpoint_url" {
   type      = string
   default   = "http://localhost:4566"
@@ -56,25 +56,6 @@ variable "aws_account_id" {
   type      = string
 }
 
-variable "ecr_repository_name" {
-  type      = string
-  default   = "fraud_detection_ecr"
-}
-
-variable "eks_cluster_name" {
-  type      = string
-  default   = "fraud_detection_eks"
-}
-
-variable "mwaa_environment_name" {
-  type      = string
-  default   = "fraud_detection_mwaa"
-}
-
-variable "rds_db_identifier" {
-  type      = string
-  default   = "fraud-detection-rds"
-}
 variable "rds_db_username" {
   type      = string
   sensitive = true
@@ -83,14 +64,29 @@ variable "rds_db_password" {
   type      = string
   sensitive = true
 }
-
-variable "s3_dags_bucket_name" {
+variable "mlflow_db_username" {
   type      = string
-  default   = "dags"
+  sensitive = true
 }
-variable "s3_mlflow_bucket_name" {
+variable "mlflow_db_password" {
   type      = string
-  default   = "mlflow"
+  sensitive = true
+}
+variable "mle_db_username" {
+  type      = string
+  sensitive = true
+}
+variable "mle_db_password" {
+  type      = string
+  sensitive = true
+}
+variable "mle_migrations_db_username" {
+  type      = string
+  sensitive = true
+}
+variable "mle_migrations_db_password" {
+  type      = string
+  sensitive = true
 }
 
 variable "slack_bot_token" {

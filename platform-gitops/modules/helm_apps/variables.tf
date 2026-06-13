@@ -17,10 +17,20 @@ variable "rds_db_port" {
 variable "rds_db_name" {
   type = string
 }
-variable "rds_db_username" {
-  type = string
+
+variable "mlflow_db_username" {
+  type      = string
+  sensitive = true
 }
-variable "rds_db_password" {
+variable "mlflow_db_password" {
+  type      = string
+  sensitive = true
+}
+variable "mle_db_username" {
+  type      = string
+  sensitive = true
+}
+variable "mle_db_password" {
   type      = string
   sensitive = true
 }
@@ -31,14 +41,20 @@ variable "s3_internal_endpoint_url" {
 variable "s3_mlflow_bucket_aws_region" {
   type = string
 }
-variable "s3_mlflow_bucket_name" {
+variable "s3_mlflow_bucket" {
+  type = string
+}
+variable "s3_mle_bucket_aws_region" {
+  type = string
+}
+variable "s3_mle_bucket" {
   type = string
 }
 
 variable "ecr_repository_name" {
   type = string
 }
-variable "ecr_region" {
+variable "ecr_aws_region" {
   type = string
 }
 variable "ecr_registry_endpoint" {

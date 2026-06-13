@@ -21,10 +21,22 @@ provider "aws" {
   skip_requesting_account_id  = true
 }
 
+provider "postgresql" {
+  host              = module.rds_db.address
+  port              = module.rds_db.port
+  database          = module.rds_db.name
+  username          = module.rds_db.username
+  password          = module.rds_db.password
+  sslmode           = "disable"
+  connect_timeout   = 15
+  superuser         = false
+  expected_version  = "15"
+}
+
 # Both providers read the kubeconfig written by the EKS module's
 # PowerShell script during Phase 1 apply (see §4).
 locals {
-  kubeconfig_file_path = "${var.kubeconfig_host_directory_path}/${var.k3s_mount_file_name}"
+  kubeconfig_file_path = "${var.kubeconfig_host_directory_path}/${var.kubeconfig_host_file_name}"
 }
 provider "kubernetes" {
   config_path = local.kubeconfig_file_path

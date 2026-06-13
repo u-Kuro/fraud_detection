@@ -9,8 +9,7 @@ param(
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
     [Parameter(Mandatory)][string]$ecr_registry_secret_name,
     [Parameter(Mandatory)][string]$kubeconfig_host_directory_path,
-    [Parameter(Mandatory)][string]$k3s_mount_directory_path,
-    [Parameter(Mandatory)][string]$k3s_mount_file_name
+    [Parameter(Mandatory)][string]$kubeconfig_host_file_name
 )
 
 Set-StrictMode -Version Latest
@@ -58,10 +57,11 @@ $host_port = $port_line -replace '.*:', ''
 Write-Host "[EKS] k3s API host port: $host_port"
 
 # Copy eks container's kubeconfig.yaml to host
+$k3s_mount_directory_path = "/etc/rancher/k3s"
 New-Item -ItemType Directory -Force -Path "${kubeconfig_host_directory_path}" | Out-Null
-$kubeconfig_file_path = Join-Path "${kubeconfig_host_directory_path}" "${k3s_mount_file_name}"
+$kubeconfig_file_path = Join-Path "${kubeconfig_host_directory_path}" "${kubeconfig_host_file_name}"
 
-docker exec $eks_container_name cat "${k3s_mount_directory_path}/${k3s_mount_file_name}" | Out-File $kubeconfig_file_path -Encoding utf8
+docker exec $eks_container_name cat "${k3s_mount_directory_path}/k3s.yaml" | Out-File $kubeconfig_file_path -Encoding utf8
 
 # Replace Docker-internal 127.0.0.1:6443 with the actual host port.
 (Get-Content $kubeconfig_file_path) `

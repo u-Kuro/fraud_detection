@@ -1,0 +1,1 @@
+from seaweedfs import *

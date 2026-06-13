@@ -1,0 +1,13 @@
+replicaCount: 1
+
+image:
+  tag: latest
+  pullPolicy: Always
+
+# ecr-secret is created by initialize-ministack-k3s.ps1 during Terraform apply.
+
+service:
+  type: NodePort
+
+# All env vars (DB, Slack, MLflow) come from the kubernetes_secret
+# "fraud_detection_secrets" managed by Terraform — no plaintext in this file.

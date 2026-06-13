@@ -2,12 +2,12 @@ locals {
   dag_s3_path                     = "dags"
   requirements_file_name          = "requirements.txt"
   temporary_kubeconfig_file_path  = "$env:TEMP\\airflow_kubeconfig.yaml"
-  airflow_kubeconfig_s3_uri       = "s3://${var.s3_dags_bucket}/${local.dag_s3_path}/kubeconfig.yaml"
+  airflow_kubeconfig_s3_uri       = "s3://${var.s3_mle_bucket}/${local.dag_s3_path}/kubeconfig.yaml"
 }
 
 # Airflow needs this provider installed to run KubernetesPodOperator.
 resource "aws_s3_object" "requirements" {
-  bucket  = var.s3_dags_bucket
+  bucket  = var.s3_mle_bucket
   key     = local.requirements_file_name
   content = "apache-airflow-providers-cncf-kubernetes\n"
 }
@@ -40,7 +40,7 @@ resource "terraform_data" "upload_airflow_kubeconfig" {
 resource "aws_mwaa_environment" "main" {
   name                  = var.environment_name
   airflow_version       = "2.10.3"
-  source_bucket_arn     = "arn:aws:s3:::${var.s3_dags_bucket}"
+  source_bucket_arn     = "arn:aws:s3:::${var.s3_mle_bucket}"
   execution_role_arn    = "arn:aws:iam::${var.aws_account_id}:role/mwaa-role"
 
   dag_s3_path           = "${local.dag_s3_path}/"

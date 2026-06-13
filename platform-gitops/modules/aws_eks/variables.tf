@@ -12,7 +12,8 @@ variable "aws_account_id" {
 }
 
 variable "cluster_name" {
-  type = string
+  type    = string
+  default = "fraud_detection_eks"
 }
 
 variable "eks_service_endpoint_url" {
@@ -35,9 +36,6 @@ variable "ecr_registry_secret_name" {
 variable "kubeconfig_host_directory_path" {
   type = string
 }
-variable "k3s_mount_directory_path" {
-  type = string
-}
-variable "k3s_mount_file_name" {
+variable "kubeconfig_host_file_name" {
   type = string
 }

@@ -34,8 +34,7 @@ resource "terraform_data" "init" {
       "-ecr_registry_mirror_endpoint_url '${var.ecr_registry_mirror_endpoint_url}'",
       "-ecr_registry_secret_name '${var.ecr_registry_secret_name}'",
       "-kubeconfig_host_directory_path '${var.kubeconfig_host_directory_path}'",
-      "-k3s_mount_directory_path '${var.k3s_mount_directory_path}'",
-      "-k3s_mount_file_name '${var.k3s_mount_file_name}'"
+      "-kubeconfig_host_file_name '${var.kubeconfig_host_file_name}'"
     ])
   }
 }

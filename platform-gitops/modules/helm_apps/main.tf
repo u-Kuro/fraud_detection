@@ -3,6 +3,7 @@ locals {
 
   mlflow_host = "mlflow"
   mlflow_port = 5000
+  mlflow_tracking_uri = "http://${local.mlflow_host}:${local.mlflow_port}"
 
   fraud_detection_host = "fraud-detection"
   fraud_detection_port = 30000
@@ -27,13 +28,14 @@ resource "helm_release" "mlflow" {
     { name = "backendStore.postgres.port",          value = var.rds_db_port },
     { name = "backendStore.postgres.database",      value = var.rds_db_name },
     { name = "extraEnvVars.AWS_DEFAULT_REGION",     value = var.s3_mlflow_bucket_aws_region },
-    { name = "artifactRoot.s3.bucket",              value = var.s3_mlflow_bucket_name },
+    { name = "artifactRoot.s3.bucket",              value = var.s3_mlflow_bucket },
+    { name = "artifactRoot.s3.path",                value = "artifacts" },
     { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = var.s3_internal_endpoint_url },
   ]
 
   set_sensitive = [
-    { name = "backendStore.postgres.user",             value = var.rds_db_username },
-    { name = "backendStore.postgres.password",         value = var.rds_db_password },
+    { name = "backendStore.postgres.user",             value = var.mlflow_db_username },
+    { name = "backendStore.postgres.password",         value = var.mlflow_db_password },
     { name = "artifactRoot.s3.awsAccessKeyId",         value = var.aws_access_key },
     { name = "artifactRoot.s3.awsSecretAccessKey",     value = var.aws_secret_key },
   ]
@@ -58,10 +60,10 @@ resource "kubernetes_secret" "fraud_detection" {
     POSTGRES_HOST          = var.rds_db_address
     POSTGRES_PORT          = var.rds_db_port
     POSTGRES_DB            = var.rds_db_name
-    POSTGRES_USER          = var.rds_db_username
-    POSTGRES_PASSWORD      = var.rds_db_password
+    POSTGRES_USER          = var.mle_db_username
+    POSTGRES_PASSWORD      = var.mle_db_password
     MLFLOW_S3_ENDPOINT_URL = var.s3_internal_endpoint_url
-    MLFLOW_TRACKING_URI    = "http://${local.mlflow_host}:${local.mlflow_port}"
+    MLFLOW_TRACKING_URI    = local.mlflow_tracking_uri
     SLACK_BOT_TOKEN        = var.slack_bot_token
     SLACK_APP_TOKEN        = var.slack_app_token
   }
@@ -81,10 +83,43 @@ resource "helm_release" "fraud_detection" {
   set = [
     { name = "service.port",              value = local.fraud_detection_port },
     { name = "service.nodePort",          value = local.fraud_detection_port },
-    { name = "image.repository",          value = "${var.ecr_registry_endpoint}/${var.aws_account_id}.dkr.ecr.${var.ecr_region}.amazonaws.com/${var.ecr_repository_name}" },
+    { name = "image.repository",          value = "${var.ecr_registry_endpoint}/${var.aws_account_id}.dkr.ecr.${var.ecr_aws_region}.amazonaws.com/${var.ecr_repository_name}" },
     { name = "imagePullSecrets[0].name",  value = var.ecr_registry_secret_name },
     { name = "secretName",                value = local.fraud_detection_secret },
   ]
 
   depends_on = [kubernetes_secret.fraud_detection]
+}
+
+resource "kubernetes_secret" "dag" {
+  metadata {
+    name      = "dag-secret"
+    namespace = "default"
+  }
+
+  data = {
+    POSTGRES_HOST     = var.rds_db_address
+    POSTGRES_PORT     = tostring(var.rds_db_port)
+    POSTGRES_DB       = var.rds_db_name
+    POSTGRES_USER     = var.mle_db_username
+    POSTGRES_PASSWORD = var.mle_db_password
+
+    S3_ENDPOINT_URL          = var.s3_internal_endpoint_url
+    S3_ACCESS_KEY            = var.aws_access_key
+    S3_SECRET_KEY            = var.aws_secret_key
+    S3_REGION                = var.s3_mle_bucket_aws_region
+    S3_MLE_BUCKET_NAME       = var.s3_mle_bucket
+
+    MLFLOW_TRACKING_URI    = local.mlflow_tracking_uri
+    MLFLOW_S3_ENDPOINT_URL = var.s3_internal_endpoint_url
+
+    AWS_ACCESS_KEY_ID      = var.aws_access_key
+    AWS_SECRET_ACCESS_KEY  = var.aws_secret_key
+    AWS_DEFAULT_REGION     = var.ecr_aws_region
+
+    SLACK_BOT_TOKEN = var.slack_bot_token
+    SLACK_APP_TOKEN = var.slack_app_token
+  }
+
+  depends_on = [helm_release.mlflow]
 }

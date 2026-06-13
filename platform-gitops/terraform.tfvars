@@ -6,5 +6,14 @@ aws_account_id              = "000000000000"
 rds_db_username             = "test"
 rds_db_password             = "test"
 
+mlflow_db_username          = "mlflow"
+mlflow_db_password          = "mlflow"
+
+mle_db_username             = "mle"
+mle_db_password             = "mle"
+
+mle_migrations_db_username  = "mle_migrations"
+mle_migrations_db_password  = "mle_migrations"
+
 slack_bot_token             = "xoxb-your-bot-token"
 slack_app_token             = "xapp-your-app-token"

@@ -1,8 +1,0 @@
-# Step 3: CA-backed issuer — signs all service certificates using the local CA
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: local-ca
-spec:
-  ca:
-    secretName: local-ca-secret
