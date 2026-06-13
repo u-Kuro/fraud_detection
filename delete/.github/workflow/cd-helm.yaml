@@ -1,0 +1,55 @@
+#name: CD — Deploy via Helm
+#
+#on:
+#  push:
+#    paths: ['infra/helm/**', 'dags/**']
+#    branches: [main]
+#
+#jobs:
+#  deploy:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Configure AWS for MiniStack
+#        run: |
+#          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws configure set region ${{ secrets.AWS_REGION }}
+#          aws configure set cli_pager ""
+#
+#      - name: Write kubeconfig
+#        run: |
+#          mkdir -p /tmp/kube
+#          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kube/k3s.yaml
+#          chmod 600 /tmp/kube/k3s.yaml
+#
+#      - name: Install Helm
+#        uses: azure/setup-helm@v4
+#
+#      - name: Deploy MLflow
+#        env:
+#          KUBECONFIG: /tmp/kube/k3s.yaml
+#        run: |
+#          helm repo add community-charts https://community-charts.github.io/helm-charts
+#          helm repo update
+#          helm upgrade --install mlflow community-charts/mlflow \
+#            --namespace default \
+#            --values infra/helm/mlflow/values.yaml \
+#            --reuse-values \
+#            --wait --timeout 5m
+#
+#      - name: Deploy FastAPI
+#        env:
+#          KUBECONFIG: /tmp/kube/k3s.yaml
+#        run: |
+#          helm upgrade --install fastapi infra/helm/fastapi \
+#            --namespace default \
+#            --set image.tag=${{ github.sha }} \
+#            --reuse-values \
+#            --wait --timeout 5m
+#
+#      - name: Sync DAGs to S3
+#        run: |
+#          aws --endpoint-url http://host.docker.internal:4566 s3 sync \
+#            ./dags/ s3://my-dags-bucket/dags/

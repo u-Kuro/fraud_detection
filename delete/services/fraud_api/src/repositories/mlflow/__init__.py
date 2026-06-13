@@ -1,0 +1,1 @@
+from services.fraud_api.src.repositories.mlflow.mlflow import client
