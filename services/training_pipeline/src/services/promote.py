@@ -9,23 +9,25 @@ Steps are idempotent (safe to re-run after crash).
 5. finalize_promotion() — DB finalization (delete pipeline_state, set status=active)
 """
 
-import logging
 import mlflow
 from mlflow import MlflowClient
-from sqlalchemy.engine import Engine
 
-from .environment import environment
-from .db import make_engine
-from .seaweedfs import make_s3, save_permanent_dataset, overwrite_reference_dataset
-from .pipeline_state import get_current_state, begin_promoting, finalize_promotion
+from services.training_pipeline.src.modules.environment import environment
+from services.training_pipeline.src.repositories.postgres.postgres import engine
+from services.training_pipeline.src.repositories.postgres.pipeline_state import (
+    get_current_state,
+    begin_promoting,
+    finalize_promotion,
+)
+from services.training_pipeline.src.repositories.s3.s3 import (
+    make_s3,
+    save_permanent_dataset,
+    overwrite_reference_dataset,
+)
+from services.shared.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-def promote(engine: Engine | None = None) -> None:
-    if engine is None:
-        engine = make_engine()
-
+def promote() -> None:
     state = get_current_state(engine)
     if state is None or state["state"] not in ("train_pending", "promoting"):
         raise RuntimeError(f"Cannot promote: unexpected pipeline_state={state}")

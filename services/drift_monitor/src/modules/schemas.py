@@ -6,12 +6,12 @@ class Environment(BaseSettings):
     # Postgres
     FRAUD_DETECTION_DB_NAME: str
 
-    # SeaweedFS / S3
-    SEAWEEDFS_S3_URL: str
-    SEAWEEDFS_ACCESS_KEY: str
-    SEAWEEDFS_SECRET_KEY: str
-    SEAWEEDFS_TRAINED_MODEL_DATASET_BUCKET: str
-    SEAWEEDFS_DRIFT_REPORTS_BUCKET: str
+    # S3
+    S3_ENDPOINT_URL: str
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
+    S3_MODEL_DATASETS_BUCKET: str
+    S3_DRIFT_REPORTS_BUCKET: str
 
     # Slack
     SLACK_WEBHOOK_URL: str
@@ -30,14 +30,6 @@ class Environment(BaseSettings):
     DRIFT_THRESHOLD: float = 0.5
     MINIMUM_ROWS: int = 500
     LOOKBACK_DAYS: int = 7
-
-    # OTel
-    OTEL_ENABLED: bool = False
-    OTEL_SERVICE_NAME: str = "drift_monitor"
-    OTEL_SERVICE_VERSION: str = "0.1.0"
-    OTEL_DEPLOYMENT_ENVIRONMENT: str = "development"
-    OTEL_URL: str = "http://otel_collector:4317"
-    OTEL_METRIC_EXPORT_INTERVAL_MS: int = 60_000
 
     @property
     def postgres_fraud_database_url(self) -> str:

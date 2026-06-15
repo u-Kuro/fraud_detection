@@ -1,0 +1,45 @@
+name: CD — Deploy Fraud API (Helm)
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: false
+        type: string
+  push:
+    paths:
+      - "platform-gitops/helm/fraud_detection/**"
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        run: |
+          aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region                ${{ secrets.AWS_REGION }}
+          aws configure set cli_pager             ""
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p /tmp/kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kube/k3s.yaml
+          chmod 600 /tmp/kube/k3s.yaml
+
+      - uses: azure/setup-helm@v4
+
+      - name: Helm upgrade
+        env:
+          KUBECONFIG: /tmp/kube/k3s.yaml
+          IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+        run: |
+          helm upgrade --install fraud-detection \
+            ./platform-gitops/helm/fraud_detection \
+            --namespace default \
+            --set image.tag=$IMAGE_TAG \
+            --reuse-values \
+            --wait --timeout 5m

@@ -6,18 +6,13 @@ from services.fraud_api.src.services.inference import FraudClassifier
 from services.fraud_api.src.repositories.postgres.fraud_inference_repository import (
     FraudInferenceRepository,
 )
-from services.fraud_api.src.services.observability import observability
-from services.fraud_api.src.services.middleware import RequestIdMiddleware
 from services.fraud_api.src.modules.environment import environment
 
 from services.fraud_api.src.controller.routers import health, inference
 from services.shared.logging import logger
 
-observability.init()
-
 fraud_classifier: FraudClassifier
 inference_repository: FraudInferenceRepository
-
 
 @asynccontextmanager
 async def lifespan(_):
@@ -44,10 +39,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-observability.observe_fastapi_application(app)
-
-# Middlewares
-app.add_middleware(RequestIdMiddleware)
 
 # Routers
 app.include_router(health.router)

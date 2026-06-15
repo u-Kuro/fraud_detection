@@ -1,1 +1,1 @@
-from postgres import engine
+from services.drift_monitor.src.repositories.postgres.postgres import engine

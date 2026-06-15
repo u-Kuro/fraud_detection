@@ -2,17 +2,6 @@ from typing import Literal, Optional, Protocol, runtime_checkable
 from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, Field
 
-
-@runtime_checkable
-class OtelEnvironment(Protocol):
-    OTEL_ENABLED: bool
-    OTEL_SERVICE_NAME: str
-    OTEL_SERVICE_VERSION: str
-    OTEL_DEPLOYMENT_ENVIRONMENT: str
-    OTEL_URL: str
-    OTEL_METRIC_EXPORT_INTERVAL_MS: int
-
-
 class PipelineStateRow(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     state: Literal["drift_pending", "train_pending", "promoting"]

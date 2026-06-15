@@ -5,14 +5,11 @@ from services.fraud_api.src.modules.schemas import (
     TransactionClassification,
 )
 from services.fraud_api.src.repositories.mlflow.models import MlflowModel
-from services.shared.observability import observe
-
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, class_name=self.__class__.__name__)
 
-    @observe
     def classify(
         self, transaction_details: TransactionDetails
     ) -> TransactionClassification:

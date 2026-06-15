@@ -1,0 +1,43 @@
+name: CD — Sync DAGs to S3 (MWAA)
+
+on:
+  push:
+    paths:
+      - "dags/**"
+    branches: [main]
+
+jobs:
+  sync-dags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax-check DAGs
+        run: |
+          python - <<'EOF'
+          import ast, glob, sys
+          errors = []
+          for f in sorted(glob.glob("dags/*.py")):
+              try:
+                  ast.parse(open(f).read())
+                  print(f"  OK  {f}")
+              except SyntaxError as e:
+                  errors.append(f)
+                  print(f"  ERR {f}: {e}")
+          if errors:
+              sys.exit(1)
+          EOF
+
+      - name: Configure AWS
+        run: |
+          aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region                ${{ secrets.AWS_REGION }}
+          aws configure set cli_pager             ""
+
+      - name: Sync DAGs to S3
+        run: |
+          aws --endpoint-url http://host.docker.internal:4566 s3 sync \
+            ./dags/ \
+            s3://dags/dags/ \
+            --delete

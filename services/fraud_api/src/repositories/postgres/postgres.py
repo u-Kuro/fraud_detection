@@ -1,5 +1,4 @@
 from services.fraud_api.src.modules.environment import environment
-from services.fraud_api.src.services.observability import observability
 from sqlalchemy import create_engine, Engine
 
 engine: Engine = create_engine(
@@ -8,4 +7,3 @@ engine: Engine = create_engine(
     pool_size=5,
     max_overflow=10,
 )
-observability.observe_sqlalchemy_engine(engine)

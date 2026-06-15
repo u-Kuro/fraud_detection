@@ -4,14 +4,10 @@ from services.fraud_api.src.modules.schemas import TransactionClassification
 from services.fraud_api.src.repositories import postgres
 from sqlalchemy import text
 
-from services.shared.observability import observe
-
-
 class FraudInferenceRepository:
     def __init__(self) -> None:
         self.engine = postgres.engine
 
-    @observe
     def insert(
         self,
         transaction_inference: TransactionClassification,

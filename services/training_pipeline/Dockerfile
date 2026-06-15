@@ -1,8 +1,5 @@
 FROM python:3.12.13-slim
 
-ARG TRAINING_PIPELINE_PORT
-
-ENV TRAINING_PIPELINE_PORT=$TRAINING_PIPELINE_PORT
 # Python console output optimizations
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -25,4 +22,4 @@ COPY /services/shared ./services/shared
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD exec uvicorn services.training_pipeline.src.main:app --host 0.0.0.0 --port $TRAINING_PIPELINE_PORT --workers 1
+CMD ["python", "-m", "services.training_pipeline.src.main"]

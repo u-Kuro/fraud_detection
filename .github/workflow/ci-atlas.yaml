@@ -1,0 +1,35 @@
+name: CI — Atlas Migrations (Lint + Apply)
+
+on:
+  push:
+    paths:
+      - "services/atlas/migrations/**"
+      - "services/atlas/atlas.hcl"
+    branches: ["**"]
+
+env:
+  POSTGRES_VERSION: "15"
+  POSTGRES_DB: "fraud_detection"
+  POSTGRES_CONNECTION_URI: ${{ secrets.POSTGRES_CONNECTION_URI }}
+
+jobs:
+  atlas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for --git-base diff
+
+      - name: Install Atlas CLI
+        run: |
+          curl -sSf https://atlasgo.sh | sh
+          atlas version
+
+      - name: Lint migrations
+        working-directory: services/atlas
+        run: atlas migrate lint --env ci --git-base origin/main
+
+      - name: Apply migrations (main only)
+        if: github.ref == 'refs/heads/main'
+        working-directory: services/atlas
+        run: atlas migrate apply --env ci --allow-dirty

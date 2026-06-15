@@ -16,7 +16,6 @@ import asyncio
 import sys, json
 from datetime import datetime, timezone, timedelta
 
-from services.drift_monitor.src.controllers.argo_workflows import submit_training_workflow
 from services.drift_monitor.src.controllers.slack import post_cold_start_notice_to_slack, update_drift_message, \
     post_drift_message
 from services.drift_monitor.src.repositories.postgres.deployed_models import has_any_active_deployed_model
@@ -24,12 +23,9 @@ from services.drift_monitor.src.repositories.postgres.pipeline_state import get_
     update_drift_message_id
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import load_current_window
 from services.drift_monitor.src.services.evidently import run_drift_report
-from services.drift_monitor.src.services.observability import observability
 from services.drift_monitor.src.modules.environment import environment
-from services.drift_monitor.src.repositories.seaweedfs import load_reference_parquet, upload_drift_report
+from services.drift_monitor.src.repositories.s3 import load_reference_parquet, upload_drift_report
 from services.shared.logging import logger
-
-observability.init()
 
 async def main() -> None:
     # ── No active model yet: skip drift, notify for first training ──────────

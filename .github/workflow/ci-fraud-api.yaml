@@ -1,0 +1,59 @@
+name: CI — Fraud API (Lint + Build + Push ECR)
+
+on:
+  push:
+    paths:
+      - "services/fraud_api/**"
+      - "services/shared/**"
+      - "pyproject.toml"
+      - "uv.lock"
+    branches: ["**"]
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install deps
+        run: uv sync --frozen --group fraud_api --group dev --no-install-project
+
+      - name: Lint
+        run: uv run ruff check services/fraud_api services/shared
+
+      # - name: Test
+      #   run: uv run pytest tests/fraud_api/ -v
+
+      - name: Configure AWS
+        run: |
+          aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region                ${{ secrets.AWS_REGION }}
+          aws configure set cli_pager             ""
+
+      - name: Login to ECR
+        # When running with --network ministack_network replace
+        # host.docker.internal:4566 with ministack:4566 (see running-with-act.txt)
+        run: |
+          aws --endpoint-url http://host.docker.internal:4566 ecr get-login-password \
+            | docker login --username AWS --password-stdin localhost:4566
+
+      - name: Build and push
+        env:
+          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud_detection_ecr
+        run: |
+          docker build \
+            --build-arg FRAUD_API_PORT=8000 \
+            -t $REPO:${{ github.sha }} \
+            -t $REPO:latest \
+            -f services/fraud_api/Dockerfile \
+            .
+          docker push $REPO:${{ github.sha }}
+          docker push $REPO:latest

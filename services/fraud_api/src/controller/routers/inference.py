@@ -4,7 +4,7 @@ from services.fraud_api.src.main import fraud_classifier, inference_repository
 from services.fraud_api.src.modules.schemas import TransactionDetails, ClassificationResponse
 from services.shared.logging import logger
 
-router = APIRouter(prefix="inference", tags=["inference"])
+router = APIRouter(prefix="/inference", tags=["inference"])
 
 @router.post("/classify")
 def classify(transaction_details: TransactionDetails) -> ClassificationResponse:
