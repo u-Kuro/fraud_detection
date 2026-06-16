@@ -3,7 +3,7 @@ from typing import Any
 import mlflow
 from services.fraud_api.src.modules.schemas import MlflowModelUri, DeployedModel
 from services.fraud_api.src.repositories.mlflow import client
-from services.shared.logging import logger
+from shared.logging import logger
 
 class MlflowModel:
     def __init__(self, mlflow_model_uri: MlflowModelUri, class_name: str):

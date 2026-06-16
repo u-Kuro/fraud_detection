@@ -9,7 +9,7 @@ from services.archiving.src.modules.environment import environment
 from services.archiving.src.repositories.postgres.postgres import engine
 from services.archiving.src.repositories.postgres.pipeline_state import get_archive_cutoff
 from services.archiving.src.repositories.s3.s3 import s3_client
-from services.shared.logging import logger
+from shared.logging import logger
 
 def _ensure_bucket(bucket: str) -> None:
     try:

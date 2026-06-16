@@ -37,7 +37,7 @@ async def post_cold_start_notice_to_slack() -> str:
             title="🆕 First Training Required",
             body=(
                 "No model has been deployed yet. "
-                "Click *Approve Training* to train the first model on the existing transaction data."
+                "Click *Approve Training* to train the first model."
             ),
             buttons=[
                 {
@@ -75,10 +75,10 @@ async def post_drift_message(drift_summary: dict):
     return response["ts"]
 
 @validate_call(validate_return=True)
-async def update_drift_message(drift_summary: dict, slack_message_id: str) -> str:
+async def update_drift_message(drift_summary: dict, drift_slack_ts: str) -> str:
     """Update an existing drift message in place."""
     response = await client.chat_update(
-        ts=slack_message_id,
+        ts=drift_slack_ts,
         channel=environment.SLACK_CHANNEL_ID,
         blocks=format_drift_blocks(drift_summary)
     )
@@ -99,13 +99,12 @@ def format_drift_blocks(drift_summary: dict) -> list:
     return blocks(
         title="⚠️ Model Retraining Required",
         body=(
-            "Significant data or concept drift has been detected in production."
-            " Click *Approve Retraining* to kick off a new training pipeline on the"
-            " latest transaction data.\n\n"
+            "Significant data or concept drift has been detected in production.\n\n"
     
-            "*Drift Summary*:\n"
             f"• *Features drift:* {features_drift_text}\n"
-            f"• *Concept drift:* {concept_drift_text}"
+            f"• *Concept drift:* {concept_drift_text}\n\n"
+
+            " Click *Approve Retraining*  to kick off a new training run."
         ),
         buttons=[
             {

@@ -20,7 +20,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --only-group fraud_api --no-install-project
 
 COPY /services/fraud_api ./services/fraud_api
-COPY /services/shared ./services/shared
+COPY /shared ./services/shared
 
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"

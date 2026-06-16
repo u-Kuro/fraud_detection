@@ -11,31 +11,31 @@ def get_pipeline_state() -> Optional[dict]:
         )).mappings().fetchone()
     return dict(row) if row else None
 
-def create_drift_pending(slack_message_id: str) -> None:
+def create_drift_pending(drift_slack_ts: str) -> None:
     with engine.connect() as connection:
         connection.execute(text("""
             INSERT INTO pipeline_state (
                 state,
-                drift_approved,
-                slack_message_id
+                training_approved,
+                drift_slack_ts
             )
             VALUES (
                'drift_pending',
                false,
-               :slack_message_id
+               :drift_slack_ts
            )
         """),{
-            "slack_message_id": slack_message_id
+            "drift_slack_ts": drift_slack_ts
         })
         connection.commit()
 
-def update_drift_message_id(slack_message_id: str) -> None:
+def update_drift_slack_ts(drift_slack_ts: str) -> None:
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE pipeline_state
-            SET slack_message_id = :slack_message_id
+            SET drift_slack_ts = :drift_slack_ts
         """),{
-            "slack_message_id": slack_message_id
+            "drift_slack_ts": drift_slack_ts
         })
         connection.commit()
 
@@ -44,24 +44,24 @@ def delete_state() -> None:
         conn.execute(text("DELETE FROM pipeline_state"))
         conn.commit()
 
-def update_state_after_training(
-    run_id: str,
-    model_version: int,
-    dataset_min_date: datetime,
-    dataset_max_date: datetime,
-) -> None:
-    with engine.connect() as conn:
-        conn.execute(text("""
-            UPDATE pipeline_state
-            SET state = 'train_pending',
-                run_id = :run_id,
-                model_version = :model_version,
-                dataset_min_date = :dataset_min_date,
-                dataset_max_date = :dataset_max_date
-        """), {
-            "run_id": run_id,
-            "model_version": model_version,
-            "dataset_min_date": dataset_min_date,
-            "dataset_max_date": dataset_max_date,
-        })
-        conn.commit()
+# def update_state_after_training(
+#     run_id: str,
+#     model_version: int,
+#     dataset_min_date: datetime,
+#     dataset_max_date: datetime,
+# ) -> None:
+#     with engine.connect() as conn:
+#         conn.execute(text("""
+#             UPDATE pipeline_state
+#             SET state = 'train_pending',
+#                 run_id = :run_id,
+#                 model_version = :model_version,
+#                 dataset_min_date = :dataset_min_date,
+#                 dataset_max_date = :dataset_max_date
+#         """), {
+#             "run_id": run_id,
+#             "model_version": model_version,
+#             "dataset_min_date": dataset_min_date,
+#             "dataset_max_date": dataset_max_date,
+#         })
+#         conn.commit()

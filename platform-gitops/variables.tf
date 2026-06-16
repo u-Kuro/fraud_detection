@@ -49,12 +49,8 @@ variable "aws_secret_key" {
   type      = string
   sensitive = true
 }
-variable "aws_region" {
-  type      = string
-}
-variable "aws_account_id" {
-  type      = string
-}
+variable "aws_region"     { type = string }
+variable "aws_account_id" { type = string }
 
 variable "rds_db_username" {
   type      = string
@@ -64,6 +60,7 @@ variable "rds_db_password" {
   type      = string
   sensitive = true
 }
+
 variable "mlflow_db_username" {
   type      = string
   sensitive = true
@@ -97,3 +94,8 @@ variable "slack_app_token" {
   type      = string
   sensitive = true
 }
+variable "slack_signing_secret" {
+  type = string
+  sensitive = true
+}
+variable "slack_channel_id" { type = string }

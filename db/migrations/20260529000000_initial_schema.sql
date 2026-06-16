@@ -14,12 +14,14 @@ CREATE TABLE pipeline_state (
     pipeline_state_id       INT                 NOT NULL        PRIMARY KEY     DEFAULT 1,
     created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
     state                   TEXT                NOT NULL,
-    drift_approved          BOOLEAN             NOT NULL        DEFAULT FALSE,
+    training_approved       BOOLEAN             NOT NULL        DEFAULT FALSE,
+    promote_approved        BOOLEAN             NOT NULL        DEFAULT FALSE,
     run_id                  TEXT                NULL,
     model_version           INT                 NULL,
     dataset_min_date        TIMESTAMPTZ         NULL,
     dataset_max_date        TIMESTAMPTZ         NULL,
-    slack_message_id        TEXT                NOT NULL,
+    drift_slack_ts          TEXT                NOT NULL,
+    promote_slack_ts        TEXT                NOT NULL,
 --     drift_count             INT                 NOT NULL        DEFAULT 0,
     CONSTRAINT state_check CHECK (state IN ('drift_pending', 'train_pending', 'promoting'))
 );

@@ -9,7 +9,7 @@ from services.fraud_api.src.repositories.postgres.fraud_inference_repository imp
 from services.fraud_api.src.modules.environment import environment
 
 from services.fraud_api.src.controller.routers import health, inference
-from services.shared.logging import logger
+from shared.logging import logger
 
 fraud_classifier: FraudClassifier
 inference_repository: FraudInferenceRepository

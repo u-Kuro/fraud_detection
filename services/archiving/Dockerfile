@@ -17,7 +17,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --only-group archiving --no-install-project
 
 COPY /services/archiving ./services/archiving
-COPY /services/shared ./services/shared
+COPY /shared ./services/shared
 
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"

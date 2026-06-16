@@ -10,20 +10,11 @@ class Environment(BaseSettings):
     S3_ENDPOINT_URL: str
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
-    S3_MODEL_DATASETS_BUCKET: str
-    S3_DRIFT_REPORTS_BUCKET: str
+    S3_MLE_BUCKET: str
 
     # Slack
-    SLACK_WEBHOOK_URL: str
-    SLACK_CHANNEL: str = "#ml-alerts"
     SLACK_BOT_USER_AUTH_TOKEN: str
     SLACK_CHANNEL_ID: str
-
-    # Argo Workflows (used to submit training when approved)
-    ARGO_SERVER_URL: str = "http://argo-workflows-server:2746"
-    ARGO_WORKFLOW_TEMPLATE_NAME: str = "training-pipeline"
-    ARGO_NAMESPACE: str = "ml-pipeline"
-    ARGO_TOKEN: str = ""  # SA token; empty in-cluster uses projected SA
 
     # Drift thresholds
     MAX_SELECTED_ROWS: int = 50_000
@@ -32,5 +23,13 @@ class Environment(BaseSettings):
     LOOKBACK_DAYS: int = 7
 
     @property
-    def postgres_fraud_database_url(self) -> str:
+    def POSTGRES_FRAUD_DB_URL(self) -> str:
         return f"postgresql:///${self.FRAUD_DETECTION_DB_NAME}"
+
+    @property
+    def S3_PIPELINE_REFERENCE_PATH(self) -> str:
+        return "pipeline/reference"
+
+    @property
+    def S3_PIPELINE_DRIFT_REPORTS_PATH(self) -> str:
+        return "pipeline/drift-reports"

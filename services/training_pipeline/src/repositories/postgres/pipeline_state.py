@@ -3,10 +3,10 @@
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import text
-from sqlalchemy.engine import Engine
 
+from services.training_pipeline.src.repositories.postgres import engine
 
-def get_latest_deployed_max_date(engine: Engine) -> datetime:
+def get_latest_deployed_max_date() -> datetime:
     """Lower bound for training data — use data strictly after this timestamp."""
     with engine.connect() as conn:
         val = conn.execute(
@@ -20,8 +20,7 @@ def get_latest_deployed_max_date(engine: Engine) -> datetime:
         else datetime(1970, 1, 1, tzinfo=timezone.utc)
     )
 
-
-def get_current_state(engine: Engine) -> Optional[dict]:
+def get_current_state() -> Optional[dict]:
     with engine.connect() as conn:
         row = (
             conn.execute(text("SELECT * FROM pipeline_state LIMIT 1"))
@@ -30,9 +29,7 @@ def get_current_state(engine: Engine) -> Optional[dict]:
         )
     return dict(row) if row else None
 
-
 def update_after_training(
-    engine: Engine,
     run_id: str,
     model_version: int,
     dataset_min_date: datetime,
@@ -44,22 +41,29 @@ def update_after_training(
             UPDATE pipeline_state
             SET state = 'train_pending',
                 run_id = :run_id,
-                model_version = :mv,
-                dataset_min_date = :dmin,
-                dataset_max_date = :dmax
+                model_version = :model_version,
+                dataset_min_date = :dataset_min_date,
+                dataset_max_date = :dataset_max_date
         """),
             {
                 "run_id": run_id,
-                "mv": model_version,
-                "dmin": dataset_min_date,
-                "dmax": dataset_max_date,
+                "model_version": model_version,
+                "dataset_min_date": dataset_min_date,
+                "dataset_max_date": dataset_max_date,
             },
         )
         conn.commit()
 
+def update_promote_slack_ts(promote_slack_ts: str) -> None:
+    with engine.connect() as conn:
+        conn.execute(text("""
+            UPDATE pipeline_state SET promote_slack_ts = :promote_slack_ts
+        """), {
+            "promote_slack_ts": promote_slack_ts
+        })
+        conn.commit()
 
 def begin_promoting(
-    engine: Engine,
     run_id: str,
     model_name: str,
     model_version: int,
@@ -70,30 +74,44 @@ def begin_promoting(
     with engine.connect() as conn:
         conn.execute(
             text("""
-            INSERT INTO deployed_models (model_name, model_version, dataset_min_date, dataset_max_date, status, promoted_at)
-            VALUES (:name, :mv, :dmin, :dmax, 'promoting', NOW())
-            ON CONFLICT (model_name, model_version) DO UPDATE SET status = 'promoting'
+            INSERT INTO deployed_models (
+                model_name,
+                model_version,
+                dataset_min_date,
+                dataset_max_date,
+                status
+            )
+            VALUES (
+                :name,
+                :model_version,
+                :dataset_min_date,
+                :dataset_max_date,
+                'promoting'
+            )
+            ON CONFLICT (model_name, model_version)
+            DO UPDATE SET status = 'promoting'
         """),
             {
-                "name": model_name,
-                "mv": model_version,
-                "dmin": dataset_min_date,
-                "dmax": dataset_max_date,
+                "model_name": model_name,
+                "model_version": model_version,
+                "dataset_min_date": dataset_min_date,
+                "dataset_max_date": dataset_max_date,
             },
         )
         conn.execute(text("UPDATE pipeline_state SET state = 'promoting'"))
         conn.commit()
 
 
-def finalize_promotion(engine: Engine, model_name: str, model_version: int) -> None:
+def finalize_promotion(model_name: str, model_version: int) -> None:
     """Atomically set deployed_model active and delete pipeline_state."""
     with engine.connect() as conn:
-        conn.execute(
-            text("""
-            UPDATE deployed_models SET status = 'active'
-            WHERE model_name = :name AND model_version = :mv
-        """),
-            {"name": model_name, "mv": model_version},
-        )
+        conn.execute(text("""
+            UPDATE deployed_models
+            SET status = 'active'
+            WHERE model_name = :model_name AND model_version = :model_version
+        """), {
+            "model_name": model_name,
+            "model_version": model_version
+        })
         conn.execute(text("DELETE FROM pipeline_state"))
         conn.commit()

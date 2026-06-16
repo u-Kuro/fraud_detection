@@ -3,13 +3,18 @@ locals {
   requirements_file_name          = "requirements.txt"
   temporary_kubeconfig_file_path  = "$env:TEMP\\airflow_kubeconfig.yaml"
   airflow_kubeconfig_s3_uri       = "s3://${var.s3_mle_bucket}/${local.dag_s3_path}/kubeconfig.yaml"
+  postgres_connection             = "postgresql://${var.mle_db_username}:${var.mle_db_password}@${var.rds_db_address}:5432/${var.rds_db_name}"
 }
 
 # Airflow needs this provider installed to run KubernetesPodOperator.
 resource "aws_s3_object" "requirements" {
   bucket  = var.s3_mle_bucket
   key     = local.requirements_file_name
-  content = "apache-airflow-providers-cncf-kubernetes\n"
+  content = <<-REQ
+    apache-airflow-providers-cncf-kubernetes
+    apache-airflow-providers-postgres
+    apache-airflow-providers-slack-sdk
+  REQ
 }
 
 # Upload the Docker-internal kubeconfig to S3 so Airflow can mount it.
@@ -45,6 +50,12 @@ resource "aws_mwaa_environment" "main" {
 
   dag_s3_path           = "${local.dag_s3_path}/"
   requirements_s3_path  = local.requirements_file_name
+
+  # Exposes the fraud_detection postgres as an Airflow connection.
+  # DAG Python sensor tasks use PostgresHook(postgres_conn_id="fraud_detection_postgres").
+  environment_variables  = {
+    AIRFLOW_CONN_FRAUD_DETECTION_POSTGRES = local.postgres_connection
+  }
 
   network_configuration {
     security_group_ids = ["sg-00000000000000001"]

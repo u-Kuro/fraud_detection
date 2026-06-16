@@ -3,6 +3,6 @@ from sqlalchemy import create_engine, Engine
 from sqlalchemy.pool import NullPool
 
 engine: Engine = create_engine(
-    environment.postgres_fraud_database_url,
+    environment.POSTGRES_FRAUD_DB_URL,
     poolclass=NullPool
 )

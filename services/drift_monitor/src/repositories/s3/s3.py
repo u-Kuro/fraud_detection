@@ -20,32 +20,28 @@ def ensure_bucket(bucket: str) -> None:
     except: s3.create_bucket(Bucket=bucket)
 
 def load_reference_parquet() -> pa.Table | None:
-    """Return the reference dataset table, or None if it does not exist yet."""
     try:
         object = s3.get_object(
-            Bucket=environment.S3_TRAINED_MODEL_DATASET_BUCKET,
-            Key="reference/dataset.parquet",
+            Bucket=environment.S3_MLE_BUCKET,
+            Key=f"{environment.S3_PIPELINE_REFERENCE_PATH}/latest.parquet",
         )
         buffer = io.BytesIO(object["Body"].read())
         return pq.read_table(buffer)
-    except s3.exceptions.NoSuchKey:
-        return None
-    except:
+    except Exception:
         return None
 
 def upload_drift_report(html_bytes: bytes, json_bytes: bytes) -> None:
-    ensure_bucket(environment.S3_DRIFT_REPORTS_BUCKET)
+    ensure_bucket(environment.S3_MLE_BUCKET)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    filename = f"{timestamp}_drift_report"
     s3.upload_fileobj(
         Fileobj=io.BytesIO(html_bytes),
-        Bucket=environment.S3_DRIFT_REPORTS_BUCKET,
-        Key=f"{filename}.html",
+        Bucket=environment.S3_MLE_BUCKET,
+        Key=f"{environment.S3_PIPELINE_DRIFT_REPORTS_PATH}/{timestamp}.html",
     )
     s3.put_object(
-        Bucket=environment.S3_DRIFT_REPORTS_BUCKET,
-        Key=f"{filename}.json",
+        Bucket=environment.S3_MLE_BUCKET,
+        Key=f"{environment.S3_PIPELINE_DRIFT_REPORTS_PATH}/{timestamp}.json",
         Body=json_bytes,
         ContentType="application/json",
     )

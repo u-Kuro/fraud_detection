@@ -11,6 +11,7 @@ mlflow = [
 ]
 fraud_api = [
     "fastapi>=0.136.1",
+    "httpx>=0.28.1",
     "mlflow>=3.12.0",
     "pandas>=2.3.3",
     "psycopg2-binary>=2.9.12",
@@ -28,6 +29,8 @@ drift_monitor = [
     "evidently>=0.7.21",
     "pandas>=2.3.3",
     "psycopg2-binary>=2.9.12",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
     "pyarrow>=23.0.1",
     "python-json-logger>=4.1.0",
     "slack-sdk>=3.42.0",
@@ -35,12 +38,15 @@ drift_monitor = [
 ]
 training_pipeline = [
     "boto3>=1.43.14",
+    "httpx>=0.28.1",
     "imbalanced-learn>=0.14.1",
     "mlflow>=3.12.0",
     "numpy>=2.4.5",
     "optuna>=4.8.0",
     "pandas>=2.3.3",
     "psycopg2-binary>=2.9.12",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
     "pyarrow>=23.0.1",
     "python-json-logger>=4.1.0",
     "scikit-learn>=1.8.0",
@@ -51,6 +57,8 @@ training_pipeline = [
 archiving = [
     "boto3>=1.43.14",
     "psycopg2-binary>=2.9.12",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
     "pyarrow>=23.0.1",
     "python-json-logger>=4.1.0",
     "sqlalchemy>=2.0.49",
@@ -81,8 +89,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-env = [
-]
+env = []
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }

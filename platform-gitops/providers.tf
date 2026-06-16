@@ -5,12 +5,13 @@ provider "aws" {
   region     = var.aws_region
 
   endpoints {
-    eks  = var.eks_service_endpoint_url
-    s3   = var.s3_service_endpoint_url
-    ecr  = "http://localhost:4566"
-    mwaa = "http://localhost:4566"
-    rds  = "http://localhost:4566"
-    iam  = "http://localhost:4566"
+    eks             = var.eks_service_endpoint_url
+    s3              = var.s3_service_endpoint_url
+    ecr             = "http://localhost:4566"
+    mwaa            = "http://localhost:4566"
+    rds             = "http://localhost:4566"
+    secretsmanager  = "http://localhost:4566"
+    iam             = "http://localhost:4566"
   }
 
   # MiniStack S3 requires path-style — virtual-hosted style
