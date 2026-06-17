@@ -53,7 +53,7 @@ resource "kubernetes_config_map" "platform_infra" {
 
   data = {
     POSTGRES_HOST           = var.rds_db_address
-    POSTGRES_PORT           = tostring(var.rds_db_port)
+    POSTGRES_PORT           = var.rds_db_port
     FRAUD_DETECTION_DB_NAME = var.rds_db_name
     MLFLOW_TRACKING_URI     = local.mlflow_tracking_uri
     S3_ENDPOINT_URL         = var.s3_internal_endpoint_url

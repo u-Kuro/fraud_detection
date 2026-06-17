@@ -3,8 +3,8 @@ name: CI — Atlas Migrations (Lint + Apply)
 on:
   push:
     paths:
-      - "services/atlas/migrations/**"
-      - "services/atlas/atlas.hcl"
+      - "db/migrations/**"
+      - "db/atlas.hcl"
     branches: ["**"]
 
 env:
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # needed for --git-base diff
+          fetch-depth: 0
 
       - name: Install Atlas CLI
         run: |
@@ -26,10 +26,10 @@ jobs:
           atlas version
 
       - name: Lint migrations
-        working-directory: services/atlas
+        working-directory: db
         run: atlas migrate lint --env ci --git-base origin/main
 
       - name: Apply migrations (main only)
         if: github.ref == 'refs/heads/main'
-        working-directory: services/atlas
+        working-directory: db
         run: atlas migrate apply --env ci --allow-dirty

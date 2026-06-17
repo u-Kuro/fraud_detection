@@ -1,13 +1,23 @@
 replicaCount: 1
 
 image:
+  # Repository is overridden by cd-fraud-api.yml --set image.repository=...
+  repository: "000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection-api"
   tag: latest
   pullPolicy: Always
 
-# ecr-secret is created by initialize-ministack-k3s.ps1 during Terraform apply.
+# ecr-secret is created by initialize-ministack-k3s.ps1 during Terraform EKS init.
+imagePullSecrets:
+  - name: ecr-secret
 
 service:
   type: NodePort
+  port: 30000
+  nodePort: 30000
 
-# All env vars (DB, Slack, MLflow) come from the kubernetes_secret
-# "fraud_detection_secrets" managed by Terraform — no plaintext in this file.
+# fraud-detection-secret is created/updated by cd-fraud-api.yml from Secrets Manager.
+# Managed by CI/CD — not by Terraform.
+secretName: fraud-detection-secret
+
+# Rolled during secret rotation to force a new ReplicaSet without changing image.
+podAnnotations: {}

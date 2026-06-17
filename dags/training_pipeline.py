@@ -1,22 +1,28 @@
+"""
+training_pipeline DAG — triggered by drift_monitor when training is approved.
+
+1. run_training        — trains the model; container posts/updates the promotion Slack message.
+2. wait_for_promotion  — sensor polls promote_approved in pipeline_state.
+3. run_promotion       — promotes candidate to production; calls fraud_api /internal/reload-model.
+"""
 from __future__ import annotations
 
-import os
 from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 from airflow.models import Variable
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from kubernetes import client as k8s
-from sqlalchemy import create_engine, text
 
-KUBECONFIG = "/usr/local/airflow/dags/kubeconfig.yaml"
-ECR_REGISTRY = Variable.get("ecr_registry", default_var="000000000000.dkr.ecr.us-east-1.amazonaws.com")
-IMAGE = f"{ECR_REGISTRY}/training_pipeline_ecr:latest"
+KUBECONFIG    = "/usr/local/airflow/dags/kubeconfig.yaml"
+ECR_REGISTRY  = Variable.get("ecr_registry", default_var="000000000000.dkr.ecr.us-east-1.amazonaws.com")
+IMAGE         = f"{ECR_REGISTRY}/fraud-detection-training-pipeline:latest"
 
 DEFAULT_ARGS = {
-    "owner": "mle",
-    "retries": 1,
-    "retry_delay": timedelta(minutes=10),
+    "owner":            "mle",
+    "retries":          1,
+    "retry_delay":      timedelta(minutes=10),
     "email_on_failure": False,
 }
 
@@ -52,21 +58,15 @@ def training_pipeline_dag():
     @task.sensor(
         task_id="wait_for_promotion_approval",
         poke_interval=60,
-        timeout=86400,
+        timeout=604800,    # 1-week timeout
         mode="reschedule",
     )
     def wait_for_promotion_approval():
-        """Polls pipeline_state until a human approves via the fraud_api webhook."""
-        pg_url = (
-            f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
-            f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
+        """Polls until a human approves via Slack → fraud_api action handler."""
+        hook = PostgresHook(postgres_conn_id="fraud_detection_postgres")
+        row  = hook.get_first(
+            "SELECT promote_approved::INTEGER FROM pipeline_state WHERE state = 'train_pending' LIMIT 1"
         )
-        eng = create_engine(pg_url, pool_pre_ping=True)
-        with eng.connect() as conn:
-            row = conn.execute(text(
-                "SELECT drift_approved FROM pipeline_state WHERE state = 'train_pending' LIMIT 1"
-            )).fetchone()
-        eng.dispose()
         return row is not None and bool(row[0])
 
     run_promotion = KubernetesPodOperator(

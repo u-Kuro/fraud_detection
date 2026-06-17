@@ -89,12 +89,14 @@ def format_drift_blocks(drift_summary: dict) -> list:
     dd = drift_summary.get("data_drift", {})
     cd = drift_summary.get("concept_drift", {})
 
-    features_drift_text = \
-        f"{dd.get('share_drifted_features', 0.0):.1%}" \
-        f" {dd.get('number_of_drifted_features', 0)}" \
+    features_drift_text = (
+        f"{dd.get('share_drifted_features', 0.0):.1%}" 
+        f" {dd.get('number_of_drifted_features', 0)}" 
         f" / {dd.get('total_features', 0)}"
-    concept_drift_text = \
+    )
+    concept_drift_text = (
         f"{cd.get('f1_delta', 'n/a')} F1 Δ"
+    )
 
     return blocks(
         title="⚠️ Model Retraining Required",

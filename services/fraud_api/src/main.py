@@ -2,13 +2,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from services.fraud_api.src.controller.routers.slack import start_socket_mode
 from services.fraud_api.src.services.inference import FraudClassifier
 from services.fraud_api.src.repositories.postgres.fraud_inference_repository import (
     FraudInferenceRepository,
 )
 from services.fraud_api.src.modules.environment import environment
 
-from services.fraud_api.src.controller.routers import health, inference
+from services.fraud_api.src.controller.routers import health, inference, slack
 from shared.logging import logger
 
 fraud_classifier: FraudClassifier
@@ -28,10 +29,11 @@ async def lifespan(_):
         logger.critical(f"Startup failed: {exception}", exc_info=True)
         raise RuntimeError("Startup failed") from exception
 
+    start_socket_mode()
+
     yield
 
     logger.info("Shutting down.")
-
 
 app = FastAPI(
     title="Fraud Detection API",
@@ -43,7 +45,7 @@ app = FastAPI(
 # Routers
 app.include_router(health.router)
 app.include_router(inference.router)
-
+app.include_router(slack.router)
 
 @app.get("/", include_in_schema=False)
 def root():

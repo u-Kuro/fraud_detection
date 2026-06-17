@@ -1,1 +1,1 @@
-from s3 import s3_client
+from services.archiving.src.repositories.s3.s3 import s3_client

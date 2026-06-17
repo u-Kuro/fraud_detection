@@ -1,4 +1,4 @@
-name: CD — Deploy Fraud API (Helm)
+name: CD — Deploy Fraud API (Secrets + Helm)
 
 on:
   workflow_call:
@@ -30,8 +30,33 @@ jobs:
           echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kube/k3s.yaml
           chmod 600 /tmp/kube/k3s.yaml
 
+      # Step 3 — Fetch current secret from Secrets Manager and apply to k8s.
+      # The superset approach: any NEW_KEY is included so old and new pods can both work
+      # during the rolling update window.
+      - name: Sync fraud-detection-secret from Secrets Manager
+        env:
+          KUBECONFIG: /tmp/kube/k3s.yaml
+        run: |
+          aws --endpoint-url http://ministack:4566 secretsmanager get-secret-value \
+            --secret-id /fraud-detection/fraud-api \
+            --query SecretString --output text \
+          | python3 -c "
+          import json, sys
+          for k, v in json.load(sys.stdin).items():
+              if not k.endswith('_PREVIOUS'):
+                  print(f'{k}={v}')
+          " > /tmp/fraud-api.env
+          
+          kubectl create secret generic fraud-detection-secret \
+            --from-env-file=/tmp/fraud-api.env \
+            --namespace default \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          rm /tmp/fraud-api.env
+
       - uses: azure/setup-helm@v4
 
+      # Step 4 — Rolling update; old pods keep old env, new pods get updated secret
       - name: Helm upgrade
         env:
           KUBECONFIG: /tmp/kube/k3s.yaml
@@ -41,5 +66,6 @@ jobs:
             ./platform-gitops/helm/fraud_detection \
             --namespace default \
             --set image.tag=$IMAGE_TAG \
+            --set image.repository=localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection-api \
             --reuse-values \
             --wait --timeout 5m

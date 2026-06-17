@@ -20,6 +20,3 @@ variable "s3_mlflow_bucket_aws_region"  { type = string }
 variable "s3_mlflow_bucket"             { type = string }
 variable "s3_mle_bucket_aws_region"     { type = string }
 variable "s3_mle_bucket"                { type = string }
-
-variable "ecr_registry_endpoint"    { type = string }
-variable "ecr_registry_secret_name" { type = string }

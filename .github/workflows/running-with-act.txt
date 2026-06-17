@@ -1,58 +1,48 @@
-# Example .secrets
+# ── Prerequisites ─────────────────────────────────────────────────────────────
+# .secrets file (gitignored):
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
-KUBECONFIG_B64=<generated below>
+KUBECONFIG_B64=<see below>
+POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:5432/fraud_detection?sslmode=disable
 
-# Add k3s.yaml as Base64 string to secrets
-$b64 = [Convert]::ToBase64String(
-    [IO.File]::ReadAllBytes(".\platform-gitops\kubeconfig\k3s.yaml")
-)
+# Generate KUBECONFIG_B64 (PowerShell):
+$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes(".\platform-gitops\kubeconfig\k3s.yaml"))
 Add-Content .secrets "KUBECONFIG_B64=$b64"
 
-# CI — build and push image
-act push -W .github/workflows/ci-ecr.yml --secret-file .secrets
+# Get rds_address:
+cd platform-gitops && terraform output -raw aws_rds_db_address
 
-# CD — deploy Helm + sync DAGs
-act push -W .github/workflows/cd-helm.yml --secret-file .secrets
+# ── Run individual workflows ───────────────────────────────────────────────────
+# CI: lint + build fraud_api image
+act push --network ministack_network -W .github/workflows/ci-fraud-api.yml --secret-file .secrets
 
-# Run on ministack_network: all services resolve by Docker DNS,
-# use http://ministack:4566 instead of host.docker.internal:4566,
-# and the internal kubeconfig addresses resolve correctly inside the container.
-act push --network ministack_network `
-         -W .github/workflows/cd-helm.yml `
-         --secret-file .secrets
+# CI: lint + build drift_monitor image
+act push --network ministack_network -W .github/workflows/ci-drift-monitor.yml --secret-file .secrets
 
-# List all detected workflows
-act -l
+# CI: lint + build training_pipeline image
+act push --network ministack_network -W .github/workflows/ci-training-pipeline.yml --secret-file .secrets
 
-# Run a specific job
-act -j build-push --secret-file .secrets
+# CI: lint + build archiving image
+act push --network ministack_network -W .github/workflows/ci-archiving.yml --secret-file .secrets
 
-# ── Additional secrets needed ────────────────────────────────────────────────
-# Get rds_address: cd platform-gitops && terraform output -raw aws_rds_db_address
-POSTGRES_CONNECTION_URI=postgresql://mle_migrations:test@<rds_address>:5432/fraud_detection?sslmode=disable
-
-# ── New workflow runs ─────────────────────────────────────────────────────────
-
-# CI: lint + push fraud_api image
-act push -W .github/workflows/ci-fraud-api.yml --secret-file .secrets
-
-# CI: atlas lint (non-main branch — no apply)
-act push -W .github/workflows/ci-atlas.yml --secret-file .secrets
+# CI: atlas lint (non-main branch — lint only)
+act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets
 
 # CI: atlas lint + apply (simulate main push)
-act push -W .github/workflows/ci-atlas.yml --secret-file .secrets \
-         -e '{"ref":"refs/heads/main"}'
+act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets \
+     -e '{"ref":"refs/heads/main"}'
 
-# CD: helm upgrade
-act push -W .github/workflows/cd-fraud-api.yml --secret-file .secrets
-
-# CD: sync DAGs to S3
-act push -W .github/workflows/cd-dags.yml --secret-file .secrets
-
-# ── All new workflows on ministack_network ────────────────────────────────────
-act push --network ministack_network -W .github/workflows/ci-fraud-api.yml --secret-file .secrets
-act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets
+# CD: deploy fraud_api (sync secret + helm upgrade)
 act push --network ministack_network -W .github/workflows/cd-fraud-api.yml --secret-file .secrets
+
+# CD: sync DAGs to S3 + refresh mle-pipeline-secret
 act push --network ministack_network -W .github/workflows/cd-dags.yml --secret-file .secrets
+
+# CD: rotate a credential (example: rotate fraud-api POSTGRES_PASSWORD)
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-secret-rotation.yml \
+     --secret-file .secrets \
+     -e '{"inputs":{"target":"fraud-api","secret_key":"POSTGRES_PASSWORD","new_secret_value":"newpass123"}}'
+
+# ── List all detected workflows ───────────────────────────────────────────────
+act -l

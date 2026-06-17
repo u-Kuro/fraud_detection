@@ -38,9 +38,6 @@ variable "s3_internal_endpoint_url" {
   default   = "http://ministack:4566"
 }
 
-# service endpoint url for eks s3
-# registry endpoint url for ecr (mini
-#
 variable "aws_access_key" {
   type      = string
   sensitive = true

@@ -1,1 +1,1 @@
-from fraud_classifier import FraudClassifier
+from services.fraud_api.src.services.inference.fraud_classifier import FraudClassifier

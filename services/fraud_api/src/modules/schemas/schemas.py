@@ -81,26 +81,28 @@ class ApiConfig(BaseModel):
     prediction_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
     max_latency_ms: float = Field(default=500.0, gt=0.0)
 
-class DriftUpdateResponse(BaseModel):
-    status: str
-    share_drifted_features: float = Field(ge=0.0, le=1.0)
-
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
 
 class Environment(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
+
+    # Postgres
     FRAUD_DETECTION_DB_NAME: str
+
+    # MLflow
     MLFLOW_TRACKING_URI: str
     MLFLOW_MODEL_URI: str
+
+    # Slack
     SLACK_BOT_USER_AUTH_TOKEN: str
     SLACK_APP_LEVEL_TOKEN: str
     SLACK_CHANNEL_ID: str
     SLACK_SIGNING_SECRET: str
 
     @property
-    def postgres_fraud_database_url(self) -> str:
+    def POSTGRES_FRAUD_DB_URL(self) -> str:
         return f"postgresql:///${self.FRAUD_DETECTION_DB_NAME}"
 
     @property

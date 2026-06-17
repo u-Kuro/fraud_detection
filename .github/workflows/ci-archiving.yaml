@@ -1,9 +1,9 @@
-name: CI — Fraud API (Lint + Build + Push ECR)
+name: CI — Archiving (Lint + Build + Push ECR)
 
 on:
   push:
     paths:
-      - "services/fraud_api/**"
+      - "services/archiving/**"
       - "shared/**"
       - "pyproject.toml"
       - "uv.lock"
@@ -23,10 +23,10 @@ jobs:
         run: pip install uv
 
       - name: Install deps
-        run: uv sync --frozen --group fraud_api --group dev --no-install-project
+        run: uv sync --frozen --group archiving --group dev --no-install-project
 
       - name: Lint
-        run: uv run ruff check services/fraud_api shared
+        run: uv run ruff check services/archiving shared
 
       - name: Configure AWS
         run: |
@@ -42,13 +42,12 @@ jobs:
 
       - name: Build and push
         env:
-          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection-api
+          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection-archiving
         run: |
           docker build \
-            --build-arg FRAUD_API_PORT=8000 \
             -t $REPO:${{ github.sha }} \
             -t $REPO:latest \
-            -f services/fraud_api/Dockerfile \
+            -f services/archiving/Dockerfile \
             .
           docker push $REPO:${{ github.sha }}
           docker push $REPO:latest

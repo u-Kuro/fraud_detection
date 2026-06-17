@@ -51,8 +51,6 @@ module "helm_apps" {
   aws_access_key              = var.aws_access_key
   aws_secret_key              = var.aws_secret_key
   aws_account_id              = var.aws_account_id
-  ecr_registry_endpoint       = var.ecr_registry_endpoint
-  ecr_registry_secret_name    = var.ecr_registry_secret_name
   s3_internal_endpoint_url    = var.s3_internal_endpoint_url
   s3_mlflow_bucket_aws_region = module.s3.mlflow_bucket_aws_region
   s3_mlflow_bucket            = module.s3.mlflow_bucket_name

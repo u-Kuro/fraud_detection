@@ -1,2 +1,2 @@
-import fraud_inference_repository as FraudInferenceRepository
-from postgres import engine
+from services.fraud_api.src.repositories.postgres.postgres import engine
+from services.fraud_api.src.repositories.postgres.fraud_inference_repository import FraudInferenceRepository

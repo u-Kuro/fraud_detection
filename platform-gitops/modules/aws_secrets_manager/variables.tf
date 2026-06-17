@@ -21,8 +21,8 @@ variable "s3_secret_key" {
   sensitive = true
 }
 variable "s3_aws_region"    { type = string }
-variable "s3_mle_bucket"    { type = string }
 variable "s3_mlflow_bucket" { type = string }
+variable "s3_mle_bucket"    { type = string }
 
 variable "mlflow_tracking_uri" { type = string }
 variable "fraud_api_url" { type = string }

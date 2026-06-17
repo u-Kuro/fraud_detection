@@ -18,9 +18,9 @@ class FraudInferenceRepository:
                 text(f"""
                     WITH active_model AS (
                         SELECT model_id FROM deployed_models
-                        WHERE model_name = :model_name
+                        WHERE model_name    = :model_name
                           AND model_version = :model_version
-                          AND status = 'active'
+                          AND status        = 'active'
                         LIMIT 1
                     )
                     INSERT INTO transaction_inferences(
@@ -46,9 +46,11 @@ class FraudInferenceRepository:
                 """),
                 {
                     **transaction_inference.model_dump(),
-                    "is_fraud": is_fraud
-                    if is_fraud is not None
-                    else transaction_inference.is_fraud,
+                    "is_fraud": (
+                        is_fraud
+                        if is_fraud is not None
+                        else transaction_inference.is_fraud
+                    ),
                 },
             )
             connection.commit()

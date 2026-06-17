@@ -37,13 +37,6 @@ env "ci" {
   }
 }
 
-env "docker" {
-  url = var.url
-  migration {
-    dir = var.dir
-  }
-}
-
 env "production" {
   url = var.url
   migration {

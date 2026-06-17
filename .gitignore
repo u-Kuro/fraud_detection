@@ -25,10 +25,6 @@ platform-gitops/terraform.tfvars
 models
 mlflow.db
 
-# Postgres
-infra/postgres/sample-queries.sql
-infra/postgres/fraud_detection/raw_data/creditcard_transactions.csv
-
 # Others
 .idea
 .mypy_cache

@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Protocol, runtime_checkable
+from typing import Literal, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, Field
 
