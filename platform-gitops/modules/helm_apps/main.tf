@@ -1,6 +1,5 @@
 locals {
   shared_namespace = "default"
-
   mlflow_host = "mlflow"
   mlflow_port = 5000
   mlflow_tracking_uri = "http://${local.mlflow_host}:${local.mlflow_port}"
@@ -44,21 +43,29 @@ resource "helm_release" "mlflow" {
   # TODO - explain all keys and values in all yaml
 }
 
-# Non-sensitive infra connectivity — MLE reads this without ever touching platform-gitops.
-resource "kubernetes_config_map" "platform_infra" {
+# Non-sensitive infrastructure connectivity facts.
+# MLE pods mount this via envFrom.configMapRef alongside their own secret.
+# Platform team owns all values here — none are MLE business logic.
+resource "kubernetes_config_map" "platform_infrastructure" {
   metadata {
-    name      = "platform-infra"
+    name      = "platform-infrastructure"
     namespace = local.shared_namespace
   }
 
   data = {
-    POSTGRES_HOST           = var.rds_db_address
-    POSTGRES_PORT           = var.rds_db_port
-    FRAUD_DETECTION_DB_NAME = var.rds_db_name
-    MLFLOW_TRACKING_URI     = local.mlflow_tracking_uri
-    S3_ENDPOINT_URL         = var.s3_internal_endpoint_url
-    AWS_DEFAULT_REGION      = var.s3_mlflow_bucket_aws_region
-    S3_MLE_BUCKET           = var.s3_mle_bucket
+    PGHOST              = var.rds_db_address
+    PGPORT              = var.rds_db_port
+    PGDATABASE          = var.rds_db_name
+
+    AWS_DEFAULT_REGION  = var.aws_region
+    AWS_ENDPOINT_URL_S3 = var.s3_internal_endpoint_url
+
+    MLFLOW_TRACKING_URI = local.mlflow_tracking_uri
+
+    S3_MLE_BUCKET       = var.s3_mle_bucket
+    S3_ENDPOINT_URL     = var.s3_internal_endpoint_url
+
+    MWAA_WEBSERVER_URL = var.mwaa_webserver_url
   }
 
   depends_on = [helm_release.mlflow]

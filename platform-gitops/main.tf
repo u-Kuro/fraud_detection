@@ -72,24 +72,7 @@ module "helm_apps" {
 }
 
 module "secrets_manager" {
-  source                  = "./modules/aws_secrets_manager"
-  rds_db_address          = module.rds_db.address
-  rds_db_port             = module.rds_db.port
-  rds_db_name             = module.rds_db.name
-  mle_db_username         = module.postgresql.mle_db_username
-  mle_db_password         = module.postgresql.mle_db_password
-  s3_endpoint_url         = var.s3_internal_endpoint_url
-  s3_access_key           = var.aws_access_key
-  s3_secret_key           = var.aws_secret_key
-  s3_aws_region           = var.aws_region
-  s3_mle_bucket           = module.s3.mle_bucket_name
-  s3_mlflow_bucket        = module.s3.mlflow_bucket_name
-  mlflow_tracking_uri     = "http://mlflow:${5000}"
-  fraud_api_url           = "http://fraud-detection:30000"
-  slack_bot_token         = var.slack_bot_token
-  slack_app_token         = var.slack_app_token
-  slack_channel_id        = var.slack_channel_id
-  slack_signing_secret    = var.slack_signing_secret
+  source = "./modules/aws_secrets_manager"
 
   depends_on = [
     module.rds_db,

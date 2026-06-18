@@ -1,3 +1,7 @@
+locals {
+  mle_schema_name = "mle"
+}
+
 # MLFLOW
 resource "postgresql_schema" "mlflow" {
   name  = "mlflow"
@@ -43,7 +47,7 @@ resource "postgresql_grant" "mlflow_sequence" {
 
 # MLE Applications
 resource "postgresql_schema" "mle" {
-  name  = "mle"
+  name  = local.mle_schema_name
   owner = var.db_owner_username
 }
 resource "postgresql_role" "mle" {
@@ -52,6 +56,7 @@ resource "postgresql_role" "mle" {
   login               = true
   connection_limit    = 50
   skip_reassign_owned = true
+  search_path = [local.mle_schema_name]
 }
 resource "postgresql_grant" "mle_database" {
   database    = var.db_name
@@ -90,6 +95,7 @@ resource "postgresql_role" "mle_migration" {
   login               = true
   connection_limit    = 20
   skip_reassign_owned = true
+  search_path = [local.mle_schema_name]
 }
 resource "postgresql_grant" "mle_migration_database" {
   database    = var.db_name

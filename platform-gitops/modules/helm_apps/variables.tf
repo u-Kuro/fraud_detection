@@ -20,3 +20,7 @@ variable "s3_mlflow_bucket_aws_region"  { type = string }
 variable "s3_mlflow_bucket"             { type = string }
 variable "s3_mle_bucket_aws_region"     { type = string }
 variable "s3_mle_bucket"                { type = string }
+
+variable "aws_region" { type = string }
+
+variable "mwaa_webserver_url" { type = string }

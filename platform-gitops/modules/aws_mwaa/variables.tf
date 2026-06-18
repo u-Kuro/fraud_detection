@@ -14,13 +14,5 @@ variable "s3_service_endpoint_url"  { type = string }
 variable "eks_cluster_name" { type = string }
 variable "s3_mle_bucket"    { type = string }
 
-variable "mle_db_username" {
-  type = string
-  sensitive = true
-}
-variable "mle_db_password" {
-  type = string
-  sensitive = true
-}
 variable "rds_db_address" { type = string }
 variable "rds_db_name"    { type = string }
