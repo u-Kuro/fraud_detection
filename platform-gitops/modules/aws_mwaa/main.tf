@@ -50,11 +50,10 @@ resource "aws_mwaa_environment" "main" {
   dag_s3_path           = "${local.dag_s3_path}/"
   requirements_s3_path  = local.requirements_file_name
 
-  # Exposes the fraud_detection postgres as an Airflow connection.
-  # DAG Python sensor tasks use PostgresHook(postgres_conn_id="fraud_detection_postgres").
-  environment_variables  = {
-    AIRFLOW_CONN_FRAUD_DETECTION_POSTGRES = local.postgres_connection
-  }
+  # Non-sensitive infra values available to all MWAA Python tasks.
+  # MLE team adds PGUSER, PGPASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+  # via: aws mwaa update-environment --name fraud_detection_mwaa \
+  #        --environment-variables '{"PGUSER":"...","PGPASSWORD":"...",...}'
   environment_variables = {
     PGHOST              = var.rds_db_address
     PGPORT              = "5432"
