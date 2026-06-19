@@ -22,7 +22,6 @@ CREATE TABLE pipeline_state (
     dataset_max_date        TIMESTAMPTZ         NULL,
     drift_slack_ts          TEXT                NOT NULL,
     promote_slack_ts        TEXT                NOT NULL,
---     drift_count             INT                 NOT NULL        DEFAULT 0,
     CONSTRAINT state_check CHECK (state IN ('drift_pending', 'train_pending', 'promoting'))
 );
 

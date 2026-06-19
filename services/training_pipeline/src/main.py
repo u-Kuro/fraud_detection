@@ -29,7 +29,6 @@ from shared.logging import logger
 FEATURE_COLS = ["transaction_timestamp", "amount"] + [f"v{i}" for i in range(1, 29)]
 TARGET_COL   = "is_fraud"
 
-
 def _load_data() -> pd.DataFrame:
     cutoff = get_latest_deployed_max_date()
     query  = text(f"""
@@ -81,7 +80,6 @@ def _train(df: pd.DataFrame):
     }
     return best, metrics, study.best_params
 
-
 def _delete_stale_candidates(client: MlflowClient, model_name: str, current_version: int) -> None:
     """Delete MLflow model versions that are trained candidates but will never be promoted."""
     try:
@@ -106,7 +104,6 @@ def _delete_stale_candidates(client: MlflowClient, model_name: str, current_vers
                     logger.warning(f"Could not delete stale version {ver}: {e}")
     except Exception as e:
         logger.warning(f"Stale candidate cleanup failed (non-fatal): {e}")
-
 
 def _post_or_update_promotion_slack(
     promote_slack_ts: str | None,
