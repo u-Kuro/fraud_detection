@@ -1,7 +1,4 @@
-import json
-import os
-import sys
-import tempfile
+import json, os, sys, tempfile
 
 import mlflow
 import pandas as pd
@@ -15,6 +12,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sqlalchemy import text
 
+from services.training_pipeline.src.modules import training_config
 from services.training_pipeline.src.modules.environment import environment
 from services.training_pipeline.src.repositories.postgres.postgres import engine
 from services.training_pipeline.src.repositories.postgres.pipeline_state import (
@@ -26,32 +24,36 @@ from services.training_pipeline.src.repositories.postgres.pipeline_state import 
 from services.training_pipeline.src.services.promote import promote
 from shared.logging import logger
 
-FEATURE_COLS = ["transaction_timestamp", "amount"] + [f"v{i}" for i in range(1, 29)]
-TARGET_COL   = "is_fraud"
-
-def _load_data() -> pd.DataFrame:
+def load_data() -> pd.DataFrame:
     cutoff = get_latest_deployed_max_date()
-    query  = text(f"""
-        SELECT transaction_timestamp, amount,
+    with engine.connect() as connection:
+        df = pd.read_sql(text(f"""
+            SELECT transaction_timestamp, amount,
                {', '.join([f'v{i}' for i in range(1, 29)])},
                is_fraud
-        FROM transaction_inferences
-        WHERE inference_timestamp > :cutoff
-          AND is_fraud IS NOT NULL
-        ORDER BY random()
-        LIMIT :limit
-    """)
-    with engine.connect() as conn:
-        df = pd.read_sql(query, conn, params={"cutoff": cutoff, "limit": environment.MAX_SELECTED_ROWS})
+            FROM transaction_inferences
+            WHERE inference_timestamp > :cutoff
+                AND is_fraud IS NOT NULL
+            ORDER BY random()
+            LIMIT :limit
+        """),
+        connection,
+        params={
+            "cutoff": cutoff,
+            "limit": training_config.MAX_SELECTED_ROWS
+        })
     df["transaction_timestamp"] = df["transaction_timestamp"].apply(lambda x: int(x.timestamp()))
     return df
 
 
-def _train(df: pd.DataFrame):
-    X = df[FEATURE_COLS].values
-    y = df[TARGET_COL].astype(int).values
+def train(df: pd.DataFrame):
+    X = df[training_config.feature_columns].values
+    y = df[training_config.target_column].astype(int).values
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=environment.TEST_SIZE, random_state=environment.RANDOM_STATE, stratify=y
+        X, y,
+        test_size=training_config.TEST_SIZE,
+        random_state=training_config.RANDOM_STATE,
+        stratify=y
     )
 
     def objective(trial: optuna.Trial) -> float:
@@ -62,50 +64,59 @@ def _train(df: pd.DataFrame):
             "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
             "scale_pos_weight": (y_train == 0).sum() / max((y_train == 1).sum(), 1),
-            "random_state":     environment.RANDOM_STATE,
+            "random_state":     training_config.RANDOM_STATE,
         }
-        m = xgb.XGBClassifier(**params)
-        m.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
-        return f1_score(y_test, m.predict(X_test))
+        model = xgb.XGBClassifier(**params)
+        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+        return f1_score(y_test, model.predict(X_test))
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=environment.BAYES_STEPS, timeout=environment.TRAINING_TIMEOUT_SECONDS)
+    study.optimize(
+        objective,
+        n_trials=training_config.BAYES_STEPS,
+        timeout=training_config.TRAINING_TIMEOUT_SECONDS
+    )
 
-    best = xgb.XGBClassifier(**study.best_params, random_state=environment.RANDOM_STATE)
+    best = xgb.XGBClassifier(
+        **study.best_params,
+        random_state=training_config.RANDOM_STATE
+    )
     best.fit(X_train, y_train)
     metrics = {
-        "f1":      f1_score(y_test, best.predict(X_test)),
+        "f1": f1_score(y_test, best.predict(X_test)),
         "roc_auc": roc_auc_score(y_test, best.predict_proba(X_test)[:, 1]),
     }
     return best, metrics, study.best_params
 
-def _delete_stale_candidates(client: MlflowClient, model_name: str, current_version: int) -> None:
+def delete_stale_candidates(
+    client: MlflowClient,
+    model_name: str,
+    current_version: int
+) -> None:
     """Delete MLflow model versions that are trained candidates but will never be promoted."""
     try:
         versions = client.search_model_versions(f"name='{model_name}'")
-        for v in versions:
-            aliases = getattr(v, "aliases", []) or []
-            ver = int(v.version)
-            if ver == current_version:
-                continue
+        for item in versions:
+            aliases = getattr(item, "aliases", []) or []
+            version = int(item.version)
+            if version == current_version: continue
             # Version has candidate alias on it but is not the new one — remove alias and delete
             if "candidate" in aliases:
                 try:
                     client.delete_registered_model_alias(model_name, "candidate")
-                except Exception:
-                    pass
+                except: pass
             # Delete versions that have no aliases and are not in production
             if "production" not in aliases and "archived" not in aliases:
                 try:
-                    client.delete_model_version(model_name, str(ver))
-                    logger.info(f"Deleted stale candidate model version {model_name} v{ver}")
+                    client.delete_model_version(model_name, str(version))
+                    logger.info(f"Deleted stale candidate model version {model_name} v{version}")
                 except Exception as e:
-                    logger.warning(f"Could not delete stale version {ver}: {e}")
+                    logger.warning(f"Could not delete stale version {version}: {e}")
     except Exception as e:
         logger.warning(f"Stale candidate cleanup failed (non-fatal): {e}")
 
-def _post_or_update_promotion_slack(
+def post_or_update_promotion_slack(
     promote_slack_ts: str | None,
     model_name: str,
     model_version: int,
@@ -114,7 +125,13 @@ def _post_or_update_promotion_slack(
     """Post or update in-place the promotion approval Slack message."""
     slack = slack_sdk.WebClient(token=environment.SLACK_BOT_USER_AUTH_TOKEN)
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": "✅ Training Complete — Approve for Promotion"}},
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "✅ Training Complete — Approve for Promotion"
+            }
+        },
         {
             "type": "section",
             "text": {
@@ -131,13 +148,19 @@ def _post_or_update_promotion_slack(
             "elements": [
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "🚀 Approve Promotion"},
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🚀 Approve Promotion"
+                    },
                     "style": "primary",
                     "action_id": "approve_promotion",
                 },
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "❌ Reject"},
+                    "text": {
+                        "type": "plain_text",
+                        "text": "❌ Reject"
+                    },
                     "style": "danger",
                     "action_id": "reject_promotion",
                 },
@@ -147,18 +170,23 @@ def _post_or_update_promotion_slack(
 
     try:
         if promote_slack_ts:
-            resp = slack.chat_update(
-                channel=environment.SLACK_CHANNEL_ID, ts=promote_slack_ts, blocks=blocks
+            response = slack.chat_update(
+                channel=environment.SLACK_CHANNEL_ID,
+                ts=promote_slack_ts,
+                blocks=blocks
             )
         else:
-            resp = slack.chat_postMessage(channel=environment.SLACK_CHANNEL_ID, blocks=blocks)
-        return resp["ts"]
+            response = slack.chat_postMessage(
+                channel=environment.SLACK_CHANNEL_ID,
+                blocks=blocks
+            )
+        return response["ts"]
     except Exception as e:
         logger.warning(f"Slack notification failed (non-fatal): {e}")
         return promote_slack_ts or ""
 
 
-def _write_xcom(payload: dict) -> None:
+def write_xcom(payload: dict) -> None:
     xcom_dir = "/airflow/xcom"
     if os.path.isdir(xcom_dir):
         with open(f"{xcom_dir}/return.json", "w") as f:
@@ -166,8 +194,8 @@ def _write_xcom(payload: dict) -> None:
 
 
 def run_training() -> None:
-    df = _load_data()
-    if len(df) < environment.TRAINING_MINIMUM_ROWS:
+    df = load_data()
+    if len(df) < training_config.TRAINING_MINIMUM_ROWS:
         logger.error(f"Insufficient labelled data ({len(df)} rows). Exiting.")
         sys.exit(1)
 
@@ -176,7 +204,7 @@ def run_training() -> None:
     mlflow.set_experiment(environment.MLFLOW_EXPERIMENT_NAME)
 
     with mlflow.start_run() as run:
-        model, metrics, best_params = _train(df)
+        model, metrics, best_params = train(df)
         mlflow.log_params(best_params)
         mlflow.log_metrics(metrics)
 
@@ -185,36 +213,38 @@ def run_training() -> None:
             pq.write_table(table, f.name)
             mlflow.log_artifact(f.name, artifact_path="dataset")
 
-        ts_col      = df["transaction_timestamp"]
-        dataset_min = pd.Timestamp(int(ts_col.min()), unit="s", tz="UTC").to_pydatetime()
-        dataset_max = pd.Timestamp(int(ts_col.max()), unit="s", tz="UTC").to_pydatetime()
+        transaction_timestamps      = df["transaction_timestamp"]
+        dataset_min = pd.Timestamp(int(transaction_timestamps.min()), unit="s", tz="UTC").to_pydatetime()
+        dataset_max = pd.Timestamp(int(transaction_timestamps.max()), unit="s", tz="UTC").to_pydatetime()
 
         mlflow.sklearn.log_model(model, artifact_path="model", registered_model_name="XGBoost")
         client   = MlflowClient()
         versions = client.search_model_versions(f"run_id='{run.info.run_id}'")
         if not versions:
             raise RuntimeError("Model registration failed.")
-        mv = versions[0]
-        client.set_registered_model_alias("XGBoost", "candidate", mv.version)
-        logger.info(f"Registered XGBoost v{mv.version} as 'candidate'.")
+        model_version = versions[0]
+        client.set_registered_model_alias("XGBoost", "candidate", model_version.version)
+        logger.info(f"Registered XGBoost v{model_version.version} as 'candidate'.")
 
-    current_version = int(mv.version)
+    current_version = int(model_version.version)
     update_after_training(str(run.info.run_id), current_version, dataset_min, dataset_max)
 
     # Clean up stale candidates BEFORE posting the promotion message
-    _delete_stale_candidates(client, "XGBoost", current_version)
+    delete_stale_candidates(client, "XGBoost", current_version)
 
-    state    = get_current_state()
+    state = get_current_state()
     promote_slack_ts = (state or {}).get("promote_slack_ts", None)
-    slack_ts = _post_or_update_promotion_slack(promote_slack_ts, "XGBoost", current_version, metrics)
+    slack_ts = post_or_update_promotion_slack(promote_slack_ts, "XGBoost", current_version, metrics)
     if slack_ts:
         update_promote_slack_ts(slack_ts)
 
-    _write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
+    write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
     logger.info("Training complete. Awaiting promotion approval.")
 
 
 if __name__ == "__main__":
+    # TODO - need to separate functions here
+    # TODO - Check if we can pass this to base settings environment
     action = os.environ.get("PIPELINE_ACTION", "train")
     if action == "promote":
         promote()

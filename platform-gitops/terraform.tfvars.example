@@ -14,8 +14,3 @@ mle_db_password             = "mle"
 
 mle_migrations_db_username  = "mle_migrations"
 mle_migrations_db_password  = "mle_migrations"
-
-slack_bot_token             = "xoxb-your-bot-token"
-slack_app_token             = "xapp-your-app-token"
-slack_channel_id            = "your-slack-channel-id"
-slack_signing_secret        = "your-signing-secret"

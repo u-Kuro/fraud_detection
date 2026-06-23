@@ -1,6 +1,3 @@
-output "aws_ecr_names" {
-  value = module.ecr_repository.repository_names
-}
 output "aws_ecr_repository_urls" {
   value = module.ecr_repository.repository_urls
 }

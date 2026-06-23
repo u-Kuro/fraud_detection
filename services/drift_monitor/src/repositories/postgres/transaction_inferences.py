@@ -33,8 +33,8 @@ def load_current_window(
         ORDER BY random()
         LIMIT :max_selected_rows
     """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn, params={
+    with engine.connect() as connection:
+        return pd.read_sql(query, connection, params={
             "current_cutoff_date": current_cutoff_date,
             "max_selected_rows": environment.MAX_SELECTED_ROWS
         })

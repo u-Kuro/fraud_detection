@@ -29,6 +29,10 @@ module "s3" {
   aws_region = var.aws_region
 }
 
+module "secrets_manager" {
+  source = "./modules/aws_secrets_manager"
+}
+
 # EKS: creates k3s cluster + runs extract-kubeconfig.ps1 automatically.
 module "eks_cluster" {
   source                            = "./modules/aws_eks"
@@ -45,43 +49,6 @@ module "eks_cluster" {
   kubeconfig_host_file_name         = var.kubeconfig_host_file_name
 }
 
-# Helm apps depend on EKS (kubeconfig must exist before Helm provider connects).
-module "helm_apps" {
-  source                      = "./modules/helm_apps"
-  aws_access_key              = var.aws_access_key
-  aws_secret_key              = var.aws_secret_key
-  aws_account_id              = var.aws_account_id
-  s3_internal_endpoint_url    = var.s3_internal_endpoint_url
-  s3_mlflow_bucket_aws_region = module.s3.mlflow_bucket_aws_region
-  s3_mlflow_bucket            = module.s3.mlflow_bucket_name
-  s3_mle_bucket_aws_region    = module.s3.mle_bucket_aws_region
-  s3_mle_bucket               = module.s3.mle_bucket_name
-  rds_db_address              = module.rds_db.address
-  rds_db_port                 = module.rds_db.port
-  rds_db_name                 = module.rds_db.name
-  mlflow_db_username          = module.postgresql.mlflow_db_username
-  mlflow_db_password          = module.postgresql.mlflow_db_password
-
-  depends_on = [
-    module.rds_db,
-    module.postgresql,
-    module.s3,
-    module.eks_cluster,
-    module.ecr_repository
-  ]
-}
-
-module "secrets_manager" {
-  source = "./modules/aws_secrets_manager"
-
-  depends_on = [
-    module.rds_db,
-    module.postgresql,
-    module.s3,
-    module.helm_apps
-  ]
-}
-
 # MWAA depends on S3 (requirements.txt) and EKS (internal kubeconfig upload).
 module "aws_mwaa_environment" {
   source                    = "./modules/aws_mwaa"
@@ -93,14 +60,31 @@ module "aws_mwaa_environment" {
   s3_service_endpoint_url   = var.s3_service_endpoint_url
   s3_mle_bucket             = module.s3.mle_bucket_name
   eks_cluster_name          = module.eks_cluster.name
-  mle_db_username           = module.postgresql.mle_db_username
-  mle_db_password           = module.postgresql.mle_db_password
-  rds_db_address            = module.rds_db.address
-  rds_db_name               = module.rds_db.name
 
   depends_on = [
     module.s3,
-    module.eks_cluster,
-    module.helm_apps
+    module.eks_cluster
+  ]
+}
+
+# Helm apps depend on EKS (kubeconfig must exist before Helm provider connects).
+module "helm_apps" {
+  source                      = "./modules/helm_apps"
+  aws_access_key              = var.aws_access_key
+  aws_secret_key              = var.aws_secret_key
+  s3_internal_endpoint_url    = var.s3_internal_endpoint_url
+  s3_mlflow_bucket_aws_region = module.s3.mlflow_bucket_aws_region
+  s3_mlflow_bucket            = module.s3.mlflow_bucket_name
+  rds_db_address              = module.rds_db.address
+  rds_db_port                 = module.rds_db.port
+  rds_db_name                 = module.rds_db.name
+  mlflow_db_username          = module.postgresql.mlflow_db_username
+  mlflow_db_password          = module.postgresql.mlflow_db_password
+
+  depends_on = [
+    module.rds_db,
+    module.postgresql,
+    module.s3,
+    module.eks_cluster
   ]
 }

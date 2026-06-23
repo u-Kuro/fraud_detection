@@ -14,10 +14,7 @@ XCom written to /airflow/xcom/return.json:
   {"action": "wait_approval"}  — DAG sensor should wait for training_approved
   {"action": "exit"}           — DAG should stop here
 """
-import asyncio
-import json
-import os
-import sys
+import asyncio, json, os
 from datetime import datetime, timezone, timedelta
 
 from services.drift_monitor.src.controllers.slack import (
@@ -25,6 +22,7 @@ from services.drift_monitor.src.controllers.slack import (
     post_drift_message,
     update_drift_message,
 )
+from services.drift_monitor.src.modules import drift_config
 from services.drift_monitor.src.repositories.postgres.deployed_models import (
     has_any_active_deployed_model,
 )
@@ -37,20 +35,17 @@ from services.drift_monitor.src.repositories.postgres.transaction_inferences imp
     load_current_window,
 )
 from services.drift_monitor.src.services.evidently import run_drift_report
-from services.drift_monitor.src.modules.environment import environment
 from services.drift_monitor.src.repositories.s3 import (
     load_reference_parquet,
     upload_drift_report,
 )
 from shared.logging import logger
 
-
 def write_xcom(payload: dict) -> None:
     xcom_dir = "/airflow/xcom"
     if os.path.isdir(xcom_dir):
         with open(f"{xcom_dir}/return.json", "w") as f:
             json.dump(payload, f)
-
 
 async def main() -> None:
     # ── (a) No active model: cold-start path ────────────────────────────────
@@ -61,25 +56,25 @@ async def main() -> None:
             # First ever run — post Slack cold-start notice, insert pending row
             drift_slack_ts = await post_cold_start_notice_to_slack()
             create_drift_pending(drift_slack_ts)
-            logger.warning("Cold-start: no model deployed. Slack notice posted; awaiting approval.")
+            logger.warning("Cold-start: no model deployed. Slack notice posted.")
             write_xcom({"action": "wait_approval"})
             return
 
         state = state_row["state"]
         training_approved = state_row["training_approved"]
 
-        if state == "drift_pending" and training_approved:
-            # Human already approved in a previous run; the DAG sensor already unblocked.
-            # Another cron tick fired before training started — nothing to do.
-            logger.info("Cold-start already approved. Training starting soon.")
-            write_xcom({"action": "exit"})
-            return
-
-        if state == "drift_pending" and not training_approved:
-            # Still waiting on human — nothing to do
-            logger.info("Cold-start pending human approval.")
-            write_xcom({"action": "wait_approval"})
-            return
+        if state == "drift_pending":
+            if training_approved:
+                # Human already approved in a previous run; the DAG sensor already unblocked.
+                # Another cron tick fired before training started — nothing to do.
+                logger.info("Cold-start already approved. Training starting soon.")
+                write_xcom({"action": "exit"})
+                return
+            else:
+                # Still waiting on human — nothing to do
+                logger.info("Cold-start pending human approval.")
+                write_xcom({"action": "wait_approval"})
+                return
 
         # Any other state (train_pending / promoting) with no active model is unusual
         logger.warning(f"No active model but state={state}. Exiting.")
@@ -87,27 +82,23 @@ async def main() -> None:
         return
 
     # ── Load reference dataset ───────────────────────────────────────────────
-    ref_table = load_reference_parquet()
-    if ref_table is None:
+    reference_table = load_reference_parquet()
+    if reference_table is None:
         logger.warning("No reference dataset in S3. Cannot compute drift.")
         write_xcom({"action": "exit"})
         return
 
-    df_reference = ref_table.to_pandas()
-    if len(df_reference) < environment.MINIMUM_ROWS:
-        logger.info(f"Reference dataset too small ({len(df_reference)} rows). Skipping.")
-        write_xcom({"action": "exit"})
-        return
-
+    df_reference = reference_table.to_pandas()
     # ── Load current window ──────────────────────────────────────────────────
     reference_last_date = datetime.fromtimestamp(
-        df_reference["transaction_timestamp"].max(), timezone.utc
+        df_reference["transaction_timestamp"].max(),
+        timezone.utc
     )
-    chosen_cutoff = datetime.now(timezone.utc) - timedelta(days=environment.LOOKBACK_DAYS)
+    chosen_cutoff = datetime.now(timezone.utc) - timedelta(days=drift_config.LOOKBACK_DAYS)
     current_cutoff = min(chosen_cutoff, reference_last_date)
     df_current = load_current_window(current_cutoff)
 
-    if len(df_current) < environment.MINIMUM_ROWS:
+    if len(df_current) < drift_config.MINIMUM_ROWS:
         logger.info(f"Current window too small ({len(df_current)} rows). Skipping.")
         write_xcom({"action": "exit"})
         return
@@ -116,7 +107,7 @@ async def main() -> None:
     drift_summary, html_bytes = run_drift_report(df_reference, df_current)
     upload_drift_report(html_bytes, json.dumps(drift_summary).encode())
 
-    data_drift    = drift_summary["data_drift"].get("dataset_drift_detected", False)
+    data_drift = drift_summary["data_drift"].get("dataset_drift_detected", False)
     concept_drift = drift_summary["concept_drift"].get("concept_drift_detected", False)
     drift_detected = data_drift or concept_drift
 
@@ -138,9 +129,9 @@ async def main() -> None:
         write_xcom({"action": "wait_approval"})
         return
 
-    state            = state_row["state"]
+    state = state_row["state"]
     training_approved = state_row["training_approved"]
-    drift_slack_ts   = state_row["drift_slack_ts"]
+    drift_slack_ts = state_row["drift_slack_ts"]
 
     if state == "drift_pending":
         # (d) Drift still pending (not yet approved for training) — update Slack message in place
@@ -154,8 +145,7 @@ async def main() -> None:
             logger.info("Drift message updated. Awaiting human approval.")
             write_xcom({"action": "wait_approval"})
         return
-
-    if state in ("train_pending", "promoting"):
+    else:
         # (c) Training is in progress or promotion underway — do not touch anything
         logger.info(f"Drift detected but state={state}. Skipping.")
         write_xcom({"action": "exit"})

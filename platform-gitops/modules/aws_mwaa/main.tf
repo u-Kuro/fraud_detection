@@ -50,17 +50,6 @@ resource "aws_mwaa_environment" "main" {
   dag_s3_path           = "${local.dag_s3_path}/"
   requirements_s3_path  = local.requirements_file_name
 
-  # Non-sensitive infra values available to all MWAA Python tasks.
-  # MLE team adds PGUSER, PGPASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-  # via: aws mwaa update-environment --name fraud_detection_mwaa \
-  #        --environment-variables '{"PGUSER":"...","PGPASSWORD":"...",...}'
-  environment_variables = {
-    PGHOST              = var.rds_db_address
-    PGPORT              = "5432"
-    PGDATABASE          = var.rds_db_name
-    MLFLOW_TRACKING_URI = "http://mlflow:5000"
-  }
-
   network_configuration {
     security_group_ids = ["sg-00000000000000001"]
     subnet_ids         = ["subnet-00000000000000001", "subnet-00000000000000002"]

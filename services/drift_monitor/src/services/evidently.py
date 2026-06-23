@@ -6,7 +6,10 @@ from pandas import DataFrame
 
 FEATURE_COLUMNS = ["transaction_timestamp", "amount"] + [f"v{i}" for i in range(1, 29)]
 
-def run_drift_report(df_reference: DataFrame, df_current: DataFrame) -> tuple[dict, bytes]:
+def run_drift_report(
+    df_reference: DataFrame,
+    df_current: DataFrame
+) -> tuple[dict, bytes]:
     """Run evidently report, return (summary_dict, html_bytes)."""
     data_definition = DataDefinition(
         classification=[BinaryClassification(
@@ -17,28 +20,40 @@ def run_drift_report(df_reference: DataFrame, df_current: DataFrame) -> tuple[di
         )],
         numerical_columns=FEATURE_COLUMNS,
     )
-    ref_ds = Dataset.from_pandas(df_reference, data_definition=data_definition)
-    cur_ds = Dataset.from_pandas(df_current, data_definition=data_definition)
+    reference_dataset = Dataset.from_pandas(
+        data=df_reference,
+        data_definition=data_definition
+    )
+    current_dataset = Dataset.from_pandas(
+        data=df_current,
+        data_definition=data_definition
+    )
     report = Report(
         metrics=[
             DataDriftPreset(),
             ClassificationPreset()
         ]
     )
-    result = report.run(reference_data=ref_ds, current_data=cur_ds)
+    result = report.run(
+        reference_data=reference_dataset,
+        current_data=current_dataset
+    )
     buffer = io.StringIO()
     result.save_html(buffer)
-    summary = extract_drift_summary(result.dict(), FEATURE_COLUMNS)
+    summary = extract_drift_summary(
+        result.dict(),
+        FEATURE_COLUMNS
+    )
     return summary, buffer.getvalue().encode("utf-8")
 
 def extract_drift_summary(
-    result_dict: dict,
+    results: dict,
     feature_columns: list[str]
 ) -> dict:
     data_drift: dict = {}
     concept_drift: dict = {}
 
-    for metric in result_dict.get("metrics", []):
+    for metric in results.get("metrics", []):
         metric_name = metric.get("metric", "")
         result = metric.get("result", {})
 

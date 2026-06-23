@@ -1,20 +1,8 @@
 import io
-import boto3
 import pyarrow as pa
 import pyarrow.parquet as pq
-from mypy_boto3_s3.client import S3Client
 from services.training_pipeline.src.modules.environment import environment
-
-s3: S3Client = boto3.client(
-    "s3",
-    endpoint_url=environment.S3_ENDPOINT_URL,
-    aws_access_key_id=environment.S3_ACCESS_KEY,
-    aws_secret_access_key=environment.S3_SECRET_KEY,
-)
-
-def ensure_bucket(bucket: str) -> None:
-    try: s3.head_bucket(Bucket=bucket)
-    except: s3.create_bucket(Bucket=bucket)
+from shared.s3 import s3, ensure_bucket
 
 def save_permanent_dataset(
     table: pa.Table,

@@ -18,7 +18,6 @@ import pyarrow.parquet as pq
 from mlflow import MlflowClient
 
 from services.training_pipeline.src.modules.environment import environment
-from services.training_pipeline.src.repositories.postgres.postgres import engine
 from services.training_pipeline.src.repositories.postgres.pipeline_state import (
     get_current_state,
     begin_promoting,
@@ -29,7 +28,6 @@ from services.training_pipeline.src.repositories.s3.s3 import (
     overwrite_reference_dataset,
 )
 from shared.logging import logger
-
 
 def promote() -> None:
     state = get_current_state()
@@ -47,8 +45,7 @@ def promote() -> None:
     versions = client.search_model_versions(f"run_id='{run_id}'")
     if not versions:
         raise RuntimeError(f"No model version found for run_id={run_id}")
-    mv         = versions[0]
-    model_name = mv.name
+    model_name = versions[0].name
 
     # Step 1 — Intent record
     begin_promoting(run_id, model_name, model_version, dataset_min_date, dataset_max_date)
@@ -56,7 +53,9 @@ def promote() -> None:
     # Step 2 — Download training artifact and save to permanent path
     local_dir = tempfile.mkdtemp()
     artifact_path = mlflow.artifacts.download_artifacts(
-        run_id=run_id, artifact_path="dataset", dst_path=local_dir
+        run_id=run_id,
+        artifact_path="dataset",
+        dst_path=local_dir
     )
     parquet_files = [f for f in os.listdir(artifact_path) if f.endswith(".parquet")]
     if not parquet_files:
@@ -68,17 +67,14 @@ def promote() -> None:
     try:
         old_prod = client.get_model_version_by_alias(model_name, "production")
         client.set_registered_model_alias(model_name, "archived", old_prod.version)
-    except Exception:
-        pass
+    except: pass
     try:
         client.delete_registered_model_alias(model_name, "production")
-    except Exception:
-        pass
+    except: pass
     client.set_registered_model_alias(model_name, "production", str(model_version))
     try:
         client.delete_registered_model_alias(model_name, "candidate")
-    except Exception:
-        pass
+    except: pass
 
     # Step 4 — Overwrite reference dataset
     overwrite_reference_dataset(table)
@@ -87,14 +83,15 @@ def promote() -> None:
     finalize_promotion(model_name, model_version)
     logger.info(f"Promotion complete: {model_name} v{model_version}")
 
+    # TODO - this stuff below will be removed and replaced since we decided to just rollout new fraud detection api than dynamically changing the model in it.
     # Step 6 — Hot-reload fraud_api (zero-downtime: the new model is already in MLflow
     # under the 'production' alias; fraud_api just re-fetches it)
     try:
-        resp = httpx.post(
+        response = httpx.post(
             f"{environment.FRAUD_API_URL}/internal/reload-model",
             timeout=30.0,
         )
-        resp.raise_for_status()
+        response.raise_for_status()
         logger.info("fraud_api model reload triggered successfully.")
     except Exception as e:
         logger.warning(

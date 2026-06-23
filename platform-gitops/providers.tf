@@ -34,8 +34,6 @@ provider "postgresql" {
   expected_version  = "15"
 }
 
-# Both providers read the kubeconfig written by the EKS module's
-# PowerShell script during Phase 1 apply (see §4).
 locals {
   kubeconfig_file_path = "${var.kubeconfig_host_directory_path}/${var.kubeconfig_host_file_name}"
 }

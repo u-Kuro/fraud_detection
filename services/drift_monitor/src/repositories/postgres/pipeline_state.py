@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from sqlalchemy import text
 
@@ -40,9 +39,9 @@ def update_drift_slack_ts(drift_slack_ts: str) -> None:
         connection.commit()
 
 def delete_state() -> None:
-    with engine.connect() as conn:
-        conn.execute(text("DELETE FROM pipeline_state"))
-        conn.commit()
+    with engine.connect() as connection:
+        connection.execute(text("DELETE FROM pipeline_state"))
+        connection.commit()
 
 # def update_state_after_training(
 #     run_id: str,
