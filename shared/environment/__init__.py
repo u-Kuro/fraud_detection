@@ -1,0 +1,1 @@
+from shared.environment.slack import slack_environment

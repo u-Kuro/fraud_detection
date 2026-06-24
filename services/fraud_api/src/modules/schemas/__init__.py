@@ -1,13 +1,3 @@
-from services.fraud_api.src.modules.schemas.schemas import (
-    Environment,
-    MlflowModelUri,
-    MlflowModelFeatures,
-    MlflowModelLabels,
-    MlflowModelDataset,
-    TransactionDetails,
-    ClassificationResponse,
-    DeployedModel,
-    TransactionClassification,
-    ApiConfig,
-    HealthResponse,
-)
+from services.fraud_api.src.modules.schemas.fraud_classification_inference import FraudClassificationRequest, FraudClassificationOutput
+from services.fraud_api.src.modules.schemas.health import HealthResponse
+from services.fraud_api.src.modules.schemas.mlflow import DeployedModel

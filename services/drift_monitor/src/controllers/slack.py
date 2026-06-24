@@ -1,8 +1,9 @@
 from pydantic import validate_call
 from slack_sdk.web.async_client import AsyncWebClient
-from services.drift_monitor.src.modules.environment import environment
 
-client: AsyncWebClient = AsyncWebClient(token=environment.SLACK_BOT_USER_AUTH_TOKEN)
+from shared.environment import slack_environment
+
+client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 
 def blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
     blocks: list[dict[str, str | dict | list]] = [
@@ -32,7 +33,7 @@ def blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
 async def post_cold_start_notice_to_slack() -> str:
     """Posted once when no model has ever been deployed."""
     response = await client.chat_postMessage(
-        channel=environment.SLACK_CHANNEL_ID,
+        channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=blocks(
             title="🆕 First Training Required",
             body=(
@@ -68,7 +69,7 @@ async def post_cold_start_notice_to_slack() -> str:
 async def post_drift_message(drift_summary: dict):
     """Post a drift message."""
     response = await client.chat_postMessage(
-        channel=environment.SLACK_CHANNEL_ID,
+        channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=format_drift_blocks(drift_summary)
     )
 
@@ -79,7 +80,7 @@ async def update_drift_message(drift_summary: dict, drift_slack_ts: str) -> str:
     """Update an existing drift message in place."""
     response = await client.chat_update(
         ts=drift_slack_ts,
-        channel=environment.SLACK_CHANNEL_ID,
+        channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=format_drift_blocks(drift_summary)
     )
 

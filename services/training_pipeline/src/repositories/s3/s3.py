@@ -31,5 +31,5 @@ def overwrite_reference_dataset(table: pa.Table) -> None:
     s3.upload_fileobj(
         Fileobj=buffer,
         Bucket=environment.S3_MLE_BUCKET,
-        Key=f"{environment.S3_PIPELINE_REFERENCE_PATH}/latest.parquet",
+        Key=f"{environment.S3_PIPELINE_DATASET_REFERENCE_PATH}/latest.parquet",
     )

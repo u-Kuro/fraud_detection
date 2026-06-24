@@ -4,7 +4,7 @@ from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
-FEATURE_COLUMNS = ["transaction_timestamp", "amount"] + [f"v{i}" for i in range(1, 29)]
+from shared.configs import fraud_classifier_config
 
 def run_drift_report(
     df_reference: DataFrame,
@@ -13,12 +13,12 @@ def run_drift_report(
     """Run evidently report, return (summary_dict, html_bytes)."""
     data_definition = DataDefinition(
         classification=[BinaryClassification(
-            target="is_fraud",
-            prediction_labels="is_fraud_prediction",
-            prediction_probas="is_fraud_probability",
+            target=fraud_classifier_config.FRAUD_CLASSIFIER_LABEL,
+            prediction_labels=fraud_classifier_config.FRAUD_CLASSIFIER_PREDICTION_LABEL,
+            prediction_probas=fraud_classifier_config.FRAUD_CLASSIFIER_PROBABILITY_LABEL,
             labels={0: "Legitimate", 1: "Fraud"},
         )],
-        numerical_columns=FEATURE_COLUMNS,
+        numerical_columns=fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES,
     )
     reference_dataset = Dataset.from_pandas(
         data=df_reference,
@@ -42,7 +42,7 @@ def run_drift_report(
     result.save_html(buffer)
     summary = extract_drift_summary(
         result.dict(),
-        FEATURE_COLUMNS
+        fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES
     )
     return summary, buffer.getvalue().encode("utf-8")
 

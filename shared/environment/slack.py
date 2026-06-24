@@ -1,0 +1,18 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class SlackEnvironment(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    # Slack
+    SLACK_BOT_USER_AUTH_TOKEN: str
+    SLACK_APP_LEVEL_TOKEN:     str
+    SLACK_CHANNEL_ID:          str
+    SLACK_SIGNING_SECRET:      str
+
+    # # Airflow REST API — fraud_api proxies Slack actions here.
+    # # MWAA_WEBSERVER_URL comes from platform-infra ConfigMap.
+    # MWAA_WEBSERVER_URL: str = "http://airflow-webserver:8080"
+    # AIRFLOW_USERNAME:   str = "admin"
+    # AIRFLOW_PASSWORD:   str = "admin"
+
+slack_environment = SlackEnvironment()

@@ -8,12 +8,13 @@ from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from sqlalchemy import text
 
-from delete.services.fraud_api.src.repositories.postgres import engine
-from services.fraud_api.src.modules.environment import environment
+from services.fraud_api.src.repositories.postgres import engine
+from shared.configs import mlflow_config
+from shared.environment import slack_environment
 
 slack_app = App(
-    token=environment.SLACK_BOT_USER_AUTH_TOKEN,
-    signing_secret=environment.SLACK_SIGNING_SECRET
+    token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN,
+    signing_secret=slack_environment.SLACK_SIGNING_SECRET
 )
 
 slack_handler: SlackRequestHandler = SlackRequestHandler(app=slack_app)
@@ -49,7 +50,6 @@ def set_training_approved(client, body) -> None:
 def handle_approve_training(ack, body, client, logger):
     ack()
     set_training_approved(client, body)
-
 
 @slack_app.action("approve_retraining")
 def handle_approve_retraining(ack, body, client, logger):
@@ -96,7 +96,6 @@ def handle_approve_promotion(ack, body, client, logger):
         }],
     )
 
-
 @slack_app.action("reject_promotion")
 def handle_reject_promotion(ack, body, client, logger):
     ack()
@@ -112,7 +111,7 @@ def handle_reject_promotion(ack, body, client, logger):
 
     if row:
         try:
-            mlflow.set_tracking_uri(environment.MLFLOW_TRACKING_URI)
+            mlflow.set_tracking_uri(mlflow_config.MLFLOW_TRACKING_URI)
             mc = MlflowClient()
             mc.delete_registered_model_alias("XGBoost", "candidate")
             mc.delete_model_version("XGBoost", str(row["model_version"]))
@@ -130,12 +129,11 @@ def handle_reject_promotion(ack, body, client, logger):
         }],
     )
 
-
 def start_socket_mode() -> None:
     """Start Socket Mode in a daemon thread so it does not block FastAPI startup."""
     handler = SocketModeHandler(
         app=slack_app,
-        app_token=environment.SLACK_APP_LEVEL_TOKEN,
+        app_token=slack_environment.SLACK_APP_LEVEL_TOKEN,
     )
 
     threading.Thread(

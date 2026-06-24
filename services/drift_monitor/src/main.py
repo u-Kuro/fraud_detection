@@ -34,11 +34,9 @@ from services.drift_monitor.src.repositories.postgres.pipeline_state import (
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import (
     load_current_window,
 )
+from services.drift_monitor.src.repositories.s3.dataset_reference import load_reference_parquet
+from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
 from services.drift_monitor.src.services.evidently import run_drift_report
-from services.drift_monitor.src.repositories.s3 import (
-    load_reference_parquet,
-    upload_drift_report,
-)
 from shared.logging import logger
 
 def write_xcom(payload: dict) -> None:

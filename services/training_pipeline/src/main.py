@@ -12,7 +12,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sqlalchemy import text
 
-from services.training_pipeline.src.modules import training_config
+from services.training_pipeline.src.modules.config import training_config
 from services.training_pipeline.src.modules.environment import environment
 from services.training_pipeline.src.repositories.postgres.postgres import engine
 from services.training_pipeline.src.repositories.postgres.pipeline_state import (
@@ -47,8 +47,8 @@ def load_data() -> pd.DataFrame:
 
 
 def train(df: pd.DataFrame):
-    X = df[training_config.feature_columns].values
-    y = df[training_config.target_column].astype(int).values
+    X = df[fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES].values
+    y = df[fraud_classifier_config.FRAUD_CLASSIFIER_LABEL].astype(int).values
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
         test_size=training_config.TEST_SIZE,

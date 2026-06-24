@@ -4,27 +4,20 @@ from fastapi import FastAPI
 
 from services.fraud_api.src.controller.routers.slack import start_socket_mode
 from services.fraud_api.src.services.inference import FraudClassifier
-from services.fraud_api.src.repositories.postgres.fraud_inference_repository import (
-    FraudInferenceRepository,
-)
-from services.fraud_api.src.modules.environment import environment
-
 from services.fraud_api.src.controller.routers import health, inference, slack
+from shared.configs import mlflow_config
 from shared.logging import logger
 
 fraud_classifier: FraudClassifier
-inference_repository: FraudInferenceRepository
 
 @asynccontextmanager
 async def lifespan(_):
     try:
-        global fraud_classifier, inference_repository
+        global fraud_classifier
 
         fraud_classifier = FraudClassifier(
-            mlflow_model_uri=environment.mlflow_model_uri,
+            mlflow_model_uri=mlflow_config.MODEL_URI,
         )
-        inference_repository = FraudInferenceRepository()
-
     except Exception as exception:
         logger.critical(f"Startup failed: {exception}", exc_info=True)
         raise RuntimeError("Startup failed") from exception

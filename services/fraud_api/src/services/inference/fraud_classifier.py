@@ -1,20 +1,22 @@
 import pandas as pd
 from services.fraud_api.src.modules.schemas import (
-    MlflowModelFeatures,
-    TransactionDetails,
-    TransactionClassification,
+    FraudClassificationRequest,
+    FraudClassificationOutput,
 )
 from services.fraud_api.src.repositories.mlflow.models import MlflowModel
+from shared.schemas import FraudClassifierFeatures
+
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, class_name=self.__class__.__name__)
 
     def classify(
-        self, transaction_details: TransactionDetails
-    ) -> TransactionClassification:
+        self,
+        transaction_details: FraudClassificationRequest
+    ) -> FraudClassificationOutput:
         features = transaction_details.model_dump(
-            include=MlflowModelFeatures.model_fields.keys()
+            include=FraudClassifierFeatures.model_fields.keys()
         )
 
         features_df = pd.DataFrame([features])
@@ -25,7 +27,7 @@ class FraudClassifier(MlflowModel):
         prediction = int(self.model.predict(data=features_df)[0])
         fraud_probability = self.model.predict_proba(features_df)[0][1]
 
-        return TransactionClassification(
+        return FraudClassificationOutput(
             **transaction_details.model_dump(),
             is_fraud=None,
             is_fraud_probability=float(fraud_probability),
