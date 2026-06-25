@@ -14,11 +14,11 @@ from mypy_boto3_s3.client import S3Client
 
     Forces path-style addressing for ministack/localstack compatibility.
 """
-s3: S3Client = boto3.client(
+s3_client: S3Client = boto3.client(
     "s3",
     config=Config(s3=_S3Dict(addressing_style="path"))
 )
 
 def ensure_bucket(bucket: str) -> None:
-    try: s3.head_bucket(Bucket=bucket)
-    except: s3.create_bucket(Bucket=bucket)
+    try: s3_client.head_bucket(Bucket=bucket)
+    except: s3_client.create_bucket(Bucket=bucket)

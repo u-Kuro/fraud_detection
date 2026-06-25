@@ -6,18 +6,16 @@ Promotion steps — idempotent (safe to re-run after crash).
 3. MLflow alias rotation      — candidate → production, old production → archived
 4. overwrite_reference_dataset() — update drift_monitor's reference
 5. finalize_promotion()       — DB finalization (delete pipeline_state, set status=active)
-6. fraud_api reload           — hot-reload the production model (zero-downtime)
+6. fraud_detection reload           — hot-reload the production model (zero-downtime)
 """
 
 import os
 import tempfile
 
-import httpx
 import mlflow
 import pyarrow.parquet as pq
 from mlflow import MlflowClient
 
-from services.training_pipeline.src.modules.environment import environment
 from services.training_pipeline.src.repositories.postgres.pipeline_state import (
     get_current_state,
     begin_promoting,
@@ -27,6 +25,7 @@ from services.training_pipeline.src.repositories.s3 import (
     save_permanent_dataset,
     overwrite_reference_dataset,
 )
+from shared.configs import mlflow_config
 from shared.logging import logger
 
 def promote() -> None:
@@ -39,7 +38,7 @@ def promote() -> None:
     dataset_min_date          = state["dataset_min_date"]
     dataset_max_date          = state["dataset_max_date"]
 
-    mlflow.set_tracking_uri(environment.MLFLOW_TRACKING_URI)
+    mlflow.set_tracking_uri(mlflow_config.MLFLOW_TRACKING_URI)
     client = MlflowClient()
 
     versions = client.search_model_versions(f"run_id='{run_id}'")
@@ -48,7 +47,7 @@ def promote() -> None:
     model_name = versions[0].name
 
     # Step 1 — Intent record
-    begin_promoting(run_id, model_name, model_version, dataset_min_date, dataset_max_date)
+    begin_promoting(model_name, model_version, dataset_min_date, dataset_max_date)
 
     # Step 2 — Download training artifact and save to permanent path
     local_dir = tempfile.mkdtemp()
@@ -84,16 +83,16 @@ def promote() -> None:
     logger.info(f"Promotion complete: {model_name} v{model_version}")
 
     # TODO - this stuff below will be removed and replaced since we decided to just rollout new fraud detection api than dynamically changing the model in it.
-    # Step 6 — Hot-reload fraud_api (zero-downtime: the new model is already in MLflow
-    # under the 'production' alias; fraud_api just re-fetches it)
-    try:
-        response = httpx.post(
-            f"{environment.FRAUD_API_URL}/internal/reload-model",
-            timeout=30.0,
-        )
-        response.raise_for_status()
-        logger.info("fraud_api model reload triggered successfully.")
-    except Exception as e:
-        logger.warning(
-            f"Could not trigger fraud_api reload (non-fatal — next pod restart will pick up new model): {e}"
-        )
+    # Step 6 — Hot-reload fraud_detection (zero-downtime: the new model is already in MLflow
+    # under the 'production' alias; fraud_detection just re-fetches it)
+    # try:
+    #     response = httpx.post(
+    #         f"{environment.FRAUD_DETECTION_URL}/internal/reload-model",
+    #         timeout=30.0,
+    #     )
+    #     response.raise_for_status()
+    #     logger.info("fraud_detection model reload triggered successfully.")
+    # except Exception as e:
+    #     logger.warning(
+    #         f"Could not trigger fraud_detection reload (non-fatal — next pod restart will pick up new model): {e}"
+    #     )

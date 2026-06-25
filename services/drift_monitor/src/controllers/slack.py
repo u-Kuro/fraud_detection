@@ -5,7 +5,7 @@ from shared.environment import slack_environment
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 
-def blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
+def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
     blocks: list[dict[str, str | dict | list]] = [
         {
             "type": "header",
@@ -34,7 +34,7 @@ async def post_cold_start_notice_to_slack() -> str:
     """Posted once when no model has ever been deployed."""
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=blocks(
+        blocks=create_blocks(
             title="🆕 First Training Required",
             body=(
                 "No model has been deployed yet. "
@@ -99,7 +99,7 @@ def format_drift_blocks(drift_summary: dict) -> list:
         f"{cd.get('f1_delta', 'n/a')} F1 Δ"
     )
 
-    return blocks(
+    return create_blocks(
         title="⚠️ Model Retraining Required",
         body=(
             "Significant data or concept drift has been detected in production.\n\n"

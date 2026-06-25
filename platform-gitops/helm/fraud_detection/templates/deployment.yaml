@@ -2,8 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "fraud_detection.name" . }}
-  labels:
-    app: {{ include "fraud_detection.name" . }}
+  annotations:
+    {{- toYaml .Values.podAnnotations | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -14,10 +14,8 @@ spec:
       labels:
         app: {{ include "fraud_detection.name" . }}
     spec:
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
       containers:
         - name: {{ include "fraud_detection.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -25,5 +23,7 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
           envFrom:
+            # MLE team credentials (PGUSER, PGPASSWORD, AWS_ACCESS_KEY_ID,
+            # AWS_SECRET_ACCESS_KEY, SLACK_*, AIRFLOW_*)
             - secretRef:
                 name: {{ .Values.secretName }}

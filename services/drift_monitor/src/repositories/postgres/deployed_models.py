@@ -19,8 +19,8 @@ def get_latest_dataset_max_date() -> Optional[datetime]:
             SELECT MAX(dataset_max_date) FROM deployed_models
             WHERE status = 'active'
         """)).scalar()
-    return (
-        dataset_max_date.astimezone(timezone.utc)
-        if dataset_max_date
-        else None
-    )
+
+    if isinstance(dataset_max_date, datetime):
+        return dataset_max_date.astimezone(timezone.utc)
+    else:
+        return None

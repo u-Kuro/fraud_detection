@@ -22,7 +22,7 @@ from services.drift_monitor.src.controllers.slack import (
     post_drift_message,
     update_drift_message,
 )
-from services.drift_monitor.src.modules import drift_config
+from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres.deployed_models import (
     has_any_active_deployed_model,
 )
@@ -96,7 +96,7 @@ async def main() -> None:
     current_cutoff = min(chosen_cutoff, reference_last_date)
     df_current = load_current_window(current_cutoff)
 
-    if len(df_current) < drift_config.MINIMUM_ROWS:
+    if len(df_current) < drift_config.MINIMUM_CURRENT_DATASET_ROWS:
         logger.info(f"Current window too small ({len(df_current)} rows). Skipping.")
         write_xcom({"action": "exit"})
         return

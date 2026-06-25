@@ -15,9 +15,10 @@ service:
   port: 30000
   nodePort: 30000
 
-# fraud-detection-secret is created/updated by cd-fraud-api.yml from Secrets Manager.
-# Managed by CI/CD — not by Terraform.
+# fraud-detection-secret is created by cd-fraud-api.yml from /fraud-detection/fraud-api in
+# Secrets Manager. Platform Terraform never sets its values.
 secretName: fraud-detection-secret
 
-# Rolled during secret rotation to force a new ReplicaSet without changing image.
+# Updated by cd-fraud-api.yml --set podAnnotations.restartedAt=...
+# to force a new ReplicaSet without changing the image tag.
 podAnnotations: {}

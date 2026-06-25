@@ -9,7 +9,7 @@ mlflow = [
     "mlflow>=3.12.0",
     "psycopg2-binary>=2.9.12",
 ]
-fraud_api = [
+fraud_detection = [
     "fastapi>=0.136.1",
     "httpx>=0.28.1",
     "mlflow>=3.12.0",

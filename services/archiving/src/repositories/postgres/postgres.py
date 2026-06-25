@@ -1,8 +1,9 @@
-from services.archiving.src.modules.environment import environment
 from sqlalchemy import create_engine, Engine
 
+from shared.configs import postgres_config
+
 engine: Engine = create_engine(
-    environment.POSTGRES_FRAUD_DB_URL,
+    postgres_config.POSTGRES_DB_URL,
     pool_pre_ping=True,
     pool_size=2,
     max_overflow=3,

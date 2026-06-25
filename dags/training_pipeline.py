@@ -3,7 +3,7 @@ training_pipeline DAG — triggered by drift_monitor when training is approved.
 
 1. run_training        — trains the model; container posts/updates the promotion Slack message.
 2. wait_for_promotion  — sensor polls promote_approved in pipeline_state.
-3. run_promotion       — promotes candidate to production; calls fraud_api /internal/reload-model.
+3. run_promotion       — promotes candidate to production; calls fraud_detection /internal/reload-model.
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ def training_pipeline_dag():
         mode="reschedule",
     )
     def wait_for_promotion_approval():
-        """Polls until a human approves via Slack → fraud_api action handler."""
+        """Polls until a human approves via Slack → fraud_detection action handler."""
         hook = PostgresHook(postgres_conn_id="fraud_detection_postgres")
         row  = hook.get_first(
             "SELECT promote_approved::INTEGER FROM pipeline_state WHERE state = 'train_pending' LIMIT 1"

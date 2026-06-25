@@ -5,9 +5,9 @@ variable "region" {
 variable "repositories" {
   type = list(string)
   default = [
-    "fraud-detection-api",
-    "fraud-detection-drift-monitor",
-    "fraud-detection-training-pipeline",
-    "fraud-detection-archiving",
+    "fraud_detection",
+    "drift_monitor",
+    "training_pipeline",
+    "archiving",
   ]
 }

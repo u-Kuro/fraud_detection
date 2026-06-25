@@ -7,5 +7,6 @@ class S3Config(BaseModel):
     S3_PIPELINE_REFERENCE_PATH: str = "pipeline/reference"
     S3_PIPELINE_DATASETS_PATH: str = "pipeline/datasets"
     S3_PIPELINE_DRIFT_REPORTS_PATH: str = "pipeline/drift-reports"
+    S3_PIPELINE_ARCHIVE_PATH: str = "pipeline/archive"
 
 s3_config = S3Config()

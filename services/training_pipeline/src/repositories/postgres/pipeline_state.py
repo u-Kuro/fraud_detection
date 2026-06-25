@@ -13,11 +13,11 @@ def get_latest_deployed_max_date() -> datetime:
             SELECT MAX(dataset_max_date) FROM deployed_models
             WHERE status = 'active'
         """)).scalar()
-    return (
-        dataset_max_date.astimezone(timezone.utc)
-        if dataset_max_date
-        else datetime(1970, 1, 1, tzinfo=timezone.utc)
-    )
+
+    if isinstance(dataset_max_date, datetime):
+        return dataset_max_date.astimezone(timezone.utc)
+    else:
+        return datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 def get_current_state() -> Optional[dict]:
     with engine.connect() as connection:

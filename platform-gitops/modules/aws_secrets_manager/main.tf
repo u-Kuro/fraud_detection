@@ -1,12 +1,12 @@
-resource "aws_secretsmanager_secret" "mle_runtime" {
-  name                    = "/fraud-detection/mle-runtime"
+resource "aws_secretsmanager_secret" "mle_pipeline" {
+  name                    = "/mle/pipeline"
   description             = "Runtime credentials for MLE DAG containers (drift_monitor, training_pipeline, archiving)."
   recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret" "fraud_api" {
-  name                    = "/fraud-detection/fraud-api"
-  description             = "Runtime credentials for the fraud_api service."
+resource "aws_secretsmanager_secret" "mle_fraud_detection" {
+  name                    = "/mle/fraud_detection"
+  description             = "Runtime credentials for the fraud_detection service."
   recovery_window_in_days = 0
 }
 
@@ -30,8 +30,8 @@ resource "aws_iam_policy" "mle_secrets_access" {
           "secretsmanager:ListSecretVersionIds",
         ]
         Resource = [
-          aws_secretsmanager_secret.mle_runtime.arn,
-          aws_secretsmanager_secret.fraud_api.arn,
+          aws_secretsmanager_secret.mle_pipeline.arn,
+          aws_secretsmanager_secret.mle_fraud_detection.arn,
         ]
       }
     ]

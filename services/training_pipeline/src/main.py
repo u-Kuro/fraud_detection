@@ -1,4 +1,5 @@
 import json, os, sys, tempfile
+from datetime import datetime, timezone
 
 import mlflow
 import pandas as pd
@@ -12,8 +13,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sqlalchemy import text
 
-from services.training_pipeline.src.modules.config import training_config
-from services.training_pipeline.src.modules.environment import environment
+from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres.postgres import engine
 from services.training_pipeline.src.repositories.postgres.pipeline_state import (
     get_current_state,
@@ -22,6 +22,8 @@ from services.training_pipeline.src.repositories.postgres.pipeline_state import 
     update_promote_slack_ts,
 )
 from services.training_pipeline.src.services.promote import promote
+from shared.configs import fraud_classifier_config, mlflow_config
+from shared.environment import slack_environment
 from shared.logging import logger
 
 def load_data() -> pd.DataFrame:
@@ -40,17 +42,17 @@ def load_data() -> pd.DataFrame:
         connection,
         params={
             "cutoff": cutoff,
-            "limit": training_config.MAX_SELECTED_ROWS
+            "limit": training_config.MAXIMUM_TRAINING_DATASET_ROWS
         })
     df["transaction_timestamp"] = df["transaction_timestamp"].apply(lambda x: int(x.timestamp()))
     return df
 
 
 def train(df: pd.DataFrame):
-    X = df[fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES].values
+    x = df[fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES].values
     y = df[fraud_classifier_config.FRAUD_CLASSIFIER_LABEL].astype(int).values
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y,
         test_size=training_config.TEST_SIZE,
         random_state=training_config.RANDOM_STATE,
         stratify=y
@@ -67,8 +69,8 @@ def train(df: pd.DataFrame):
             "random_state":     training_config.RANDOM_STATE,
         }
         model = xgb.XGBClassifier(**params)
-        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
-        return f1_score(y_test, model.predict(X_test))
+        model.fit(x_train, y_train, eval_set=[(x_test, y_test)], verbose=False)
+        return f1_score(y_test, model.predict(x_test))
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     study = optuna.create_study(direction="maximize")
@@ -82,10 +84,10 @@ def train(df: pd.DataFrame):
         **study.best_params,
         random_state=training_config.RANDOM_STATE
     )
-    best.fit(X_train, y_train)
+    best.fit(x_train, y_train)
     metrics = {
-        "f1": f1_score(y_test, best.predict(X_test)),
-        "roc_auc": roc_auc_score(y_test, best.predict_proba(X_test)[:, 1]),
+        "f1": f1_score(y_test, best.predict(x_test)),
+        "roc_auc": roc_auc_score(y_test, best.predict_proba(x_test)[:, 1]),
     }
     return best, metrics, study.best_params
 
@@ -123,7 +125,7 @@ def post_or_update_promotion_slack(
     metrics: dict,
 ) -> str:
     """Post or update in-place the promotion approval Slack message."""
-    slack = slack_sdk.WebClient(token=environment.SLACK_BOT_USER_AUTH_TOKEN)
+    slack = slack_sdk.WebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
     blocks = [
         {
             "type": "header",
@@ -171,13 +173,13 @@ def post_or_update_promotion_slack(
     try:
         if promote_slack_ts:
             response = slack.chat_update(
-                channel=environment.SLACK_CHANNEL_ID,
+                channel=slack_environment.SLACK_CHANNEL_ID,
                 ts=promote_slack_ts,
                 blocks=blocks
             )
         else:
             response = slack.chat_postMessage(
-                channel=environment.SLACK_CHANNEL_ID,
+                channel=slack_environment.SLACK_CHANNEL_ID,
                 blocks=blocks
             )
         return response["ts"]
@@ -195,27 +197,34 @@ def write_xcom(payload: dict) -> None:
 
 def run_training() -> None:
     df = load_data()
-    if len(df) < training_config.TRAINING_MINIMUM_ROWS:
+    if len(df) < training_config.MINIMUM_TRAINING_DATASET_ROWS:
         logger.error(f"Insufficient labelled data ({len(df)} rows). Exiting.")
         sys.exit(1)
 
     logger.info(f"Training on {len(df)} rows.")
-    mlflow.set_tracking_uri(environment.MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(environment.MLFLOW_EXPERIMENT_NAME)
+    mlflow.set_tracking_uri(mlflow_config.MLFLOW_TRACKING_URI)
+    mlflow.set_experiment(mlflow_config.MLFLOW_EXPERIMENT_NAME)
 
     with mlflow.start_run() as run:
         model, metrics, best_params = train(df)
         mlflow.log_params(best_params)
         mlflow.log_metrics(metrics)
 
-        table = pa.Table.from_pandas(df)
-        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as f:
-            pq.write_table(table, f.name)
-            mlflow.log_artifact(f.name, artifact_path="dataset")
+        table = pa.table(df)
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as file:
+            pq.write_table(table, file.name)
+            mlflow.log_artifact(file.name, artifact_path="dataset")
 
-        transaction_timestamps      = df["transaction_timestamp"]
-        dataset_min = pd.Timestamp(int(transaction_timestamps.min()), unit="s", tz="UTC").to_pydatetime()
-        dataset_max = pd.Timestamp(int(transaction_timestamps.max()), unit="s", tz="UTC").to_pydatetime()
+        transaction_timestamps = df["transaction_timestamp"]
+
+        raw_min = transaction_timestamps.min()
+        raw_max = transaction_timestamps.max()
+
+        if not isinstance(raw_min, (int, float)) or not isinstance(raw_max, (int, float)):
+            raise ValueError("transaction_timestamp column is empty or all-null.")
+
+        dataset_min = datetime.fromtimestamp(int(raw_min), tz=timezone.utc)
+        dataset_max = datetime.fromtimestamp(int(raw_max), tz=timezone.utc)
 
         mlflow.sklearn.log_model(model, artifact_path="model", registered_model_name="XGBoost")
         client   = MlflowClient()

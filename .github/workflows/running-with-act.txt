@@ -4,7 +4,7 @@ AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
 KUBECONFIG_B64=<see below>
-POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:5432/fraud_detection?sslmode=disable
+POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:5432/main?sslmode=disable
 
 # Generate KUBECONFIG_B64 (PowerShell):
 $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes(".\platform-gitops\kubeconfig\k3s.yaml"))
@@ -14,7 +14,7 @@ Add-Content .secrets "KUBECONFIG_B64=$b64"
 cd platform-gitops && terraform output -raw aws_rds_db_address
 
 # ── Run individual workflows ───────────────────────────────────────────────────
-# CI: lint + build fraud_api image
+# CI: lint + build fraud_detection image
 act push --network ministack_network -W .github/workflows/ci-fraud-api.yml --secret-file .secrets
 
 # CI: lint + build drift_monitor image
@@ -33,7 +33,7 @@ act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-
 act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets \
      -e '{"ref":"refs/heads/main"}'
 
-# CD: deploy fraud_api (sync secret + helm upgrade)
+# CD: deploy fraud_detection (sync secret + helm upgrade)
 act push --network ministack_network -W .github/workflows/cd-fraud-api.yml --secret-file .secrets
 
 # CD: sync DAGs to S3 + refresh mle-pipeline-secret

@@ -1,6 +1,6 @@
 variable "environment_name" {
   type    = string
-  default = "fraud_detection_mwaa"
+  default = "mle_mwaa"
 }
 
 variable "aws_access_key"  { type = string }

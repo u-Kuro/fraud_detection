@@ -1,8 +1,9 @@
-from services.training_pipeline.src.modules.environment import environment
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.pool import NullPool
 
+from shared.configs import postgres_config
+
 engine: Engine = create_engine(
-    environment.POSTGRES_DB_URL,
+    postgres_config.POSTGRES_DB_URL,
     poolclass=NullPool
 )

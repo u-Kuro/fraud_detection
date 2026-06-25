@@ -81,6 +81,7 @@ def extract_drift_summary(
                 c, r = cur.get(key), ref.get(key)
                 return round(c - r, 4) if c is not None and r is not None else None
 
+            f1_delta = delta("f1")
             concept_drift = {
                 "f1_current": cur.get("f1"),
                 "f1_reference": ref.get("f1"),
@@ -92,9 +93,7 @@ def extract_drift_summary(
                 "recall_delta": delta("recall"),
                 # A negative delta means the model performs worse on current data.
                 # Flag concept drift if F1 degrades by more than 5 pp.
-                "concept_drift_detected": (
-                    delta("f1") is not None and delta("f1") < -0.05
-                ),
+                "concept_drift_detected": f1_delta is not None and f1_delta < -0.05
             }
 
     return {
