@@ -1,4 +1,4 @@
-name: CI — Atlas Migrations (Lint + Apply)
+name: CI — Atlas Migrations
 
 on:
   push:
@@ -7,29 +7,26 @@ on:
       - "db/atlas.hcl"
     branches: ["**"]
 
-env:
-  POSTGRES_VERSION: "15"
-  POSTGRES_DB: "fraud_detection"
-  POSTGRES_CONNECTION_URI: ${{ secrets.POSTGRES_CONNECTION_URI }}
-
 jobs:
-  atlas:
+  lint:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_VERSION: "15"
+      FRAUD_DETECTION_DB_NAME: fraud_detection
+      POSTGRES_CONNECTION_URI: ${{ secrets.POSTGRES_CONNECTION_URI }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - name: Install Atlas CLI
-        run: |
-          curl -sSf https://atlasgo.sh | sh
-          atlas version
+        run: curl -sSf https://atlasgo.sh | sh
 
       - name: Lint migrations
         working-directory: db
         run: atlas migrate lint --env ci --git-base origin/main
 
-      - name: Apply migrations (main only)
-        if: github.ref == 'refs/heads/main'
-        working-directory: db
-        run: atlas migrate apply --env ci --allow-dirty
+  apply:
+    needs: lint
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cd-atlas.yml
+    secrets: inherit

@@ -1,0 +1,22 @@
+name: CD — Atlas Migrations
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_VERSION: "15"
+      POSTGRES_DB_NAME: main
+      POSTGRES_CONNECTION_URI: ${{ secrets.POSTGRES_CONNECTION_URI }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Atlas CLI
+        run: curl -sSf https://atlasgo.sh | sh
+
+      - name: Apply migrations
+        working-directory: db
+        run: atlas migrate apply --env ci --allow-dirty

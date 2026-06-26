@@ -1,29 +1,28 @@
-name: CI — Archiving (Lint + Build + Push ECR)
+name: CI — Archiving
 
 on:
   push:
     paths:
       - "services/archiving/**"
       - "shared/**"
+      - "dags/archiving.py"
       - "pyproject.toml"
       - "uv.lock"
     branches: ["**"]
 
 jobs:
-  build-push:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12.13"
+        with: { python-version: "3.12.13" }
 
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install deps
-        run: uv sync --frozen --group archiving --group dev --no-install-project
+      - run: pip install uv
+      - run: uv sync --frozen --group archiving --group dev --no-install-project
 
       - name: Lint
         run: uv run ruff check services/archiving shared
@@ -33,7 +32,6 @@ jobs:
           aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set region                ${{ secrets.AWS_REGION }}
-          aws configure set cli_pager             ""
 
       - name: Login to ECR
         run: |
@@ -42,12 +40,18 @@ jobs:
 
       - name: Build and push
         env:
-          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection-archiving
+          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/archiving
         run: |
           docker build \
             -t $REPO:${{ github.sha }} \
             -t $REPO:latest \
-            -f services/archiving/Dockerfile \
-            .
+            -f services/archiving/Dockerfile .
           docker push $REPO:${{ github.sha }}
           docker push $REPO:latest
+          echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cd-archiving.yml
+    secrets: inherit

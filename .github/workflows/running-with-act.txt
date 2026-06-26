@@ -1,48 +1,24 @@
-# ── Prerequisites ─────────────────────────────────────────────────────────────
-# .secrets file (gitignored):
+# Prerequisites — .secrets file (gitignored):
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
-KUBECONFIG_B64=<see below>
-POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:5432/main?sslmode=disable
+POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:port/main?sslmode=disable
+KUBECONFIG_B64=<base64 of ./platform-gitops/kubeconfig/k3s.yaml>
 
 # Generate KUBECONFIG_B64 (PowerShell):
 $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes(".\platform-gitops\kubeconfig\k3s.yaml"))
 Add-Content .secrets "KUBECONFIG_B64=$b64"
 
-# Get rds_address:
-cd platform-gitops && terraform output -raw aws_rds_db_address
+# ── Run CI workflows (build image, lint) ────────────────────────────────────
+act push --network ministack_network -W .github/workflows/ci-fraud-detection.yml     --secret-file .secrets
+act push --network ministack_network -W .github/workflows/ci-drift-monitor.yml       --secret-file .secrets
+act push --network ministack_network -W .github/workflows/ci-training-pipeline.yml   --secret-file .secrets
+act push --network ministack_network -W .github/workflows/ci-archiving.yml           --secret-file .secrets
+act push --network ministack_network -W .github/workflows/ci-atlas.yml               --secret-file .secrets
 
-# ── Run individual workflows ───────────────────────────────────────────────────
-# CI: lint + build fraud_detection image
-act push --network ministack_network -W .github/workflows/ci-fraud-api.yml --secret-file .secrets
-
-# CI: lint + build drift_monitor image
-act push --network ministack_network -W .github/workflows/ci-drift-monitor.yml --secret-file .secrets
-
-# CI: lint + build training_pipeline image
-act push --network ministack_network -W .github/workflows/ci-training-pipeline.yml --secret-file .secrets
-
-# CI: lint + build archiving image
-act push --network ministack_network -W .github/workflows/ci-archiving.yml --secret-file .secrets
-
-# CI: atlas lint (non-main branch — lint only)
-act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets
-
-# CI: atlas lint + apply (simulate main push)
-act push --network ministack_network -W .github/workflows/ci-atlas.yml --secret-file .secrets \
-     -e '{"ref":"refs/heads/main"}'
-
-# CD: deploy fraud_detection (sync secret + helm upgrade)
-act push --network ministack_network -W .github/workflows/cd-fraud-api.yml --secret-file .secrets
-
-# CD: sync DAGs to S3 + refresh mle-pipeline-secret
-act push --network ministack_network -W .github/workflows/cd-dags.yml --secret-file .secrets
-
-# CD: rotate a credential (example: rotate fraud-api POSTGRES_PASSWORD)
-act workflow_dispatch --network ministack_network -W .github/workflows/cd-secret-rotation.yml \
-     --secret-file .secrets \
-     -e '{"inputs":{"target":"fraud-api","secret_key":"POSTGRES_PASSWORD","new_secret_value":"newpass123"}}'
-
-# ── List all detected workflows ───────────────────────────────────────────────
-act -l
+# ── Run CD workflows directly (manual rerollout after secret change) ─────────
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-fraud-detection.yml     --secret-file .secrets
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-drift-monitor.yml       --secret-file .secrets
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-training-pipeline.yml   --secret-file .secrets
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-archiving.yml           --secret-file .secrets
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-atlas.yml               --secret-file .secrets

@@ -1,0 +1,74 @@
+name: CD — Deploy Fraud Detection
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        required: false
+        type: string
+        description: "Leave empty to reroll existing pods with updated secret."
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        run: |
+          aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region                ${{ secrets.AWS_REGION }}
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p /tmp/kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kube/k3s.yaml
+          chmod 600 /tmp/kube/k3s.yaml
+
+      # EXPAND — write current secret to k8s BEFORE touching any running pod.
+      - name: Expand — sync fraud-detection-secret from Secrets Manager
+        env:
+          KUBECONFIG: /tmp/kube/k3s.yaml
+        run: |
+          aws --endpoint-url http://ministack:4566 secretsmanager get-secret-value \
+            --secret-id /mle/fraud-detection \
+            --query SecretString --output text \
+          | python3 -c "
+          import json, sys
+          for k, v in json.load(sys.stdin).items():
+              print(f'{k}={v}')
+          " > /tmp/mle-fraud-detection-secret.env
+          
+          kubectl create secret generic mle-fraud-detection-secret \
+            --from-env-file=/tmp/mle-fraud-detection-secret.env \
+            --namespace default \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          rm /tmp/mle-fraud-detection-secret.env
+
+      - uses: azure/setup-helm@v4
+
+      - name: Rollout
+        env:
+          KUBECONFIG: /tmp/kube/k3s.yaml
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          ECR_REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/fraud-detection
+        run: |
+          if [ -n "$IMAGE_TAG" ]; then
+            helm upgrade --install fraud-detection \
+              ./platform-gitops/helm/fraud_detection \
+              --namespace default \
+              --set image.tag=$IMAGE_TAG \
+              --set image.repository=$ECR_REPO \
+              --reuse-values \
+              --wait --timeout 5m
+          else
+            kubectl rollout restart deployment/fraud-detection --namespace default
+            kubectl rollout status deployment/fraud-detection --namespace default --timeout=5m
+          fi

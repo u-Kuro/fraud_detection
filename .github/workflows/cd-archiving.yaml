@@ -1,0 +1,48 @@
+name: CD — Archiving
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        run: |
+          aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region                ${{ secrets.AWS_REGION }}
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p /tmp/kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kube/k3s.yaml
+          chmod 600 /tmp/kube/k3s.yaml
+
+      - name: Expand — sync mle-pipeline-secret from Secrets Manager
+        env:
+          KUBECONFIG: /tmp/kube/k3s.yaml
+        run: |
+          aws --endpoint-url http://ministack:4566 secretsmanager get-secret-value \
+            --secret-id /mle/pipeline \
+            --query SecretString --output text \
+          | python3 -c "
+          import json, sys
+          for k, v in json.load(sys.stdin).items():
+              print(f'{k}={v}')
+          " > /tmp/mle-pipeline-secret.env
+
+          kubectl create secret generic mle-pipeline-secret \
+            --from-env-file=/tmp/mle-pipeline-secret.env \
+            --namespace default \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          rm /tmp/mle-pipeline-secret.env
+
+      - name: Sync archiving DAG file to S3
+        run: |
+          aws --endpoint-url http://ministack:4566 s3 cp \
+            dags/archiving.py s3://mle/dags/

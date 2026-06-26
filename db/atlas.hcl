@@ -5,7 +5,7 @@ variable "url" {
 
 variable "dev" {
   type    = string
-  default = "docker://postgres/${getenv("POSTGRES_VERSION")}/${getenv("FRAUD_DETECTION_DB_NAME")}?search_path=public"
+  default = "docker://postgres/${getenv("POSTGRES_VERSION")}/${getenv("POSTGRES_DB_NAME")}?search_path=public"
 }
 
 variable "dir" {

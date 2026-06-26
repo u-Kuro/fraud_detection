@@ -10,9 +10,10 @@ resource "aws_s3_object" "requirements" {
   bucket  = var.s3_mle_bucket
   key     = local.requirements_file_name
   content = <<-REQ
-    apache-airflow-providers-cncf-kubernetes
-    apache-airflow-providers-postgres
-    apache-airflow-providers-slack-sdk
+    apache-airflow-providers-cncf-kubernetes==10.18.0
+    apache-airflow-providers-postgres==6.8.0
+    apache-airflow-providers-slack==9.10.2
+    kubernetes==36.0.2
   REQ
 }
 
