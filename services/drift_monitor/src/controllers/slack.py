@@ -1,7 +1,11 @@
+import json
+from uuid import uuid4
+
 from pydantic import validate_call
 from slack_sdk.web.async_client import AsyncWebClient
 
-from shared.environment import slack_environment
+from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow
+from shared.modules.environment import slack_environment
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 
@@ -31,7 +35,7 @@ def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> l
 
 @validate_call(validate_return=True)
 async def post_cold_start_notice_to_slack() -> str:
-    """Posted once when no model has ever been deployed."""
+    workflow_id = uuid4()
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=create_blocks(
@@ -48,7 +52,10 @@ async def post_cold_start_notice_to_slack() -> str:
                         "text": "✅ Approve Training"
                     },
                     "style": "primary",
-                    "action_id": "approve_training"
+                    "action_id": "approve_training",
+                    "value": json.dumps({
+                        "workflow_id": str(workflow_id)
+                    })
                 },
                 {
                     "type": "button",
@@ -57,17 +64,26 @@ async def post_cold_start_notice_to_slack() -> str:
                         "text": "❌ Dismiss"
                     },
                     "style": "danger",
-                    "action_id": "dismiss_drift"
+                    "action_id": "reject_training",
+                    "value": json.dumps({
+                        "workflow_id": str(workflow_id)
+                    })
                 },
             ]
         )
     )
 
-    return response["ts"]
+    drift_slack_ts = response["ts"]
+
+    create_train_pending_workflow(
+        workflow_id=workflow_id,
+        drift_slack_ts=drift_slack_ts
+    )
+
+    return drift_slack_ts
 
 @validate_call(validate_return=True)
-async def post_drift_message(drift_summary: dict):
-    """Post a drift message."""
+async def post_drift_message(drift_summary: dict) -> str:
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=format_drift_blocks(drift_summary)
@@ -77,7 +93,6 @@ async def post_drift_message(drift_summary: dict):
 
 @validate_call(validate_return=True)
 async def update_drift_message(drift_summary: dict, drift_slack_ts: str) -> str:
-    """Update an existing drift message in place."""
     response = await client.chat_update(
         ts=drift_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,

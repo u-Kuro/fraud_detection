@@ -14,7 +14,7 @@ XCom written to /airflow/xcom/return.json:
   {"action": "wait_approval"}  — DAG sensor should wait for training_approved
   {"action": "exit"}           — DAG should stop here
 """
-import asyncio, json, os
+import asyncio, json
 from datetime import datetime, timezone, timedelta
 
 from services.drift_monitor.src.controllers.slack import (
@@ -23,12 +23,12 @@ from services.drift_monitor.src.controllers.slack import (
     update_drift_message,
 )
 from services.drift_monitor.src.modules.configs import drift_config
-from services.drift_monitor.src.repositories.postgres.deployed_models import (
+from services.drift_monitor.src.repositories.postgres.model_deployments import (
     has_any_active_deployed_model,
 )
-from services.drift_monitor.src.repositories.postgres.pipeline_state import (
-    get_pipeline_state,
-    create_drift_pending,
+from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import (
+    get_current_model_deployment_workflow,
+    create_train_pending_workflow,
     update_drift_slack_ts,
 )
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import (
@@ -36,47 +36,39 @@ from services.drift_monitor.src.repositories.postgres.transaction_inferences imp
 )
 from services.drift_monitor.src.repositories.s3.dataset_reference import load_reference_parquet
 from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
+from services.drift_monitor.src.services.airflow import write_xcom
 from services.drift_monitor.src.services.evidently import run_drift_report
-from shared.logging import logger
-
-def write_xcom(payload: dict) -> None:
-    xcom_dir = "/airflow/xcom"
-    if os.path.isdir(xcom_dir):
-        with open(f"{xcom_dir}/return.json", "w") as f:
-            json.dump(payload, f)
+from shared.modules.logging import logger
 
 async def main() -> None:
-    # ── (a) No active model: cold-start path ────────────────────────────────
     if not has_any_active_deployed_model():
-        state_row = get_pipeline_state()
+        current_model_deployment_workflow = get_current_model_deployment_workflow()
 
-        if state_row is None:
-            # First ever run — post Slack cold-start notice, insert pending row
-            drift_slack_ts = await post_cold_start_notice_to_slack()
-            create_drift_pending(drift_slack_ts)
-            logger.warning("Cold-start: no model deployed. Slack notice posted.")
-            write_xcom({"action": "wait_approval"})
+        if current_model_deployment_workflow is None:
+            await post_cold_start_notice_to_slack()
+            logger.warning("Cold-start: no model deployed. Slack notice was posted.")
+            # write_xcom({"action": "wait_approval"})
             return
 
-        state = state_row["state"]
-        training_approved = state_row["training_approved"]
+        state = current_model_deployment_workflow["state"]
+        training_approved = current_model_deployment_workflow["training_approved"]
 
-        if state == "drift_pending":
+        if state == "train_pending":
             if training_approved:
                 # Human already approved in a previous run; the DAG sensor already unblocked.
                 # Another cron tick fired before training started — nothing to do.
-                logger.info("Cold-start already approved. Training starting soon.")
-                write_xcom({"action": "exit"})
+                logger.info("Cold-start already approved.")
+                # write_xcom({"action": "exit"})
                 return
             else:
                 # Still waiting on human — nothing to do
                 logger.info("Cold-start pending human approval.")
-                write_xcom({"action": "wait_approval"})
+                # write_xcom({"action": "wait_approval"})
                 return
 
-        # Any other state (train_pending / promoting) with no active model is unusual
-        logger.warning(f"No active model but state={state}. Exiting.")
-        write_xcom({"action": "exit"})
+        # Any other state (promoting) with no active model is unusual
+        logger.warning(f"No active model with state set to {state}.")
+        # write_xcom({"action": "exit"})
         return
 
     # ── Load reference dataset ───────────────────────────────────────────────
@@ -118,18 +110,18 @@ async def main() -> None:
     logger.warning(f"Drift detected — data={data_drift} concept={concept_drift}")
 
     # ── State machine ────────────────────────────────────────────────────────
-    state_row = get_pipeline_state()
+    current_model_deployment_workflow = get_current_model_deployment_workflow()
 
-    if state_row is None:
+    if current_model_deployment_workflow is None:
         # No existing state — post fresh drift message
         drift_slack_ts = await post_drift_message(drift_summary)
-        create_drift_pending(drift_slack_ts)
+        create_train_pending_workflow(drift_slack_ts)
         write_xcom({"action": "wait_approval"})
         return
 
-    state = state_row["state"]
-    training_approved = state_row["training_approved"]
-    drift_slack_ts = state_row["drift_slack_ts"]
+    state = current_model_deployment_workflow["state"]
+    training_approved = current_model_deployment_workflow["training_approved"]
+    drift_slack_ts = current_model_deployment_workflow["drift_slack_ts"]
 
     if state == "drift_pending":
         # (d) Drift still pending (not yet approved for training) — update Slack message in place

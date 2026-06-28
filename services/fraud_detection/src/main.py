@@ -3,19 +3,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from services.fraud_detection.src.controller.routers.slack import start_socket_mode
+from services.fraud_detection.src.services import model_states
 from services.fraud_detection.src.services.fraud_classifier import FraudClassifier
 from services.fraud_detection.src.controller.routers import health, inference, slack
-from shared.configs import mlflow_config
-from shared.logging import logger
-
-fraud_classifier: FraudClassifier
+from shared.modules.configs import mlflow_config
+from shared.modules.logging import logger
 
 @asynccontextmanager
 async def lifespan(_):
     try:
-        global fraud_classifier
-
-        fraud_classifier = FraudClassifier(
+        model_states.fraud_classifier = FraudClassifier(
             mlflow_model_uri=mlflow_config.MODEL_URI,
         )
     except Exception as exception:

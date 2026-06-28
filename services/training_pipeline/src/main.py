@@ -15,16 +15,16 @@ from sqlalchemy import text
 
 from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres.postgres import engine
-from services.training_pipeline.src.repositories.postgres.pipeline_state import (
+from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
     get_current_state,
     get_latest_deployed_max_date,
     update_after_training,
     update_promote_slack_ts,
 )
 from services.training_pipeline.src.services.promote import promote
-from shared.configs import fraud_classifier_config, mlflow_config
-from shared.environment import slack_environment
-from shared.logging import logger
+from shared.modules.configs import fraud_classifier_config, mlflow_config
+from shared.modules.environment import slack_environment
+from shared.modules.logging import logger
 
 def load_data() -> pd.DataFrame:
     cutoff = get_latest_deployed_max_date()
@@ -46,7 +46,6 @@ def load_data() -> pd.DataFrame:
         })
     df["transaction_timestamp"] = df["transaction_timestamp"].apply(lambda x: int(x.timestamp()))
     return df
-
 
 def train(df: pd.DataFrame):
     x = df[fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES].values
@@ -96,7 +95,6 @@ def delete_stale_candidates(
     model_name: str,
     current_version: int
 ) -> None:
-    """Delete MLflow model versions that are trained candidates but will never be promoted."""
     try:
         versions = client.search_model_versions(f"name='{model_name}'")
         for item in versions:

@@ -1,14 +1,14 @@
 import httpx
 
-from shared.configs.airflow import airflow_config
-from shared.environment.airflow import airflow_environment
-from shared.logging import logger
+from shared.modules.configs import airflow_config
+from shared.modules.environment import airflow_environment
+from shared.modules.logging import logger
 
-def trigger_airflow_dag(dag_id: str, conf: dict) -> None:
+def trigger_airflow_dag(dag_id: str, configurations: dict) -> None:
     try:
         httpx.post(
             f"{airflow_config.MWAA_WEBSERVER_URL}/api/v1/dags/{dag_id}/dagRuns",
-            json={"conf": conf},
+            json={"conf": configurations},
             auth=(airflow_environment.AIRFLOW_USERNAME, airflow_environment.AIRFLOW_PASSWORD),
             verify=False,
             timeout=5.0,

@@ -5,7 +5,7 @@ Promotion steps — idempotent (safe to re-run after crash).
 2. save_permanent_dataset()   — copy artifact parquet to permanent S3 path
 3. MLflow alias rotation      — candidate → production, old production → archived
 4. overwrite_reference_dataset() — update drift_monitor's reference
-5. finalize_promotion()       — DB finalization (delete pipeline_state, set status=active)
+5. finalize_promotion()       — DB finalization (delete model_deployment_workflows, set status=active)
 6. fraud_detection reload           — hot-reload the production model (zero-downtime)
 """
 
@@ -16,7 +16,7 @@ import mlflow
 import pyarrow.parquet as pq
 from mlflow import MlflowClient
 
-from services.training_pipeline.src.repositories.postgres.pipeline_state import (
+from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
     get_current_state,
     begin_promoting,
     finalize_promotion,
@@ -25,13 +25,13 @@ from services.training_pipeline.src.repositories.s3 import (
     save_permanent_dataset,
     overwrite_reference_dataset,
 )
-from shared.configs import mlflow_config
-from shared.logging import logger
+from shared.modules.configs import mlflow_config
+from shared.modules.logging import logger
 
 def promote() -> None:
     state = get_current_state()
     if state is None or state["state"] not in ("train_pending", "promoting"):
-        raise RuntimeError(f"Cannot promote: unexpected pipeline_state={state}")
+        raise RuntimeError(f"Cannot promote: unexpected model_deployment_workflows={state}")
 
     run_id:          str      = state["run_id"]
     model_version:   int      = state["model_version"]

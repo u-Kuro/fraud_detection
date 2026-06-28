@@ -6,10 +6,10 @@ from sqlalchemy import text
 
 from services.archiving.src.modules.configs import archiving_config
 from services.archiving.src.repositories.postgres import engine
-from services.archiving.src.repositories.postgres.pipeline_state import get_archive_cutoff
-from shared.configs import s3_config
-from shared.logging import logger
-from shared.s3 import s3_client, ensure_bucket
+from services.archiving.src.repositories.postgres.model_deployment_workflows import get_archive_cutoff
+from shared.modules.configs import s3_config
+from shared.modules.logging import logger
+from shared.repositories.s3 import s3_client, ensure_bucket
 
 def archive() -> None:
     cutoff = get_archive_cutoff(engine)

@@ -7,11 +7,9 @@ from sqlalchemy import text
 from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres import engine
 
-
 def load_current_window(
     current_cutoff_date: datetime,
 ) -> DataFrame:
-    """Load recent inference data from transaction_inferences."""
     query = text(f"""
         WITH selected AS (
             SELECT DISTINCT ON (transaction_id)

@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Engine
 
-from shared.configs import postgres_config
+from shared.modules.configs import postgres_config
 
 engine: Engine = create_engine(
     postgres_config.POSTGRES_DB_URL,

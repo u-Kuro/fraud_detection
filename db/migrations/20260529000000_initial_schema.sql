@@ -1,18 +1,25 @@
-CREATE TABLE deployed_models (
-    model_id                SERIAL              NOT NULL        PRIMARY KEY,
-    promoted_at             TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
-    model_name              TEXT                NOT NULL,
-    model_version           INT                 NOT NULL,
-    dataset_min_date        TIMESTAMPTZ         NULL,
-    dataset_max_date        TIMESTAMPTZ         NOT NULL,
-    status                  TEXT                NOT NULL        DEFAULT 'active',
-    CONSTRAINT deployed_models_name_version_key UNIQUE (model_name, model_version),
-    CONSTRAINT status_check CHECK (status IN ('promoting', 'active'))
+CREATE TABLE projects (
+    id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
+    created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    name                    TEXT                NOT NULL
 );
 
-CREATE TABLE pipeline_state (
-    pipeline_state_id       INT                 NOT NULL        PRIMARY KEY     DEFAULT 1,
+CREATE TABLE model_deployments (
+    id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
     created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    project_id              UUID                NOT NULL                                        REFERENCES model_tasks(id),
+    name                    TEXT                NOT NULL,
+    version                 INT                 NOT NULL,
+    dataset_min_date        TIMESTAMPTZ         NULL,
+    dataset_max_date        TIMESTAMPTZ         NOT NULL,
+    active                  BOOLEAN             NOT NULL        DEFAULT FALSE,
+    CONSTRAINT model_deployment_name_version_key UNIQUE (name, version)
+);
+
+CREATE TABLE model_deployment_workflows (
+    id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
+    created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    project_id              UUID                NOT NULL                                        REFERENCES model_tasks(id),
     state                   TEXT                NOT NULL,
     training_approved       BOOLEAN             NOT NULL        DEFAULT FALSE,
     promote_approved        BOOLEAN             NOT NULL        DEFAULT FALSE,
@@ -20,21 +27,21 @@ CREATE TABLE pipeline_state (
     model_version           INT                 NULL,
     dataset_min_date        TIMESTAMPTZ         NULL,
     dataset_max_date        TIMESTAMPTZ         NULL,
-    drift_slack_ts          TEXT                NOT NULL,
-    promote_slack_ts        TEXT                NOT NULL,
+    drift_slack_ts          TEXT                NULL,
+    promote_slack_ts        TEXT                NULL,
     CONSTRAINT state_check CHECK (state IN ('drift_pending', 'train_pending', 'promoting'))
 );
 
 CREATE TABLE transaction_inferences (
-    request_id              UUID                NOT NULL        PRIMARY KEY     DEFAULT gen_random_uuid(),
-    inference_timestamp     TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
+    created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
     transaction_id          UUID                NULL,
     transaction_timestamp   TIMESTAMPTZ         NOT NULL,
     amount                  DOUBLE PRECISION    NOT NULL,
     is_fraud                BOOLEAN             NULL,
     is_fraud_prediction     BOOLEAN             NULL,
     is_fraud_probability    DOUBLE PRECISION    NULL,
-    model_deployment_id     INT                 NULL            REFERENCES      deployed_models(model_id),
+    deployed_model_id       INT                 NULL                                            REFERENCES model_deployments(id),
     v1                      DOUBLE PRECISION    NOT NULL,
     v2                      DOUBLE PRECISION    NOT NULL,
     v3                      DOUBLE PRECISION    NOT NULL,

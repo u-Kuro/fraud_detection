@@ -4,7 +4,7 @@ from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
-from shared.configs import fraud_classifier_config
+from shared.modules.configs import fraud_classifier_config
 
 def run_drift_report(
     df_reference: DataFrame,
