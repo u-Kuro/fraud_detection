@@ -103,6 +103,7 @@ async def main() -> None:
 
         if current_model_deployment_workflow is None:
             # No existing state — post fresh drift message
+            # TODO - CURRENTLY HERE TO CHECK UPTO BELOW
             training_approval_slack_ts = await post_training_approval(drift_summary)
             create_train_pending_workflow(training_approval_slack_ts)
             return
