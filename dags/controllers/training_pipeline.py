@@ -4,13 +4,15 @@ from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperato
 from airflow.sdk import dag, Variable, task
 from kubernetes import client as k8s
 
+from dags.modules.configs.dags import dags_config
+
 @dag(
     dag_id="training_pipeline",
     schedule=None,
     start_date=datetime(2026, 1, 1),
     catchup=False,
     default_args={
-        "owner": "mle",
+        "owner": dags_config.OWNER,
         "retries": 1,
         "retry_delay": timedelta(minutes=10),
         "email_on_failure": False

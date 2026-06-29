@@ -1,5 +1,5 @@
 import json
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from pydantic import validate_call
 from slack_sdk.web.async_client import AsyncWebClient
@@ -34,8 +34,9 @@ def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> l
     return blocks
 
 @validate_call(validate_return=True)
-async def post_cold_start_notice_to_slack() -> str:
+async def post_cold_start_training_approval() -> str:
     workflow_id = uuid4()
+
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=create_blocks(
@@ -73,35 +74,44 @@ async def post_cold_start_notice_to_slack() -> str:
         )
     )
 
-    drift_slack_ts = response["ts"]
+    training_approval_slack_ts = response["ts"]
 
     create_train_pending_workflow(
         workflow_id=workflow_id,
-        drift_slack_ts=drift_slack_ts
+        training_approval_slack_ts=training_approval_slack_ts
     )
 
-    return drift_slack_ts
+    return training_approval_slack_ts
 
 @validate_call(validate_return=True)
-async def post_drift_message(drift_summary: dict) -> str:
+async def post_training_approval(drift_summary: dict) -> str:
+    workflow_id = uuid4()
+
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_drift_blocks(drift_summary)
+        blocks=format_drift_blocks(drift_summary, workflow_id)
     )
 
-    return response["ts"]
+    training_approval_slack_ts = response["ts"]
+
+    create_train_pending_workflow(
+        workflow_id=workflow_id,
+        training_approval_slack_ts=training_approval_slack_ts
+    )
+
+    return training_approval_slack_ts
 
 @validate_call(validate_return=True)
-async def update_drift_message(drift_summary: dict, drift_slack_ts: str) -> str:
+async def update_training_approval(drift_summary: dict, training_approval_slack_ts: str) -> str:
     response = await client.chat_update(
-        ts=drift_slack_ts,
+        ts=training_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=format_drift_blocks(drift_summary)
     )
 
     return response["ts"]
 
-def format_drift_blocks(drift_summary: dict) -> list:
+def format_drift_blocks(drift_summary: dict, workflow_id: UUID) -> list:
     dd = drift_summary.get("data_drift", {})
     cd = drift_summary.get("concept_drift", {})
 
@@ -132,7 +142,10 @@ def format_drift_blocks(drift_summary: dict) -> list:
                     "text": "🔄 Approve Retraining"
                 },
                 "style": "primary",
-                "action_id": "approve_retraining"
+                "action_id": "approve_retraining",
+                "value": json.dumps({
+                    "workflow_id": str(workflow_id)
+                })
             },
             {
                 "type": "button",
@@ -141,7 +154,10 @@ def format_drift_blocks(drift_summary: dict) -> list:
                     "text": "❌ Dismiss"
                 },
                 "style": "danger",
-                "action_id": "dismiss_drift"
+                "action_id": "reject_retraining",
+                "value": json.dumps({
+                    "workflow_id": str(workflow_id)
+                })
             },
         ]
     )

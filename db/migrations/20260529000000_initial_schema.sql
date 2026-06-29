@@ -17,18 +17,18 @@ CREATE TABLE model_deployments (
 );
 
 CREATE TABLE model_deployment_workflows (
-    id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
-    created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
-    project_id              UUID                NOT NULL                                        REFERENCES model_tasks(id),
-    state                   TEXT                NOT NULL,
-    training_approved       BOOLEAN             NOT NULL        DEFAULT FALSE,
-    promote_approved        BOOLEAN             NOT NULL        DEFAULT FALSE,
-    run_id                  TEXT                NULL,
-    model_version           INT                 NULL,
-    dataset_min_date        TIMESTAMPTZ         NULL,
-    dataset_max_date        TIMESTAMPTZ         NULL,
-    drift_slack_ts          TEXT                NULL,
-    promote_slack_ts        TEXT                NULL,
+    id                              UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
+    created_at                      TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    project_id                      UUID                NOT NULL                                        REFERENCES model_tasks(id),
+    state                           TEXT                NOT NULL,
+    training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
+    promote_approved                BOOLEAN             NOT NULL        DEFAULT FALSE,
+    run_id                          TEXT                NULL,
+    model_version                   INT                 NULL,
+    dataset_min_date                TIMESTAMPTZ         NULL,
+    dataset_max_date                TIMESTAMPTZ         NULL,
+    training_approval_slack_ts      TEXT                NULL,
+    promotion_approval_slack_ts     TEXT                NULL,
     CONSTRAINT state_check CHECK (state IN ('drift_pending', 'train_pending', 'promoting'))
 );
 

@@ -18,9 +18,9 @@ import asyncio, json
 from datetime import datetime, timezone, timedelta
 
 from services.drift_monitor.src.controllers.slack import (
-    post_cold_start_notice_to_slack,
-    post_drift_message,
-    update_drift_message,
+    post_cold_start_training_approval,
+    post_training_approval,
+    update_training_approval,
 )
 from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres.model_deployments import (
@@ -29,14 +29,13 @@ from services.drift_monitor.src.repositories.postgres.model_deployments import (
 from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import (
     get_current_model_deployment_workflow,
     create_train_pending_workflow,
-    update_drift_slack_ts,
+    update_training_approval_slack_ts,
 )
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import (
     load_current_window,
 )
 from services.drift_monitor.src.repositories.s3.dataset_reference import load_reference_parquet
 from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
-from services.drift_monitor.src.services.airflow import write_xcom
 from services.drift_monitor.src.services.evidently import run_drift_report
 from shared.modules.logging import logger
 
@@ -45,9 +44,8 @@ async def main() -> None:
         current_model_deployment_workflow = get_current_model_deployment_workflow()
 
         if current_model_deployment_workflow is None:
-            await post_cold_start_notice_to_slack()
+            await post_cold_start_training_approval()
             logger.warning("Cold-start: no model deployed. Slack notice was posted.")
-            # write_xcom({"action": "wait_approval"})
             return
 
         state = current_model_deployment_workflow["state"]
@@ -58,24 +56,20 @@ async def main() -> None:
                 # Human already approved in a previous run; the DAG sensor already unblocked.
                 # Another cron tick fired before training started — nothing to do.
                 logger.info("Cold-start already approved.")
-                # write_xcom({"action": "exit"})
                 return
             else:
                 # Still waiting on human — nothing to do
                 logger.info("Cold-start pending human approval.")
-                # write_xcom({"action": "wait_approval"})
                 return
 
         # Any other state (promoting) with no active model is unusual
         logger.warning(f"No active model with state set to {state}.")
-        # write_xcom({"action": "exit"})
         return
 
     # ── Load reference dataset ───────────────────────────────────────────────
     reference_table = load_reference_parquet()
     if reference_table is None:
-        logger.warning("No reference dataset in S3. Cannot compute drift.")
-        write_xcom({"action": "exit"})
+        logger.warning("No reference dataset in S3.")
         return
 
     df_reference = reference_table.to_pandas()
@@ -89,8 +83,7 @@ async def main() -> None:
     df_current = load_current_window(current_cutoff)
 
     if len(df_current) < drift_config.MINIMUM_CURRENT_DATASET_ROWS:
-        logger.info(f"Current window too small ({len(df_current)} rows). Skipping.")
-        write_xcom({"action": "exit"})
+        logger.info(f"Current dataset window is too small ({len(df_current)} rows).")
         return
 
     # ── Run drift report ─────────────────────────────────────────────────────
@@ -102,44 +95,37 @@ async def main() -> None:
     drift_detected = data_drift or concept_drift
 
     # ── (b) No drift ────────────────────────────────────────────────────────
-    if not drift_detected:
-        logger.info("No drift detected. Exiting.")
-        write_xcom({"action": "exit"})
-        return
+    if drift_detected:
+        logger.warning(f"Drift detected — data={data_drift} concept={concept_drift}")
 
-    logger.warning(f"Drift detected — data={data_drift} concept={concept_drift}")
+        # ── State machine ────────────────────────────────────────────────────────
+        current_model_deployment_workflow = get_current_model_deployment_workflow()
 
-    # ── State machine ────────────────────────────────────────────────────────
-    current_model_deployment_workflow = get_current_model_deployment_workflow()
+        if current_model_deployment_workflow is None:
+            # No existing state — post fresh drift message
+            training_approval_slack_ts = await post_training_approval(drift_summary)
+            create_train_pending_workflow(training_approval_slack_ts)
+            return
 
-    if current_model_deployment_workflow is None:
-        # No existing state — post fresh drift message
-        drift_slack_ts = await post_drift_message(drift_summary)
-        create_train_pending_workflow(drift_slack_ts)
-        write_xcom({"action": "wait_approval"})
-        return
+        state = current_model_deployment_workflow["state"]
+        training_approved = current_model_deployment_workflow["training_approved"]
+        training_approval_slack_ts = current_model_deployment_workflow["training_approval_slack_ts"]
 
-    state = current_model_deployment_workflow["state"]
-    training_approved = current_model_deployment_workflow["training_approved"]
-    drift_slack_ts = current_model_deployment_workflow["drift_slack_ts"]
-
-    if state == "drift_pending":
-        # (d) Drift still pending (not yet approved for training) — update Slack message in place
-        new_ts = await update_drift_message(drift_summary, drift_slack_ts)
-        update_drift_slack_ts(new_ts)
-        if training_approved:
-            # Approved but training not started yet — sensor already unblocked
-            logger.info("Training already approved; update posted. Exiting.")
-            write_xcom({"action": "exit"})
+        if state == "drift_pending":
+            # (d) Drift still pending (not yet approved for training) — update Slack message in place
+            new_ts = await update_training_approval(drift_summary, training_approval_slack_ts)
+            update_training_approval_slack_ts(new_ts)
+            if training_approved:
+                # Approved but training not started yet — sensor already unblocked
+                logger.info("Training already approved; update posted. Exiting.")
+            else:
+                logger.info("Drift message updated. Awaiting human approval.")
+            return
         else:
-            logger.info("Drift message updated. Awaiting human approval.")
-            write_xcom({"action": "wait_approval"})
-        return
-    else:
-        # (c) Training is in progress or promotion underway — do not touch anything
-        logger.info(f"Drift detected but state={state}. Skipping.")
-        write_xcom({"action": "exit"})
-        return
+            # (c) Training is in progress or promotion underway — do not touch anything
+            logger.info(f"Drift detected with state set to {state}.")
+            return
+    else: logger.info("No drift detected.")
 
 if __name__ == "__main__":
     asyncio.run(main())

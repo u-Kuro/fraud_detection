@@ -10,7 +10,6 @@ def run_drift_report(
     df_reference: DataFrame,
     df_current: DataFrame
 ) -> tuple[dict, bytes]:
-    """Run evidently report, return (summary_dict, html_bytes)."""
     data_definition = DataDefinition(
         classification=[BinaryClassification(
             target=fraud_classifier_config.FRAUD_CLASSIFIER_LABEL,
@@ -42,13 +41,13 @@ def run_drift_report(
     result.save_html(buffer)
     summary = extract_drift_summary(
         result.dict(),
-        fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES
+        set(fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES)
     )
     return summary, buffer.getvalue().encode("utf-8")
 
 def extract_drift_summary(
     results: dict,
-    feature_columns: list[str]
+    feature_names: set[str]
 ) -> dict:
     data_drift: dict = {}
     concept_drift: dict = {}
@@ -59,40 +58,42 @@ def extract_drift_summary(
 
         # Data drift — feature distribution shift P(X)
         if "drift_by_columns" in result:
-            drifted = [
-                col
-                for col, info in result["drift_by_columns"].items()
-                if col in feature_columns and info.get("drift_detected", False)
+            drifted_feature_names = [
+                feature_name
+                for feature_name, info in result["drift_by_columns"].items()
+                if info.get("drift_detected", False) and feature_name in feature_names
             ]
             data_drift = {
                 "dataset_drift_detected": result.get("dataset_drift", False),
                 "share_drifted_features": result.get("share_drifted_features", 0.0),
                 "number_of_drifted_features": result.get("number_of_drifted_features", 0),
-                "total_features": result.get("number_of_columns", len(feature_columns)),
-                "drifted_feature_names": drifted,
+                "total_features": result.get("number_of_columns", len(feature_names)),
+                "drifted_feature_names": drifted_feature_names,
             }
 
         # Concept / model performance drift — P(Y|X) degradation
         if metric_name == "ClassificationQualityMetric" and "current" in result and "reference" in result:
-            cur = result["current"]
-            ref = result["reference"]
+            current = result["current"]
+            reference = result["reference"]
 
             def delta(key: str) -> float | None:
-                c, r = cur.get(key), ref.get(key)
-                return round(c - r, 4) if c is not None and r is not None else None
+                c, r = current.get(key), reference.get(key)
+                if c is None or r is None: return None
+                else: return round(c - r, 4)
 
             f1_delta = delta("f1")
             concept_drift = {
-                "f1_current": cur.get("f1"),
-                "f1_reference": ref.get("f1"),
-                "f1_delta": delta("f1"),
-                "roc_auc_current": cur.get("roc_auc"),
-                "roc_auc_reference": ref.get("roc_auc"),
+                "f1_current": current.get("f1"),
+                "f1_reference": reference.get("f1"),
+                "f1_delta": f1_delta,
+                "roc_auc_current": current.get("roc_auc"),
+                "roc_auc_reference": reference.get("roc_auc"),
                 "roc_auc_delta": delta("roc_auc"),
                 "precision_delta": delta("precision"),
                 "recall_delta": delta("recall"),
                 # A negative delta means the model performs worse on current data.
                 # Flag concept drift if F1 degrades by more than 5 pp.
+                # TODO - idk if we need to remove or change this concept drift. I need to check it manually first online.
                 "concept_drift_detected": f1_delta is not None and f1_delta < -0.05
             }
 

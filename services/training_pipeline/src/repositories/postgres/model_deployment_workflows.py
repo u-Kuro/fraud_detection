@@ -49,13 +49,13 @@ def update_after_training(
         })
         connection.commit()
 
-def update_promote_slack_ts(promote_slack_ts: str) -> None:
+def update_promotion_approval_slack_ts(promotion_approval_slack_ts: str) -> None:
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
-            SET promote_slack_ts = :promote_slack_ts
+            SET promotion_approval_slack_ts = :promotion_approval_slack_ts
         """), {
-            "promote_slack_ts": promote_slack_ts
+            "promotion_approval_slack_ts": promotion_approval_slack_ts
         })
         connection.commit()
 

@@ -19,7 +19,7 @@ from services.training_pipeline.src.repositories.postgres.model_deployment_workf
     get_current_state,
     get_latest_deployed_max_date,
     update_after_training,
-    update_promote_slack_ts,
+    update_promotion_approval_slack_ts,
 )
 from services.training_pipeline.src.services.promote import promote
 from shared.modules.configs import fraud_classifier_config, mlflow_config
@@ -27,22 +27,22 @@ from shared.modules.environment import slack_environment
 from shared.modules.logging import logger
 
 def load_data() -> pd.DataFrame:
-    cutoff = get_latest_deployed_max_date()
+    latest_deployed_max_date = get_latest_deployed_max_date()
     with engine.connect() as connection:
         df = pd.read_sql(text(f"""
             SELECT transaction_timestamp, amount,
-               {', '.join([f'v{i}' for i in range(1, 29)])},
-               is_fraud
+                {",".join(fraud_classifier_config.FRAUD_CLASSIFIER_FEATURES)}
+                {fraud_classifier_config.FRAUD_CLASSIFIER_LABEL}
             FROM transaction_inferences
-            WHERE inference_timestamp > :cutoff
-                AND is_fraud IS NOT NULL
+            WHERE inference_timestamp > :latest_deployed_max_date
+                AND {fraud_classifier_config.FRAUD_CLASSIFIER_LABEL} IS NOT NULL
             ORDER BY random()
-            LIMIT :limit
+            LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
         """),
         connection,
         params={
-            "cutoff": cutoff,
-            "limit": training_config.MAXIMUM_TRAINING_DATASET_ROWS
+            "latest_deployed_max_date": latest_deployed_max_date,
+            "MAXIMUM_TRAINING_DATASET_ROWS": training_config.MAXIMUM_TRAINING_DATASET_ROWS
         })
     df["transaction_timestamp"] = df["transaction_timestamp"].apply(lambda x: int(x.timestamp()))
     return df
@@ -117,7 +117,7 @@ def delete_stale_candidates(
         logger.warning(f"Stale candidate cleanup failed (non-fatal): {e}")
 
 def post_or_update_promotion_slack(
-    promote_slack_ts: str | None,
+    promotion_approval_slack_ts: str | None,
     model_name: str,
     model_version: int,
     metrics: dict,
@@ -169,10 +169,10 @@ def post_or_update_promotion_slack(
     ]
 
     try:
-        if promote_slack_ts:
+        if promotion_approval_slack_ts:
             response = slack.chat_update(
                 channel=slack_environment.SLACK_CHANNEL_ID,
-                ts=promote_slack_ts,
+                ts=promotion_approval_slack_ts,
                 blocks=blocks
             )
         else:
@@ -183,7 +183,7 @@ def post_or_update_promotion_slack(
         return response["ts"]
     except Exception as e:
         logger.warning(f"Slack notification failed (non-fatal): {e}")
-        return promote_slack_ts or ""
+        return promotion_approval_slack_ts or ""
 
 
 def write_xcom(payload: dict) -> None:
@@ -240,10 +240,10 @@ def run_training() -> None:
     delete_stale_candidates(client, "XGBoost", current_version)
 
     state = get_current_state()
-    promote_slack_ts = (state or {}).get("promote_slack_ts", None)
-    slack_ts = post_or_update_promotion_slack(promote_slack_ts, "XGBoost", current_version, metrics)
+    promotion_approval_slack_ts = (state or {}).get("promotion_approval_slack_ts", None)
+    slack_ts = post_or_update_promotion_slack(promotion_approval_slack_ts, "XGBoost", current_version, metrics)
     if slack_ts:
-        update_promote_slack_ts(slack_ts)
+        update_promotion_approval_slack_ts(slack_ts)
 
     write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
     logger.info("Training complete. Awaiting promotion approval.")
