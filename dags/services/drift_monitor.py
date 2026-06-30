@@ -4,9 +4,9 @@ from kubernetes import client as k8s
 
 run_drift_monitor = KubernetesPodOperator(
     task_id="run_drift_monitor",
-    name="drift-monitor-{{ ds_nodash }}",
+    name="drift-monitor",
     namespace="default",
-    image=f"{Variable.get("ecr_registry")}/fraud-detection-drift-monitor:latest",
+    image=f"{Variable.get("ecr_registry")}/drift-monitor:latest",
     image_pull_policy="Always",
     image_pull_secrets=[
         k8s.V1LocalObjectReference(

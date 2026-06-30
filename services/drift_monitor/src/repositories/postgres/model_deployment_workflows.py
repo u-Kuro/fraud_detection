@@ -3,8 +3,7 @@ from sqlalchemy import text
 
 from services.drift_monitor.src.repositories.postgres import engine
 from shared.modules.configs import postgres_config
-from shared.modules.schemas import ModelDeploymentWorkflowState
-from shared.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflow
+from shared.modules.schemas import ModelDeploymentWorkflowState, ModelDeploymentWorkflow
 
 def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
     with engine.connect() as connection:
@@ -13,6 +12,7 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
                 {",".join(ModelDeploymentWorkflow.model_field_keys())}
             FROM model_deployment_workflows
                 WHERE project_id = :project_id
+            ORDER BY created_at DESC
             LIMIT 1
         """), {
             "project_id": postgres_config.PROJECT_ID
@@ -50,7 +50,7 @@ def update_training_approval_slack_ts(training_approval_slack_ts: str | None, cu
         connection.execute(text("""
             UPDATE model_deployment_workflows
             SET training_approval_slack_ts = :training_approval_slack_ts
-            WHERE id = :id
+                WHERE id = :id
         """),{
             "id": current_model_deployment_workflow.id,
             "training_approval_slack_ts": training_approval_slack_ts

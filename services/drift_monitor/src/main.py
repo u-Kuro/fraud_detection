@@ -1,19 +1,3 @@
-"""
-Drift monitor — state machine entrypoint.
-
-Runs as a KubernetesPodOperator container (DAG: drift_monitor).
-
-State machine (the DAG sensor handles the human-approval gate):
-  No state row  →  post Slack cold-start or drift message, INSERT drift_pending
-  drift_pending + no training_approved  →  update existing Slack message in-place (new drift info)
-  drift_pending + training_approved     →  training approved, DAG already triggered; nothing to do
-  train_pending  →  training in progress or done; exit (drift re-detected during training is skipped)
-  promoting      →  promotion in progress; exit
-
-XCom written to /airflow/xcom/return.json:
-  {"action": "wait_approval"}  — DAG sensor should wait for training_approved
-  {"action": "exit"}           — DAG should stop here
-"""
 import asyncio, json
 from datetime import datetime, timezone, timedelta
 

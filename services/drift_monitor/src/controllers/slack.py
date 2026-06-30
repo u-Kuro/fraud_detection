@@ -3,10 +3,9 @@ from uuid import uuid4, UUID
 
 from slack_sdk.web.async_client import AsyncWebClient
 
-from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, \
-    update_training_approval_slack_ts
+from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, update_training_approval_slack_ts
 from shared.modules.environment import slack_environment
-from shared.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflow
+from shared.modules.schemas import ModelDeploymentWorkflow
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 

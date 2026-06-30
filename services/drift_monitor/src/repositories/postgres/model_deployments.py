@@ -10,8 +10,9 @@ def has_any_active_deployed_model() -> bool:
         has_active_model = connection.execute(text("""
             SELECT EXISTS (
                 SELECT 1 FROM model_deployments
-                    WHERE   status        = 'active'
-                        AND project_id  = :project_id
+                    WHERE
+                        active
+                    AND project_id  = :project_id
             )
         """), {
             "project_id": postgres_config.PROJECT_ID
@@ -23,8 +24,9 @@ def get_latest_dataset_max_date() -> datetime | None:
         dataset_max_date = connection.execute(text("""
             SELECT MAX(dataset_max_date)
             FROM model_deployments
-                WHERE   status      = 'active'
-                    AND project_id  = :project_id
+                WHERE
+                    active
+                AND project_id  = :project_id
         """)).scalar()
 
     if isinstance(dataset_max_date, datetime):

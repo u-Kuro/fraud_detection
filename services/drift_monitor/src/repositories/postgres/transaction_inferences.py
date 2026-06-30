@@ -6,9 +6,7 @@ from sqlalchemy import text
 
 from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres import engine
-from shared.modules.schemas import FraudClassifierFeatures, FraudClassifierLabel, FraudClassificationPrediction, \
-    FraudClassificationProbability
-
+from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def load_current_window(
     current_cutoff_date: datetime,
@@ -18,8 +16,8 @@ def load_current_window(
             text(f"""
                 WITH selected AS (
                     SELECT DISTINCT ON (transaction_id)
-                        {",".join(FraudClassifierFeatures.model_field_keys())}
-                        {FraudClassifierLabel.model_field_key()}::INTEGER AS {FraudClassifierLabel.model_field_key()},
+                        {",".join(FraudClassificationFeatures.model_field_keys())},
+                        {FraudClassificationLabel.model_field_key()}::INTEGER AS {FraudClassificationLabel.model_field_key()},
                         {FraudClassificationPrediction.model_field_key()}::INTEGER AS {FraudClassificationPrediction.model_field_key()},
                         {FraudClassificationProbability.model_field_key()}
                     FROM transaction_inferences
@@ -29,8 +27,7 @@ def load_current_window(
                         transaction_timestamp DESC,
                         inference_timestamp DESC 
                 )
-                SELECT * 
-                FROM selected
+                SELECT * FROM selected
                 ORDER BY random()
                 LIMIT :MAXIMUM_CURRENT_DATASET_ROWS
            """),

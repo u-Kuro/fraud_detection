@@ -6,7 +6,7 @@ from services.fraud_detection.src.modules.schemas import (
     FraudClassificationOutput,
 )
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
-from shared.modules.schemas import FraudClassifierFeatures
+from shared.modules.schemas import FraudClassificationFeatures
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
@@ -17,7 +17,7 @@ class FraudClassifier(MlflowModel):
         transaction_details: FraudClassificationRequest
     ) -> FraudClassificationOutput:
         features = transaction_details.model_dump(
-            include=FraudClassifierFeatures.model_fields.keys()
+            include=FraudClassificationFeatures.model_fields.keys()
         )
 
         features_df = pd.DataFrame([features])

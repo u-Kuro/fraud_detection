@@ -25,17 +25,17 @@ from services.training_pipeline.src.services.promote import promote
 from shared.modules.configs import mlflow_config
 from shared.modules.environment import slack_environment
 from shared.modules.logging import logger
-from shared.modules.schemas import FraudClassifierFeatures, FraudClassifierDataset, FraudClassifierLabel
+from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationDataset, FraudClassificationLabel
 
 def load_data() -> pd.DataFrame:
     latest_deployed_max_date = get_latest_deployed_max_date()
     with engine.connect() as connection:
         df = pd.read_sql(text(f"""
             SELECT transaction_timestamp, amount,
-                {",".join(FraudClassifierDataset.model_field_keys())}
+                {",".join(FraudClassificationDataset.model_field_keys())}
             FROM transaction_inferences
             WHERE inference_timestamp > :latest_deployed_max_date
-                AND {FraudClassifierLabel.model_field_key()} IS NOT NULL
+                AND {FraudClassificationLabel.model_field_key()} IS NOT NULL
             ORDER BY random()
             LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
         """),
@@ -48,8 +48,8 @@ def load_data() -> pd.DataFrame:
     return df
 
 def train(df: pd.DataFrame):
-    x = df[FraudClassifierFeatures.model_field_keys()].values
-    y = df[FraudClassifierLabel.model_field_key()].astype(int).values
+    x = df[FraudClassificationFeatures.model_field_keys()].values
+    y = df[FraudClassificationLabel.model_field_key()].astype(int).values
     x_train, x_test, y_train, y_test = train_test_split(
         x, y,
         test_size=training_config.TEST_SIZE,

@@ -7,7 +7,7 @@ from kubernetes import client as k8s
 from dags.modules.configs.dags import dags_config
 from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
 
-
+# TODO - continue here.
 @dag(
     dag_id="training_pipeline",
     schedule=None,

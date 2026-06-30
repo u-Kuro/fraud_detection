@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-class FraudClassifierFeatures(BaseModel):
+class FraudClassificationFeatures(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     transaction_timestamp: datetime = Field(
         ..., strict=False, description="Transaction timestamp in UTC"
@@ -46,15 +46,15 @@ class FraudClassifierFeatures(BaseModel):
     def model_field_keys(cls) -> list[str]:
         return list(cls.model_fields.keys())
 
-class FraudClassifierLabel(BaseModel):
+class FraudClassificationLabel(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     is_fraud: bool | None = None
 
     @classmethod
     def model_field_key(cls) -> str:
-        return next(iter(FraudClassifierLabel.model_fields.keys()))
+        return next(iter(FraudClassificationLabel.model_fields.keys()))
 
-class FraudClassifierDataset(FraudClassifierFeatures, FraudClassifierLabel):
+class FraudClassificationDataset(FraudClassificationFeatures, FraudClassificationLabel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
     @classmethod
@@ -67,7 +67,7 @@ class FraudClassificationPrediction(BaseModel):
 
     @classmethod
     def model_field_key(cls) -> str:
-        return next(iter(FraudClassifierLabel.model_fields.keys()))
+        return next(iter(FraudClassificationLabel.model_fields.keys()))
 
 class FraudClassificationProbability(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
@@ -75,7 +75,7 @@ class FraudClassificationProbability(BaseModel):
 
     @classmethod
     def model_field_key(cls) -> str:
-        return next(iter(FraudClassifierLabel.model_fields.keys()))
+        return next(iter(FraudClassificationLabel.model_fields.keys()))
 
 class FraudClassificationResponse(FraudClassificationPrediction, FraudClassificationProbability):
     model_config = ConfigDict(strict=True, extra="forbid")

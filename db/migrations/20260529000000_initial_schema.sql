@@ -1,7 +1,8 @@
 CREATE TABLE projects (
     id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
     created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
-    name                    TEXT                NOT NULL
+    name                    TEXT                NOT NULL,
+    CONSTRAINT unique_project_name UNIQUE (name)
 );
 
 CREATE TABLE model_deployments (
@@ -29,7 +30,8 @@ CREATE TABLE model_deployment_workflows (
     dataset_max_date                TIMESTAMPTZ         NULL,
     training_approval_slack_ts      TEXT                NULL,
     promotion_approval_slack_ts     TEXT                NULL,
-    CONSTRAINT state_check CHECK (state IN ('drift_pending', 'train_pending', 'promoting'))
+    CONSTRAINT state_check CHECK (state IN ('train_pending', 'promote_pending')),
+    CONSTRAINT unique_project_id UNIQUE (project_id)
 );
 
 CREATE TABLE transaction_inferences (

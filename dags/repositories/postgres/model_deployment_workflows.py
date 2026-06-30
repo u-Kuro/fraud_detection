@@ -8,10 +8,11 @@ def training_approved(workflow_id: UUID):
     with engine.begin() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
-            SET training_approved = true
+            SET training_approved = :training_approved
             WHERE id = :id
         """), {
-            "id": workflow_id
+            "id": workflow_id,
+            "training_approved": True
         })
 
 def training_rejected(workflow_id: UUID):

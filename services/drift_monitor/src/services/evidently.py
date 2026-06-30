@@ -4,9 +4,7 @@ from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
-from shared.modules.schemas import FraudClassifierFeatures, FraudClassifierLabel, FraudClassificationPrediction, \
-    FraudClassificationProbability
-
+from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def run_drift_report(
     df_reference: DataFrame,
@@ -14,12 +12,12 @@ def run_drift_report(
 ) -> tuple[dict, bytes]:
     data_definition = DataDefinition(
         classification=[BinaryClassification(
-            target=FraudClassifierLabel.model_field_key(),
+            target=FraudClassificationLabel.model_field_key(),
             prediction_labels=FraudClassificationPrediction.model_field_key(),
             prediction_probas=FraudClassificationProbability.model_field_key(),
             labels={0: "Legitimate", 1: "Fraud"},
         )],
-        numerical_columns=FraudClassifierFeatures.model_field_keys(),
+        numerical_columns=FraudClassificationFeatures.model_field_keys(),
     )
     reference_dataset = Dataset.from_pandas(
         data=df_reference,
@@ -43,14 +41,14 @@ def run_drift_report(
     result.save_html(buffer)
     summary = extract_drift_summary(
         result.dict(),
-        set(FraudClassifierFeatures.model_field_keys())
+        set(FraudClassificationFeatures.model_field_keys())
     )
     return summary, buffer.getvalue().encode("utf-8")
 
 def extract_drift_summary(
     results: dict,
     feature_names: set[str]
-) -> dict:
+) -> dict[str, dict]:
     data_drift: dict = {}
     concept_drift: dict = {}
 
