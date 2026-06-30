@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import BaseModel, ConfigDict
 
 
 class MLflowConfig(BaseModel):
@@ -11,7 +11,6 @@ class MLflowConfig(BaseModel):
     MLFLOW_ARCHIVED_ALIAS:        str = "archived"
     MLFLOW_EXPERIMENT_NAME:       str = "fraud-detection"
 
-    @computed_field
     @property
     def MODEL_URI(self) -> str:
         return f"models:/{self.MLFLOW_REGISTERED_MODEL_NAME}@{self.MLFLOW_PRODUCTION_ALIAS}"

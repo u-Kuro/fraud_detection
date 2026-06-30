@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 
 from airflow.sdk import dag, task
 
+from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
+
+
 @dag(
     dag_id="promotion_callback",
     schedule=None,
@@ -31,19 +34,23 @@ def promotion_callback_dag():
         try:
             if action == "approved":
                 with engine.begin() as conn:
-                    conn.execute(text("""
+                    conn.execute(text(f"""
                         UPDATE model_deployment_workflows
                         SET promote_approved = true
-                        WHERE state = 'train_pending'
-                    """))
+                        WHERE state = :state
+                    """), {
+                        "state": ModelDeploymentWorkflowState.train_pending
+                    })
             elif action == "rejected":
                 with engine.connect() as conn:
                     row = conn.execute(text("""
                         SELECT run_id
                         FROM model_deployment_workflows
-                        WHERE state = 'train_pending'
+                        WHERE state = :state
                         LIMIT 1
-                    """)).mappings().fetchone()
+                    """), {
+                        "state": ModelDeploymentWorkflowState.train_pending
+                    }).mappings().fetchone()
                 with engine.begin() as conn:
                     conn.execute(text("DELETE FROM model_deployment_workflows"))
                 if row: cleanup_mlflow(row["run_id"])

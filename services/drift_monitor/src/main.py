@@ -27,9 +27,7 @@ from services.drift_monitor.src.repositories.postgres.model_deployments import (
     has_any_active_deployed_model,
 )
 from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import (
-    get_current_model_deployment_workflow,
-    create_train_pending_workflow,
-    update_training_approval_slack_ts,
+    get_current_model_deployment_workflow
 )
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import (
     load_current_window,
@@ -38,6 +36,7 @@ from services.drift_monitor.src.repositories.s3.dataset_reference import load_re
 from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
 from services.drift_monitor.src.services.evidently import run_drift_report
 from shared.modules.logging import logger
+from shared.modules.schemas import ModelDeploymentWorkflowState
 
 async def main() -> None:
     if not has_any_active_deployed_model():
@@ -48,11 +47,10 @@ async def main() -> None:
             logger.warning("Cold-start: no model deployed. Slack notice was posted.")
             return
 
-        state = current_model_deployment_workflow["state"]
-        training_approved = current_model_deployment_workflow["training_approved"]
+        state = current_model_deployment_workflow.state
 
-        if state == "train_pending":
-            if training_approved:
+        if state == ModelDeploymentWorkflowState.train_pending:
+            if current_model_deployment_workflow.training_approved:
                 # Human already approved in a previous run; the DAG sensor already unblocked.
                 # Another cron tick fired before training started — nothing to do.
                 logger.info("Cold-start already approved.")
@@ -103,20 +101,15 @@ async def main() -> None:
 
         if current_model_deployment_workflow is None:
             # No existing state — post fresh drift message
-            # TODO - CURRENTLY HERE TO CHECK UPTO BELOW
-            training_approval_slack_ts = await post_training_approval(drift_summary)
-            create_train_pending_workflow(training_approval_slack_ts)
+            await post_training_approval(drift_summary)
             return
 
-        state = current_model_deployment_workflow["state"]
-        training_approved = current_model_deployment_workflow["training_approved"]
-        training_approval_slack_ts = current_model_deployment_workflow["training_approval_slack_ts"]
+        state = current_model_deployment_workflow.state
 
-        if state == "drift_pending":
+        if state == ModelDeploymentWorkflowState.train_pending:
             # (d) Drift still pending (not yet approved for training) — update Slack message in place
-            new_ts = await update_training_approval(drift_summary, training_approval_slack_ts)
-            update_training_approval_slack_ts(new_ts)
-            if training_approved:
+            await update_training_approval(drift_summary, current_model_deployment_workflow)
+            if current_model_deployment_workflow.training_approved:
                 # Approved but training not started yet — sensor already unblocked
                 logger.info("Training already approved; update posted. Exiting.")
             else:

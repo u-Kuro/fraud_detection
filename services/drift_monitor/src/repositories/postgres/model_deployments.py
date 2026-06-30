@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy import text
 
@@ -19,7 +18,7 @@ def has_any_active_deployed_model() -> bool:
         }).scalar()
     return bool(has_active_model)
 
-def get_latest_dataset_max_date() -> Optional[datetime]:
+def get_latest_dataset_max_date() -> datetime | None:
     with engine.connect() as connection:
         dataset_max_date = connection.execute(text("""
             SELECT MAX(dataset_max_date)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlalchemy import text
 
 from services.fraud_detection.src.modules.schemas import FraudClassificationOutput
@@ -7,7 +5,7 @@ from services.fraud_detection.src.repositories.postgres import engine
 
 def insert_transaction_inference(
     transaction_inference: FraudClassificationOutput,
-    is_fraud: Optional[bool] = None,
+    is_fraud: bool | None = None,
 ):
     with engine.connect() as connection:
         connection.execute(

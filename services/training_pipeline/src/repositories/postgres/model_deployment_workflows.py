@@ -1,9 +1,9 @@
 """All model_deployment_workflows + model_deployments mutations used during training + promotion."""
 
 from datetime import datetime, timezone
-from typing import Optional
 from sqlalchemy import text
 
+from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
 from services.training_pipeline.src.repositories.postgres import engine
 
 def get_latest_deployed_max_date() -> datetime:
@@ -18,7 +18,7 @@ def get_latest_deployed_max_date() -> datetime:
     else:
         return datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-def get_current_state() -> Optional[dict]:
+def get_current_state() -> dict | None:
     with engine.connect() as connection:
         row = connection.execute(text("""
             SELECT * FROM model_deployment_workflows
@@ -36,12 +36,13 @@ def update_after_training(
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
-            SET state = 'train_pending',
+            SET state = :state,
                 run_id = :run_id,
                 model_version = :model_version,
                 dataset_min_date = :dataset_min_date,
                 dataset_max_date = :dataset_max_date
         """), {
+            "state": ModelDeploymentWorkflowState.train_pending,
             "run_id": run_id,
             "model_version": model_version,
             "dataset_min_date": dataset_min_date,

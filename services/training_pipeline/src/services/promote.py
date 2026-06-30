@@ -16,6 +16,7 @@ import mlflow
 import pyarrow.parquet as pq
 from mlflow import MlflowClient
 
+from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
     get_current_state,
     begin_promoting,
@@ -30,7 +31,7 @@ from shared.modules.logging import logger
 
 def promote() -> None:
     state = get_current_state()
-    if state is None or state["state"] not in ("train_pending", "promoting"):
+    if state is None or state["state"] not in ModelDeploymentWorkflowState.__members__:
         raise RuntimeError(f"Cannot promote: unexpected model_deployment_workflows={state}")
 
     run_id:          str      = state["run_id"]

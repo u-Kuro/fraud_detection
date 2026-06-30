@@ -1,4 +1,4 @@
-from shared.modules.schemas.pipeline import PipelineStateRow, DeployedModelRow
 from shared.modules.schemas.archive import ArchivingBatchResult
-from shared.modules.schemas.fraud_classification_dataset import FraudClassifierFeatures, FraudClassifierLabel, FraudClassifierDataset
-from shared.modules.schemas.fraud_classification_inference import FraudClassificationPrediction, FraudClassificationProbability, FraudClassificationResponse
+from shared.modules.schemas.fraud_classification import FraudClassifierFeatures, FraudClassifierLabel, FraudClassifierDataset, FraudClassificationPrediction, FraudClassificationProbability, FraudClassificationResponse
+from shared.modules.schemas.model_deployment import ModelDeployment, ModelDeploymentStatus
+from shared.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState, ModelDeploymentWorkflow

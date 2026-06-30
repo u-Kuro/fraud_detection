@@ -1,11 +1,12 @@
 import json
 from uuid import uuid4, UUID
 
-from pydantic import validate_call
 from slack_sdk.web.async_client import AsyncWebClient
 
-from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow
+from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, \
+    update_training_approval_slack_ts
 from shared.modules.environment import slack_environment
+from shared.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflow
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 
@@ -33,8 +34,7 @@ def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> l
         })
     return blocks
 
-@validate_call(validate_return=True)
-async def post_cold_start_training_approval() -> str:
+async def post_cold_start_training_approval():
     workflow_id = uuid4()
 
     response = await client.chat_postMessage(
@@ -74,17 +74,12 @@ async def post_cold_start_training_approval() -> str:
         )
     )
 
-    training_approval_slack_ts = response["ts"]
-
     create_train_pending_workflow(
         workflow_id=workflow_id,
-        training_approval_slack_ts=training_approval_slack_ts
+        training_approval_slack_ts=response["ts"]
     )
 
-    return training_approval_slack_ts
-
-@validate_call(validate_return=True)
-async def post_training_approval(drift_summary: dict) -> str:
+async def post_training_approval(drift_summary: dict):
     workflow_id = uuid4()
 
     response = await client.chat_postMessage(
@@ -92,24 +87,19 @@ async def post_training_approval(drift_summary: dict) -> str:
         blocks=format_drift_blocks(drift_summary, workflow_id)
     )
 
-    training_approval_slack_ts = response["ts"]
-
     create_train_pending_workflow(
         workflow_id=workflow_id,
-        training_approval_slack_ts=training_approval_slack_ts
+        training_approval_slack_ts=response["ts"]
     )
 
-    return training_approval_slack_ts
-
-@validate_call(validate_return=True)
-async def update_training_approval(drift_summary: dict, training_approval_slack_ts: str) -> str:
+async def update_training_approval(drift_summary: dict, current_model_deployment_workflow: ModelDeploymentWorkflow):
     response = await client.chat_update(
-        ts=training_approval_slack_ts,
+        ts=current_model_deployment_workflow["training_approval_slack_ts"],
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_drift_blocks(drift_summary)
+        blocks=format_drift_blocks(drift_summary, current_model_deployment_workflow.id)
     )
 
-    return response["ts"]
+    update_training_approval_slack_ts(response["ts"], current_model_deployment_workflow)
 
 def format_drift_blocks(drift_summary: dict, workflow_id: UUID) -> list:
     dd = drift_summary.get("data_drift", {})

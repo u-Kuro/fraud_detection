@@ -5,6 +5,8 @@ from airflow.sdk import dag, Variable, task
 from kubernetes import client as k8s
 
 from dags.modules.configs.dags import dags_config
+from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
+
 
 @dag(
     dag_id="training_pipeline",
@@ -60,8 +62,11 @@ def training_pipeline_dag():
                 return conn.execute(text("""
                     SELECT promote_approved
                     FROM model_deployment_workflows
-                    WHERE state = 'train_pending' LIMIT 1
-                """)).scalar()
+                    WHERE state = :state
+                    LIMIT 1
+                """), {
+                    "state": ModelDeploymentWorkflowState.train_pending
+                }).scalar()
         finally:
             engine.dispose()
 
