@@ -5,33 +5,33 @@ CREATE TABLE projects (
     CONSTRAINT unique_project_name UNIQUE (name)
 );
 
+CREATE TABLE model_deployment_workflows (
+    id                              UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
+    created_at                      TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    project_id                      UUID                NOT NULL                                        REFERENCES projects(id),
+    state                           TEXT                NOT NULL,
+    training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
+    promote_approved                BOOLEAN             NOT NULL        DEFAULT FALSE,
+--    run_id                          TEXT                NULL,
+--    model_version                   INT                 NULL,
+    model_dataset_min_date          TIMESTAMPTZ         NULL,
+    model_dataset_max_date          TIMESTAMPTZ         NULL,
+    training_approval_slack_ts      TEXT                NOT NULL,
+    promotion_approval_slack_ts     TEXT                NULL,
+    CONSTRAINT state_check CHECK (state IN ('train_pending', 'promote_pending')),
+    CONSTRAINT unique_project_id UNIQUE (project_id)
+);
+
 CREATE TABLE model_deployments (
     id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
     created_at              TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
-    project_id              UUID                NOT NULL                                        REFERENCES model_tasks(id),
+    project_id              UUID                NOT NULL                                        REFERENCES projects(id),
     name                    TEXT                NOT NULL,
     version                 INT                 NOT NULL,
     dataset_min_date        TIMESTAMPTZ         NULL,
     dataset_max_date        TIMESTAMPTZ         NOT NULL,
     active                  BOOLEAN             NOT NULL        DEFAULT FALSE,
     CONSTRAINT model_deployment_name_version_key UNIQUE (name, version)
-);
-
-CREATE TABLE model_deployment_workflows (
-    id                              UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
-    created_at                      TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
-    project_id                      UUID                NOT NULL                                        REFERENCES model_tasks(id),
-    state                           TEXT                NOT NULL,
-    training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
-    promote_approved                BOOLEAN             NOT NULL        DEFAULT FALSE,
-    run_id                          TEXT                NULL,
-    model_version                   INT                 NULL,
-    dataset_min_date                TIMESTAMPTZ         NULL,
-    dataset_max_date                TIMESTAMPTZ         NULL,
-    training_approval_slack_ts      TEXT                NULL,
-    promotion_approval_slack_ts     TEXT                NULL,
-    CONSTRAINT state_check CHECK (state IN ('train_pending', 'promote_pending')),
-    CONSTRAINT unique_project_id UNIQUE (project_id)
 );
 
 CREATE TABLE transaction_inferences (

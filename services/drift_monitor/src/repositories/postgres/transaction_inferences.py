@@ -8,13 +8,13 @@ from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres import engine
 from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
-def load_current_window(
+def load_current_dataset(
     current_cutoff_date: datetime,
 ) -> DataFrame:
     with engine.connect() as connection:
         return pd.read_sql(
             text(f"""
-                WITH selected AS (
+                WITH current_dataset AS (
                     SELECT DISTINCT ON (transaction_id)
                         {",".join(FraudClassificationFeatures.model_field_keys())},
                         {FraudClassificationLabel.model_field_key()}::INTEGER AS {FraudClassificationLabel.model_field_key()},
@@ -27,7 +27,7 @@ def load_current_window(
                         transaction_timestamp DESC,
                         inference_timestamp DESC 
                 )
-                SELECT * FROM selected
+                SELECT * FROM current_dataset
                 ORDER BY random()
                 LIMIT :MAXIMUM_CURRENT_DATASET_ROWS
            """),

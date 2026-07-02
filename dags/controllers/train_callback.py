@@ -9,7 +9,8 @@ from dags.services.train_callback import train_callback, start_training_pipeline
     dag_id="train_callback",
     schedule=None,
     start_date=datetime(2026, 1, 1),
-    catchup=False,
+    max_active_runs=1,
+    catchup=True,
     default_args={
         "owner": "mle",
         "retries": 1,

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-class FraudClassificationFeatures(BaseModel):
+class FraudClassificationTransactionTimestamp(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     transaction_timestamp: datetime = Field(
         ..., strict=False, description="Transaction timestamp in UTC"
@@ -11,6 +11,14 @@ class FraudClassificationFeatures(BaseModel):
     @classmethod
     def ensure_utc(cls, v: datetime) -> datetime:
         return v.astimezone(timezone.utc)
+
+    @classmethod
+    def model_field_key(cls, rename: str | None = None) -> str:
+        key = next(iter(cls.model_fields.keys()))
+        return rename or key
+
+class FraudClassificationFeatures(FraudClassificationTransactionTimestamp):
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     amount: float = Field(..., description="Transaction amount in USD")
     v1: float = Field(..., description="PCA feature v1")
@@ -43,39 +51,52 @@ class FraudClassificationFeatures(BaseModel):
     v28: float = Field(..., description="PCA feature v28")
 
     @classmethod
-    def model_field_keys(cls) -> list[str]:
-        return list(cls.model_fields.keys())
+    def model_field_keys(cls, rename: dict[str, str] | None = None) -> list[str]:
+        keys: list[str] = list(cls.model_fields.keys())
+        if rename: return [str(rename.get(key, key)) for key in keys]
+        return keys
 
 class FraudClassificationLabel(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     is_fraud: bool | None = None
 
     @classmethod
-    def model_field_key(cls) -> str:
-        return next(iter(FraudClassificationLabel.model_fields.keys()))
+    def model_field_key(cls, rename: str | None = None) -> str:
+        key = next(iter(cls.model_fields.keys()))
+        return rename or key
 
 class FraudClassificationDataset(FraudClassificationFeatures, FraudClassificationLabel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
     @classmethod
-    def model_field_keys(cls) -> list[str]:
-        return list(cls.model_fields.keys())
+    def model_field_keys(cls, rename: dict[str, str] | None = None) -> list[str]:
+        keys: list[str] = list(cls.model_fields.keys())
+        if rename: return [str(rename.get(key, key)) for key in keys]
+        return keys
 
 class FraudClassificationPrediction(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     is_fraud_prediction: bool
 
     @classmethod
-    def model_field_key(cls) -> str:
-        return next(iter(FraudClassificationLabel.model_fields.keys()))
+    def model_field_key(cls, rename: str | None = None) -> str:
+        key = next(iter(cls.model_fields.keys()))
+        return rename or key
 
 class FraudClassificationProbability(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     is_fraud_probability: float = Field(..., ge=0.0, le=1.0)
 
     @classmethod
-    def model_field_key(cls) -> str:
-        return next(iter(FraudClassificationLabel.model_fields.keys()))
+    def model_field_key(cls, rename: str | None = None) -> str:
+        key = next(iter(cls.model_fields.keys()))
+        return rename or key
 
 class FraudClassificationResponse(FraudClassificationPrediction, FraudClassificationProbability):
     model_config = ConfigDict(strict=True, extra="forbid")
+
+    @classmethod
+    def model_field_keys(cls, rename: dict[str, str] | None = None) -> list[str]:
+        keys: list[str] = list(cls.model_fields.keys())
+        if rename: return [str(rename.get(key, key)) for key in keys]
+        return keys

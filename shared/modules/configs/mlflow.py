@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ConfigDict
 
-
 class MLflowConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -9,7 +8,7 @@ class MLflowConfig(BaseModel):
     MLFLOW_PRODUCTION_ALIAS:      str = "production"
     MLFLOW_CANDIDATE_ALIAS:       str = "candidate"
     MLFLOW_ARCHIVED_ALIAS:        str = "archived"
-    MLFLOW_EXPERIMENT_NAME:       str = "fraud-detection"
+    MLFLOW_EXPERIMENT_NAME:       str = "fraud_detection"
 
     @property
     def MODEL_URI(self) -> str:

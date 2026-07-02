@@ -8,10 +8,9 @@ from shared.modules.schemas import ModelDeploymentWorkflowState, ModelDeployment
 def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
     with engine.connect() as connection:
         row = connection.execute(text(f"""
-            SELECT 
-                {",".join(ModelDeploymentWorkflow.model_field_keys())}
+            SELECT {",".join(ModelDeploymentWorkflow.model_field_keys())}
             FROM model_deployment_workflows
-                WHERE project_id = :project_id
+            WHERE project_id = :project_id
             ORDER BY created_at DESC
             LIMIT 1
         """), {
@@ -19,7 +18,7 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
         }).mappings().fetchone()
     return ModelDeploymentWorkflow.model_validate(row, from_attributes=True) if row else None
 
-def create_train_pending_workflow(workflow_id: UUID, training_approval_slack_ts: str | None):
+def create_train_pending_workflow(workflow_id: UUID, training_approval_slack_ts: str | None) -> None:
     with engine.connect() as connection:
         connection.execute(text(f"""
             INSERT INTO model_deployment_workflows (
@@ -50,7 +49,7 @@ def update_training_approval_slack_ts(training_approval_slack_ts: str | None, cu
         connection.execute(text("""
             UPDATE model_deployment_workflows
             SET training_approval_slack_ts = :training_approval_slack_ts
-                WHERE id = :id
+            WHERE id = :id
         """),{
             "id": current_model_deployment_workflow.id,
             "training_approval_slack_ts": training_approval_slack_ts

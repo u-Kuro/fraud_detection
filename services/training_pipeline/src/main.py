@@ -17,7 +17,7 @@ from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres.postgres import engine
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
     get_current_state,
-    get_latest_deployed_max_date,
+    get_latest_unused_dataset,
     update_after_training,
     update_promotion_approval_slack_ts,
 )
@@ -25,27 +25,9 @@ from services.training_pipeline.src.services.promote import promote
 from shared.modules.configs import mlflow_config
 from shared.modules.environment import slack_environment
 from shared.modules.logging import logger
-from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationDataset, FraudClassificationLabel
+from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationDataset, FraudClassificationLabel, \
+    FraudClassificationTransactionTimestamp
 
-def load_data() -> pd.DataFrame:
-    latest_deployed_max_date = get_latest_deployed_max_date()
-    with engine.connect() as connection:
-        df = pd.read_sql(text(f"""
-            SELECT transaction_timestamp, amount,
-                {",".join(FraudClassificationDataset.model_field_keys())}
-            FROM transaction_inferences
-            WHERE inference_timestamp > :latest_deployed_max_date
-                AND {FraudClassificationLabel.model_field_key()} IS NOT NULL
-            ORDER BY random()
-            LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
-        """),
-        connection,
-        params={
-            "latest_deployed_max_date": latest_deployed_max_date,
-            "MAXIMUM_TRAINING_DATASET_ROWS": training_config.MAXIMUM_TRAINING_DATASET_ROWS
-        })
-    df["transaction_timestamp"] = df["transaction_timestamp"].apply(lambda x: int(x.timestamp()))
-    return df
 
 def train(df: pd.DataFrame):
     x = df[FraudClassificationFeatures.model_field_keys()].values
@@ -79,16 +61,16 @@ def train(df: pd.DataFrame):
         timeout=training_config.TRAINING_TIMEOUT_SECONDS
     )
 
-    best = xgb.XGBClassifier(
+    best_model = xgb.XGBClassifier(
         **study.best_params,
         random_state=training_config.RANDOM_STATE
     )
-    best.fit(x_train, y_train)
-    metrics = {
-        "f1": f1_score(y_test, best.predict(x_test)),
-        "roc_auc": roc_auc_score(y_test, best.predict_proba(x_test)[:, 1]),
+    best_model.fit(x_train, y_train)
+    best_model_metrics = {
+        "f1": f1_score(y_test, best_model.predict(x_test)),
+        "roc_auc": roc_auc_score(y_test, best_model.predict_proba(x_test)[:, 1]),
     }
-    return best, metrics, study.best_params
+    return best_model, best_model_metrics, study.best_params
 
 def delete_stale_candidates(
     client: MlflowClient,
@@ -194,9 +176,9 @@ def write_xcom(payload: dict) -> None:
 
 
 def run_training() -> None:
-    df = load_data()
+    df = get_latest_unused_dataset()
     if len(df) < training_config.MINIMUM_TRAINING_DATASET_ROWS:
-        logger.error(f"Insufficient labelled data ({len(df)} rows). Exiting.")
+        logger.error(f"Insufficient labeled data ({len(df)} rows). Exiting.")
         sys.exit(1)
 
     logger.info(f"Training on {len(df)} rows.")
@@ -204,8 +186,9 @@ def run_training() -> None:
     mlflow.set_experiment(mlflow_config.MLFLOW_EXPERIMENT_NAME)
 
     with mlflow.start_run() as run:
-        model, metrics, best_params = train(df)
-        mlflow.log_params(best_params)
+        # TODO - continue here.
+        model, metrics, model_parameters = train(df)
+        mlflow.log_params(model_parameters)
         mlflow.log_metrics(metrics)
 
         table = pa.table(df)
@@ -213,28 +196,25 @@ def run_training() -> None:
             pq.write_table(table, file.name)
             mlflow.log_artifact(file.name, artifact_path="dataset")
 
-        transaction_timestamps = df["transaction_timestamp"]
+        transaction_timestamps = df[FraudClassificationTransactionTimestamp.model_field_key()]
 
-        raw_min = transaction_timestamps.min()
-        raw_max = transaction_timestamps.max()
+        model_dataset_min_timestamp = int(transaction_timestamps.min())
+        model_dataset_max_timestamp = int(transaction_timestamps.max())
 
-        if not isinstance(raw_min, (int, float)) or not isinstance(raw_max, (int, float)):
+        if isinstance(model_dataset_min_timestamp, int) and isinstance(model_dataset_max_timestamp, int):
+            mlflow.sklearn.log_model(model, artifact_path="model", registered_model_name="XGBoost")
+            client   = MlflowClient()
+            versions = client.search_model_versions(f"run_id='{run.info.run_id}'")
+            if not versions:
+                raise RuntimeError("Model registration failed.")
+            model_version = versions[0]
+            client.set_registered_model_alias("XGBoost", "candidate", model_version.version)
+            logger.info(f"Registered XGBoost v{model_version.version} as 'candidate'.")
+        else:
             raise ValueError("transaction_timestamp column is empty or all-null.")
 
-        dataset_min = datetime.fromtimestamp(int(raw_min), tz=timezone.utc)
-        dataset_max = datetime.fromtimestamp(int(raw_max), tz=timezone.utc)
-
-        mlflow.sklearn.log_model(model, artifact_path="model", registered_model_name="XGBoost")
-        client   = MlflowClient()
-        versions = client.search_model_versions(f"run_id='{run.info.run_id}'")
-        if not versions:
-            raise RuntimeError("Model registration failed.")
-        model_version = versions[0]
-        client.set_registered_model_alias("XGBoost", "candidate", model_version.version)
-        logger.info(f"Registered XGBoost v{model_version.version} as 'candidate'.")
-
     current_version = int(model_version.version)
-    update_after_training(str(run.info.run_id), current_version, dataset_min, dataset_max)
+    update_after_training(str(run.info.run_id), current_version, model_dataset_min_timestamp, model_dataset_max_timestamp)
 
     # Clean up stale candidates BEFORE posting the promotion message
     delete_stale_candidates(client, "XGBoost", current_version)

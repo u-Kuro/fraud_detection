@@ -8,13 +8,13 @@ from services.drift_monitor.src.controllers.slack import (
 )
 from services.drift_monitor.src.modules.configs import drift_config
 from services.drift_monitor.src.repositories.postgres.model_deployments import (
-    has_any_active_deployed_model,
+    has_any_active_model,
 )
 from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import (
     get_current_model_deployment_workflow
 )
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import (
-    load_current_window,
+    load_current_dataset,
 )
 from services.drift_monitor.src.repositories.s3.dataset_reference import load_reference_parquet
 from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
@@ -23,7 +23,7 @@ from shared.modules.logging import logger
 from shared.modules.schemas import ModelDeploymentWorkflowState
 
 async def main() -> None:
-    if not has_any_active_deployed_model():
+    if not has_any_active_model():
         current_model_deployment_workflow = get_current_model_deployment_workflow()
 
         if current_model_deployment_workflow is None:
@@ -55,14 +55,14 @@ async def main() -> None:
         return
 
     df_reference = reference_table.to_pandas()
-    # ── Load current window ──────────────────────────────────────────────────
+    # ── Load current dataset ──────────────────────────────────────────────────
     reference_last_date = datetime.fromtimestamp(
         df_reference["transaction_timestamp"].max(),
         timezone.utc
     )
     chosen_cutoff = datetime.now(timezone.utc) - timedelta(days=drift_config.LOOKBACK_DAYS)
     current_cutoff = min(chosen_cutoff, reference_last_date)
-    df_current = load_current_window(current_cutoff)
+    df_current = load_current_dataset(current_cutoff)
 
     if len(df_current) < drift_config.MINIMUM_CURRENT_DATASET_ROWS:
         logger.info(f"Current dataset window is too small ({len(df_current)} rows).")

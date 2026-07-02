@@ -1,27 +1,51 @@
 """All model_deployment_workflows + model_deployments mutations used during training + promotion."""
 
 from datetime import datetime, timezone
+
+import pandas as pd
+from pandas import DataFrame
 from sqlalchemy import text
 
 from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
+from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres import engine
+from shared.modules.configs import postgres_config
+from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel
 
-def get_latest_deployed_max_date() -> datetime:
+
+def get_latest_unused_dataset() -> DataFrame:
     with engine.connect() as connection:
-        dataset_max_date = connection.execute(text("""
-            SELECT MAX(dataset_max_date) FROM model_deployments
-            WHERE status = 'active'
-        """)).scalar()
-
-    if isinstance(dataset_max_date, datetime):
-        return dataset_max_date.astimezone(timezone.utc)
-    else:
-        return datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return pd.read_sql(
+            text(f"""
+                WITH dataset_cutoff AS ( 
+                    SELECT MAX(dataset_max_date)
+                    FROM model_deployments
+                    WHERE 
+                        project_id = :project_id
+                    AND active
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                )
+                SELECT {",".join(FraudClassificationDataset.model_field_keys())}
+                FROM transaction_inferences
+                WHERE 
+                    inference_timestamp > dataset_cutoff
+                AND {FraudClassificationLabel.model_field_key()} IS NOT NULL
+                ORDER BY random()
+                LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
+            """),
+            connection,
+            params={
+                "project_id": postgres_config.PROJECT_ID,
+                "MAXIMUM_TRAINING_DATASET_ROWS": training_config.MAXIMUM_TRAINING_DATASET_ROWS
+            }
+        )
 
 def get_current_state() -> dict | None:
     with engine.connect() as connection:
         row = connection.execute(text("""
             SELECT * FROM model_deployment_workflows
+            WHERE project_id = :project_id
             LIMIT 1
         """)).mappings().fetchone()
 

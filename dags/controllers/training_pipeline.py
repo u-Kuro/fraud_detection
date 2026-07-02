@@ -7,12 +7,12 @@ from kubernetes import client as k8s
 from dags.modules.configs.dags import dags_config
 from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
 
-# TODO - continue here.
 @dag(
     dag_id="training_pipeline",
     schedule=None,
     start_date=datetime(2026, 1, 1),
-    catchup=False,
+    max_active_runs=1,
+    catchup=True,
     default_args={
         "owner": dags_config.OWNER,
         "retries": 1,
@@ -24,9 +24,9 @@ from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkfl
 def training_pipeline_dag():
     run_training = KubernetesPodOperator(
         task_id="run_training",
-        name="training-{{ run_id | slugify }}",
+        name="training",
         namespace="default",
-        image=f"{Variable.get("ecr_registry")}/fraud-detection-training-pipeline:latest",
+        image=f"{Variable.get("ecr_registry")}/training-pipeline:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
             k8s.V1LocalObjectReference(
@@ -34,6 +34,11 @@ def training_pipeline_dag():
             )
         ],
         env_from=[
+            k8s.V1EnvFromSource(
+                config_map_ref=k8s.V1ConfigMapEnvSource(
+                    name="platform-infrastructure"
+                )
+            ),
             k8s.V1EnvFromSource(
                 secret_ref=k8s.V1SecretEnvSource(
                     name="mle-pipeline-secret"
@@ -74,7 +79,7 @@ def training_pipeline_dag():
         task_id="run_promotion",
         name="promotion-{{ run_id | slugify }}",
         namespace="default",
-        image=f"{Variable.get("ecr_registry")}/fraud-detection-training-pipeline:latest",
+        image=f"{Variable.get("ecr_registry")}/training-pipeline:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
             k8s.V1LocalObjectReference(
@@ -82,6 +87,11 @@ def training_pipeline_dag():
             )
         ],
         env_from=[
+            k8s.V1EnvFromSource(
+                config_map_ref=k8s.V1ConfigMapEnvSource(
+                    name="platform-infrastructure"
+                )
+            ),
             k8s.V1EnvFromSource(
                 secret_ref=k8s.V1SecretEnvSource(
                     name="mle-pipeline-secret"

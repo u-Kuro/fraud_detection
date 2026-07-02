@@ -7,9 +7,9 @@ from dags.services.drift_monitor import run_drift_monitor
 
 @dag(
     dag_id="drift_monitor",
-    max_active_runs=1,
     schedule="0 */6 * * *",
     start_date=datetime(2026, 1, 1),
+    max_active_runs=1,
     catchup=True,
     default_args={
         "owner": dags_config.OWNER,
