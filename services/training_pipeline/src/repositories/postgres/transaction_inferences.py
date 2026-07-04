@@ -2,9 +2,9 @@ import pandas as pd
 from pandas import DataFrame
 from sqlalchemy import text
 
-from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres import engine
 from shared.modules.configs import postgres_config
+from shared.modules.configs.dataset import dataset_config
 from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, FraudClassificationTransactionTimestamp
 
 def get_latest_unused_dataset() -> DataFrame:
@@ -26,12 +26,12 @@ def get_latest_unused_dataset() -> DataFrame:
                     inference_timestamp > dataset_cutoff
                 AND {FraudClassificationLabel.model_field_key()} IS NOT NULL
                 ORDER BY random()
-                LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
+                LIMIT :MAXIMUM_DATASET_ROWS
             """),
             connection,
             params={
                 "project_id": postgres_config.PROJECT_ID,
-                "MAXIMUM_TRAINING_DATASET_ROWS": training_config.MAXIMUM_TRAINING_DATASET_ROWS
+                "MAXIMUM_DATASET_ROWS": dataset_config.MAXIMUM_DATASET_ROWS
             }
         )
         transaction_timestamp_key = FraudClassificationTransactionTimestamp.model_field_key()

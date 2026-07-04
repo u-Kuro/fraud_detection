@@ -1,1 +1,1 @@
-from services.drift_monitor.src.modules.configs.drift import drift_config
+from services.drift_monitor.src.modules.configs.evidently import evidently_config

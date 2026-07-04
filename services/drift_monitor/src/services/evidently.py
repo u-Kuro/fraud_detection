@@ -1,9 +1,14 @@
 import io
+import json
 
 from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
+from services.drift_monitor.src.modules.configs import evidently_config
+from services.drift_monitor.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
+from services.drift_monitor.src.repositories.postgres.transaction_inferences import load_current_dataset
+from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
 from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def run_drift_report(
@@ -64,7 +69,7 @@ def extract_drift_summary(
                 if info.get("drift_detected", False) and feature_name in feature_names
             ]
             data_drift = {
-                "dataset_drift_detected": result.get("dataset_drift", False),
+                evidently_config.DRIFTED_KEY: result.get("dataset_drift", False),
                 "share_drifted_features": result.get("share_drifted_features", 0.0),
                 "number_of_drifted_features": result.get("number_of_drifted_features", 0),
                 "total_features": result.get("number_of_columns", len(feature_names)),
@@ -94,12 +99,26 @@ def extract_drift_summary(
                 # A negative delta means the model performs worse on current data.
                 # Flag concept drift if F1 degrades by more than 5 pp.
                 # TODO - idk if we need to remove or change this concept drift. I need to check it manually first online.
-                "concept_drift_detected": f1_delta is not None and f1_delta < -0.05
+                evidently_config.DRIFTED_KEY: f1_delta is not None and f1_delta < -0.05
             }
 
     return {
         # Data drift (P(X) shift)
-        "data_drift": data_drift,
+        evidently_config.DATA_DRIFT_KEY: data_drift,
         # Concept drift (P(Y|X) shift: model quality on current data vs reference)
-        "concept_drift": concept_drift,
+        evidently_config.CONCEPT_DRIFT_KEY: concept_drift,
     }
+
+def check_for_drift() -> tuple[bool, dict]:
+    df_reference, current_dataset_cutoff = load_reference_dataset()
+    df_current = load_current_dataset(current_dataset_cutoff)
+
+    drift_summary, html_bytes = run_drift_report(df_reference, df_current)
+    upload_drift_report(html_bytes, json.dumps(drift_summary).encode())
+
+    data_drift = drift_summary[evidently_config.DATA_DRIFT_KEY].get(evidently_config.DRIFTED_KEY, False)
+    concept_drift = drift_summary[evidently_config.CONCEPT_DRIFT_KEY].get(evidently_config.DRIFTED_KEY, False)
+
+    drift_detected = data_drift or concept_drift
+
+    return drift_detected, drift_summary

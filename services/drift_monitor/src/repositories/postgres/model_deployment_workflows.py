@@ -18,6 +18,9 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
         }).mappings().fetchone()
     return ModelDeploymentWorkflow.model_validate(row, from_attributes=True) if row else None
 
+def has_no_ongoing_model_deployment_workflow() -> bool:
+    return get_current_model_deployment_workflow() is None
+
 def create_train_pending_workflow(workflow_id: UUID, training_approval_slack_ts: str | None) -> None:
     with engine.connect() as connection:
         connection.execute(text(f"""

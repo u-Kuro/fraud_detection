@@ -1,21 +1,22 @@
 """All model_deployment_workflows + model_deployments mutations used during training + promotion."""
 
 from datetime import datetime, timezone
+from uuid import UUID
 
 import pandas as pd
 from pandas import DataFrame
 from sqlalchemy import text
 
 from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
-from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.repositories.postgres import engine
 from shared.modules.configs import postgres_config
+from shared.modules.configs.dataset import dataset_config
 from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel
 
 
 def get_latest_unused_dataset() -> DataFrame:
     with engine.connect() as connection:
-        return pd.read_sql(
+        df = pd.read_sql(
             text(f"""
                 WITH dataset_cutoff AS ( 
                     SELECT MAX(dataset_max_date)
@@ -32,14 +33,19 @@ def get_latest_unused_dataset() -> DataFrame:
                     inference_timestamp > dataset_cutoff
                 AND {FraudClassificationLabel.model_field_key()} IS NOT NULL
                 ORDER BY random()
-                LIMIT :MAXIMUM_TRAINING_DATASET_ROWS
+                LIMIT :MAXIMUM_DATASET_ROWS
             """),
             connection,
             params={
                 "project_id": postgres_config.PROJECT_ID,
-                "MAXIMUM_TRAINING_DATASET_ROWS": training_config.MAXIMUM_TRAINING_DATASET_ROWS
+                "MAXIMUM_DATASET_ROWS": dataset_config.MAXIMUM_DATASET_ROWS
             }
         )
+
+        if len(df) < dataset_config.MINIMUM_ROWS:
+            raise ValueError(f"Dataset window is too small ({len(df)} rows), minimum is {dataset_config.MINIMUM_ROWS}.")
+
+        return df
 
 def get_current_state() -> dict | None:
     with engine.connect() as connection:
@@ -51,26 +57,29 @@ def get_current_state() -> dict | None:
 
     return dict(row) if row else None
 
-def update_after_training(
-    run_id: str,
-    model_version: int,
-    dataset_min_date: datetime,
-    dataset_max_date: datetime,
+def update_deployment_workflow(
+    id: UUID,
+    registered_model_name: str,
+    registered_model_version: int,
+    model_dataset_min_timestamp: int,
+    model_dataset_max_timestamp: int,
 ) -> None:
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
             SET state = :state,
-                run_id = :run_id,
-                model_version = :model_version,
-                dataset_min_date = :dataset_min_date,
-                dataset_max_date = :dataset_max_date
+                registered_model_name = :registered_model_name,
+                registered_model_version = :registered_model_version,
+                model_dataset_min_timestamp = :model_dataset_min_timestamp,
+                model_dataset_max_timestamp = :model_dataset_max_timestamp
+            WHERE id = :id
         """), {
+            "id": id,
             "state": ModelDeploymentWorkflowState.train_pending,
-            "run_id": run_id,
-            "model_version": model_version,
-            "dataset_min_date": dataset_min_date,
-            "dataset_max_date": dataset_max_date,
+            "registered_model_name": registered_model_name,
+            "registered_model_version": registered_model_version,
+            "model_dataset_min_timestamp": model_dataset_min_timestamp,
+            "model_dataset_max_timestamp": model_dataset_max_timestamp,
         })
         connection.commit()
 

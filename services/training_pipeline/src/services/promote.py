@@ -39,7 +39,7 @@ def promote() -> None:
     dataset_min_date          = state["dataset_min_date"]
     dataset_max_date          = state["dataset_max_date"]
 
-    mlflow.set_tracking_uri(mlflow_config.MLFLOW_TRACKING_URI)
+    mlflow.set_tracking_uri(mlflow_config.TRACKING_URI)
     client = MlflowClient()
 
     versions = client.search_model_versions(f"run_id='{run_id}'")
