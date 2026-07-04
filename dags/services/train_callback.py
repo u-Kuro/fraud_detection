@@ -14,7 +14,7 @@ def train_callback(**context) -> str:
         task_context = AirflowTaskContext.from_context(context)
         training_approved(configurations.workflow_id)
         task_context.ti.xcom_push(
-            key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+            key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID,
             value=str(configurations.workflow_id)
         )
         return start_training_pipeline.__name__
@@ -26,13 +26,13 @@ def start_training_pipeline(**context) -> TriggerDagRunOperator:
     task_context = AirflowTaskContext.from_context(context)
     model_deployment_workflow_id = task_context.ti.xcom_pull(
         task_ids=train_callback_task_id,
-        key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY
+        key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID
     )
     return TriggerDagRunOperator(
         task_id=start_training_pipeline.__name__,
         trigger_dag_id="training_pipeline",
         wait_for_completion=False,
         conf={
-            dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY: model_deployment_workflow_id
+            dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID: model_deployment_workflow_id
         }
     )

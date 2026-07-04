@@ -1,13 +1,14 @@
 from pyarrow.lib import UUID
 from sqlalchemy import text
 
+from services.drift_monitor.src.modules.schemas import ModelDeploymentWorkflow
 from services.drift_monitor.src.repositories.postgres import engine
 from shared.modules.configs import postgres_config
-from shared.modules.schemas import ModelDeploymentWorkflowState, ModelDeploymentWorkflow
+from shared.modules.schemas import ModelDeploymentWorkflowState
 
 def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
     with engine.connect() as connection:
-        row = connection.execute(text(f"""
+        model_deployment_workflow = connection.execute(text(f"""
             SELECT {",".join(ModelDeploymentWorkflow.model_field_keys())}
             FROM model_deployment_workflows
             WHERE project_id = :project_id
@@ -16,7 +17,11 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
         """), {
             "project_id": postgres_config.PROJECT_ID
         }).mappings().fetchone()
-    return ModelDeploymentWorkflow.model_validate(row, from_attributes=True) if row else None
+
+    if model_deployment_workflow is None:
+        return None
+    else:
+        return ModelDeploymentWorkflow.model_validate(model_deployment_workflow, from_attributes=True)
 
 def has_no_ongoing_model_deployment_workflow() -> bool:
     return get_current_model_deployment_workflow() is None

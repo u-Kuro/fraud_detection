@@ -5,14 +5,14 @@ from uuid import UUID
 
 import pandas as pd
 from pandas import DataFrame
+from pydantic import validate_call
 from sqlalchemy import text
 
-from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
+from services.training_pipeline.src.modules.schemas import ModelDeploymentWorkflow
 from services.training_pipeline.src.repositories.postgres import engine
 from shared.modules.configs import postgres_config
 from shared.modules.configs.dataset import dataset_config
-from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel
-
+from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, ModelDeploymentWorkflowState
 
 def get_latest_unused_dataset() -> DataFrame:
     with engine.connect() as connection:
@@ -47,15 +47,20 @@ def get_latest_unused_dataset() -> DataFrame:
 
         return df
 
-def get_current_state() -> dict | None:
+def get_deployment_workflow(id: UUID) -> ModelDeploymentWorkflow:
     with engine.connect() as connection:
-        row = connection.execute(text("""
-            SELECT * FROM model_deployment_workflows
-            WHERE project_id = :project_id
-            LIMIT 1
-        """)).mappings().fetchone()
+        model_deployment_workflow = connection.execute(text(f"""
+            SELECT {",".join(ModelDeploymentWorkflow.model_field_keys())}
+            FROM model_deployment_workflows
+            WHERE id = :id
+        """), {
+            "id": id
+        }).mappings().fetchone()
 
-    return dict(row) if row else None
+    if model_deployment_workflow is None:
+        raise ValueError(f"ModelDeploymentWorkflow with id={id} not found.")
+
+    return ModelDeploymentWorkflow.model_validate(model_deployment_workflow, from_attributes=True)
 
 def update_deployment_workflow(
     id: UUID,
@@ -83,68 +88,74 @@ def update_deployment_workflow(
         })
         connection.commit()
 
-def update_promotion_approval_slack_ts(promotion_approval_slack_ts: str) -> None:
+@validate_call()
+def update_promotion_approval_slack_ts(
+    id: UUID,
+    promotion_approval_slack_ts: str | None
+) -> None:
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
             SET promotion_approval_slack_ts = :promotion_approval_slack_ts
-        """), {
+            WHERE id = :id
+        """),{
+            "id": id,
             "promotion_approval_slack_ts": promotion_approval_slack_ts
         })
         connection.commit()
-
-def begin_promoting(
-    model_name: str,
-    model_version: int,
-    dataset_min_date: datetime,
-    dataset_max_date: datetime,
-) -> None:
-    with engine.connect() as connection:
-        connection.execute(text("""
-            INSERT INTO model_deployments (
-                model_name,
-                model_version,
-                dataset_min_date,
-                dataset_max_date,
-                status
-            )
-            VALUES (
-                :name,
-                :model_version,
-                :dataset_min_date,
-                :dataset_max_date,
-                'promoting'
-            )
-            ON CONFLICT (model_name, model_version)
-            DO UPDATE SET status = 'promoting'
-        """), {
-            "model_name": model_name,
-            "model_version": model_version,
-            "dataset_min_date": dataset_min_date,
-            "dataset_max_date": dataset_max_date,
-        })
-        connection.execute(text("""
-            UPDATE model_deployment_workflows
-            SET state = 'promoting'
-        """))
-        connection.commit()
-
-
-def finalize_promotion(
-    model_name: str,
-    model_version: int
-) -> None:
-    with engine.connect() as connection:
-        connection.execute(text("""
-            UPDATE model_deployments
-            SET status = 'active'
-            WHERE   model_name = :model_name
-                AND model_version = :model_version
-        """), {
-            "model_name": model_name,
-            "model_version": model_version
-        })
-        connection.execute(text("""
-            DELETE FROM model_deployment_workflows
-        """))
-        connection.commit()
+#
+# def begin_promoting(
+#     model_name: str,
+#     model_version: int,
+#     dataset_min_date: datetime,
+#     dataset_max_date: datetime,
+# ) -> None:
+#     with engine.connect() as connection:
+#         connection.execute(text("""
+#             INSERT INTO model_deployments (
+#                 model_name,
+#                 model_version,
+#                 dataset_min_date,
+#                 dataset_max_date,
+#                 status
+#             )
+#             VALUES (
+#                 :name,
+#                 :model_version,
+#                 :dataset_min_date,
+#                 :dataset_max_date,
+#                 'promoting'
+#             )
+#             ON CONFLICT (model_name, model_version)
+#             DO UPDATE SET status = 'promoting'
+#         """), {
+#             "model_name": model_name,
+#             "model_version": model_version,
+#             "dataset_min_date": dataset_min_date,
+#             "dataset_max_date": dataset_max_date,
+#         })
+#         connection.execute(text("""
+#             UPDATE model_deployment_workflows
+#             SET state = 'promoting'
+#         """))
+#         connection.commit()
+#
+#
+# def finalize_promotion(
+#     model_name: str,
+#     model_version: int
+# ) -> None:
+#     with engine.connect() as connection:
+#         connection.execute(text("""
+#             UPDATE model_deployments
+#             SET status = 'active'
+#             WHERE   model_name = :model_name
+#                 AND model_version = :model_version
+#         """), {
+#             "model_name": model_name,
+#             "model_version": model_version
+#         })
+#         connection.execute(text("""
+#             DELETE FROM model_deployment_workflows
+#         """))
+#         connection.commit()

@@ -11,7 +11,7 @@ CREATE TABLE model_deployment_workflows (
     project_id                      UUID                NOT NULL                                        REFERENCES projects(id),
     state                           TEXT                NOT NULL,
     training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
-    promote_approved                BOOLEAN             NOT NULL        DEFAULT FALSE,
+    promotion_approved              BOOLEAN             NOT NULL        DEFAULT FALSE,
     registered_model_name           TEXT                NULL,
     registered_model_version        INT                 NULL,
     model_dataset_min_timestamp     INT                 NULL,

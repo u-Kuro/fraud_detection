@@ -3,9 +3,9 @@ from uuid import uuid4, UUID
 
 from slack_sdk.web.async_client import AsyncWebClient
 
+from services.drift_monitor.src.modules.schemas import ModelDeploymentWorkflow
 from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, update_training_approval_slack_ts
 from shared.modules.environment import slack_environment
-from shared.modules.schemas import ModelDeploymentWorkflow
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 
@@ -83,7 +83,7 @@ async def post_training_approval(drift_summary: dict):
 
     response = await client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_drift_blocks(drift_summary, workflow_id)
+        blocks=format_retraining_approval_blocks(drift_summary, workflow_id)
     )
 
     create_train_pending_workflow(
@@ -95,12 +95,12 @@ async def update_training_approval(drift_summary: dict, current_model_deployment
     response = await client.chat_update(
         ts=current_model_deployment_workflow["training_approval_slack_ts"],
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_drift_blocks(drift_summary, current_model_deployment_workflow.id)
+        blocks=format_retraining_approval_blocks(drift_summary, current_model_deployment_workflow.id)
     )
 
     update_training_approval_slack_ts(response["ts"], current_model_deployment_workflow)
 
-def format_drift_blocks(drift_summary: dict, workflow_id: UUID) -> list:
+def format_retraining_approval_blocks(drift_summary: dict, workflow_id: UUID) -> list:
     dd = drift_summary.get("data_drift", {})
     cd = drift_summary.get("concept_drift", {})
 

@@ -18,7 +18,7 @@ from mlflow import MlflowClient
 
 from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
-    get_current_state,
+    get_deployment_workflow,
     begin_promoting,
     finalize_promotion,
 )
@@ -30,7 +30,7 @@ from shared.modules.configs import mlflow_config
 from shared.modules.logging import logger
 
 def promote() -> None:
-    state = get_current_state()
+    state = get_deployment_workflow()
     if state is None or state["state"] not in ModelDeploymentWorkflowState.__members__:
         raise RuntimeError(f"Cannot promote: unexpected model_deployment_workflows={state}")
 

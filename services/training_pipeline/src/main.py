@@ -22,10 +22,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
+from services.training_pipeline.src.controllers.slack import update_promotion_approval
 from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.modules.environments.dags import dags_environment
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
-    get_current_state,
+    get_deployment_workflow,
     get_latest_unused_dataset,
     update_deployment_workflow,
     update_promotion_approval_slack_ts,
@@ -104,7 +105,7 @@ def visualize_model_predictions(
         f"confusion_matrix_{title.lower()}": confusion_matrix_figure,
     }
 
-def train_model(model_deployment_workflow_id: UUID) -> tuple[str, int]:
+def train_model(model_deployment_workflow_id: UUID) -> tuple[str, int, dict]:
     df = get_latest_unused_dataset()
 
     mlflow.set_tracking_uri(mlflow_config.TRACKING_URI)
@@ -297,7 +298,7 @@ def train_model(model_deployment_workflow_id: UUID) -> tuple[str, int]:
             model_dataset_max_timestamp
         )
 
-        return mlflow_config.MODEL_NAME, model_info.registered_model_version
+        return mlflow_config.MODEL_NAME, model_info.registered_model_version, model_metrics
 
 def delete_stale_candidates(
     client: MlflowClient,
@@ -404,25 +405,25 @@ def write_xcom(payload: dict) -> None:
 
 def run_training() -> None:
     # Train
-    train_model(model_deployment_workflow_id=dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY)
+    model_name, model_version, model_metrics = train_model(
+        model_deployment_workflow_id=dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID
+    )
 
     # Ask for promotion (name and version and metrics)
-
-
+    # replace
+    model_deployment_workflow = get_deployment_workflow(id=dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID)
+    update_promotion_approval(
+        model_name=model_name,
+        model_version=model_version,
+        model_metrics=model_metrics,
+        model_deployment_workflow=model_deployment_workflow
+    )
     # Delete/Replace old trained model and promotion approval
 
-
-
-
-
+    # TODO - Continue here
     # Clean up stale candidates BEFORE posting the promotion message
     delete_stale_candidates(client, "XGBoost", current_version)
 
-    state = get_current_state()
-    promotion_approval_slack_ts = (state or {}).get("promotion_approval_slack_ts", None)
-    slack_ts = post_or_update_promotion_slack(promotion_approval_slack_ts, "XGBoost", current_version, metrics)
-    if slack_ts:
-        update_promotion_approval_slack_ts(slack_ts)
 
     write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
     logger.info("Training complete. Awaiting promotion approval.")
