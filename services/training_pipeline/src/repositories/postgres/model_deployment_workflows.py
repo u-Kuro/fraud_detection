@@ -72,7 +72,8 @@ def update_deployment_workflow(
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
-            SET state = :state,
+            SET trained_at = NOW(),
+                state = :state,
                 registered_model_name = :registered_model_name,
                 registered_model_version = :registered_model_version,
                 model_dataset_min_timestamp = :model_dataset_min_timestamp,
@@ -80,7 +81,7 @@ def update_deployment_workflow(
             WHERE id = :id
         """), {
             "id": id,
-            "state": ModelDeploymentWorkflowState.train_pending,
+            "state": ModelDeploymentWorkflowState.promote_pending,
             "registered_model_name": registered_model_name,
             "registered_model_version": registered_model_version,
             "model_dataset_min_timestamp": model_dataset_min_timestamp,

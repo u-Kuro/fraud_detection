@@ -1,3 +1,4 @@
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import task
 
@@ -12,6 +13,7 @@ def train_callback(**context) -> str:
     configurations = TrainCallbackConfigurations.from_context(context)
     if configurations.approved:
         task_context = AirflowTaskContext.from_context(context)
+        # TODO - try and check if PostgresHook() is more used. but it needs environment variable to connect so im doubting to check first
         training_approved(configurations.workflow_id)
         task_context.ti.xcom_push(
             key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID,

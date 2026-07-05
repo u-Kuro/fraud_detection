@@ -19,11 +19,16 @@ async def main() -> None:
     # Any active model corresponds to an existing dataset reference,
     # allowing calculation for drift
     if has_any_active_model():
+        # TODO below
+        # if 1 model_deployment_workflow has promote_pending
+        # and 1 model_deployment_workflow has promote_pending_replacement
+        if has_expired_promote_pending_workflow_with_replacement:
+            replace_expired_promote_pending_with_replacement
+
         drift_detected, drift_summary = check_for_drift()
 
         if drift_detected:
             current_model_deployment_workflow = get_current_model_deployment_workflow()
-
             if current_model_deployment_workflow is None:
                 await post_training_approval(drift_summary)
                 logger.info("Posted new workflow approval for training.")

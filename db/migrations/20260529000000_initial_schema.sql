@@ -8,6 +8,7 @@ CREATE TABLE projects (
 CREATE TABLE model_deployment_workflows (
     id                              UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,
     created_at                      TIMESTAMPTZ         NOT NULL        DEFAULT NOW(),
+    trained_at                      TIMESTAMPTZ         NOT NULL,
     project_id                      UUID                NOT NULL                                        REFERENCES projects(id),
     state                           TEXT                NOT NULL,
     training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
