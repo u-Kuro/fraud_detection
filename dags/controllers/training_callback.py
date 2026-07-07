@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from airflow.sdk import dag
 
 from dags.services.airflow_operators import no_action
-from dags.services.train_callback import train_callback, start_training_pipeline
+from dags.services.training_callback import training_callback, start_training_pipeline
 
 @dag(
-    dag_id="train_callback",
+    dag_id="training_callback",
     schedule=None,
     start_date=datetime(2026, 1, 1),
     max_active_runs=1,
@@ -19,7 +19,7 @@ from dags.services.train_callback import train_callback, start_training_pipeline
     },
     tags=["mle", "callback"]
 )
-def train_callback_dag():
-    train_callback() >> [start_training_pipeline(), no_action()]
+def training_callback_dag():
+    training_callback() >> [start_training_pipeline(), no_action()]
 
-train_callback_dag()
+training_callback_dag()

@@ -10,6 +10,7 @@ resource "aws_s3_object" "requirements" {
   bucket  = var.s3_mle_bucket
   key     = local.requirements_file_name
   content = <<-REQ
+    apache-airflow-providers-amazon==9.31.0
     apache-airflow-providers-cncf-kubernetes==10.18.0
     apache-airflow-providers-postgres==6.8.0
     apache-airflow-providers-slack==9.10.2
@@ -43,6 +44,30 @@ resource "terraform_data" "upload_airflow_kubeconfig" {
   }
 }
 
+resource "aws_iam_role_policy" "mwaa_secrets_access" {
+  name = "mwaa_secrets_access"
+  role = "mwaa_role"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "mwaa_secrets_access"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds",
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:airflow/connections/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:airflow/variables/*",
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_mwaa_environment" "main" {
   name                  = var.environment_name
   airflow_version       = "2.10.3"
@@ -52,6 +77,15 @@ resource "aws_mwaa_environment" "main" {
   dag_s3_path           = "${local.dag_s3_path}/"
   requirements_s3_path  = local.requirements_file_name
 
+  airflow_configuration_options = {
+    "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
+    "secrets.backend_kwargs" = jsonencode({
+      connections_prefix = "airflow/connections"
+      variables_prefix   = "airflow/variables"
+      endpoint_url       = var.secretsmanager_service_endpoint_url  # ministack LocalStack endpoint
+    })
+  }
+
   network_configuration {
     security_group_ids = ["sg-00000000000000001"]
     subnet_ids         = ["subnet-00000000000000001", "subnet-00000000000000002"]
@@ -59,6 +93,7 @@ resource "aws_mwaa_environment" "main" {
 
   depends_on = [
     aws_s3_object.requirements,
-    terraform_data.upload_airflow_kubeconfig
+    terraform_data.upload_airflow_kubeconfig,
+    aws_iam_role_policy.mwaa_secrets_access,
   ]
 }

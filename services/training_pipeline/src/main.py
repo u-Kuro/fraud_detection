@@ -418,15 +418,14 @@ def run_training() -> None:
         model_metrics=model_metrics,
         model_deployment_workflow=model_deployment_workflow
     )
-    # Delete/Replace old trained model and promotion approval
-
-    # TODO - Continue here
-    # Clean up stale candidates BEFORE posting the promotion message
-    delete_stale_candidates(client, "XGBoost", current_version)
-
-
-    write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
-    logger.info("Training complete. Awaiting promotion approval.")
+    # # Delete/Replace old trained model and promotion approval
+    #
+    # # Clean up stale candidates BEFORE posting the promotion message
+    # delete_stale_candidates(client, "XGBoost", current_version)
+    #
+    #
+    # write_xcom({"trained": True, "model_version": current_version, "f1": metrics["f1"]})
+    # logger.info("Training complete. Awaiting promotion approval.")
 
 
 if __name__ == "__main__":

@@ -1,20 +1,8 @@
-resource "aws_secretsmanager_secret" "mle_pipeline" {
-  name                    = "/mle/pipeline"
-  description             = "Runtime credentials for MLE DAG containers (drift_monitor, training_pipeline, archiving)."
-  recovery_window_in_days = 0
-}
-
-resource "aws_secretsmanager_secret" "mle_fraud_detection" {
-  name                    = "/mle/fraud_detection"
-  description             = "Runtime credentials for the fraud_detection service."
-  recovery_window_in_days = 0
-}
-
 # IAM policy — grants the MLE team (only) read/write access to their secrets.
 # Platform team cannot read these secrets; they have no need to.
 resource "aws_iam_policy" "mle_secrets_access" {
   name        = "mle_secrets_access"
-  description = "Grants MLE team read/write access to their own Secrets Manager entries."
+  description = "MLE team full self-service access under /mle/* namespace."
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -23,16 +11,21 @@ resource "aws_iam_policy" "mle_secrets_access" {
         Sid    = "mle_secret_access"
         Effect = "Allow"
         Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
           "secretsmanager:GetSecretValue",
           "secretsmanager:PutSecretValue",
           "secretsmanager:UpdateSecret",
           "secretsmanager:DescribeSecret",
           "secretsmanager:ListSecretVersionIds",
         ]
-        Resource = [
-          aws_secretsmanager_secret.mle_pipeline.arn,
-          aws_secretsmanager_secret.mle_fraud_detection.arn,
-        ]
+        Resource = "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:/mle/*"
+      },
+      {
+        Sid      = "mle_secret_list_access"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:ListSecrets"]
+        Resource = "*"   # ListSecrets can't be scoped to a prefix
       }
     ]
   })

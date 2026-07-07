@@ -15,6 +15,10 @@ variable "s3_service_endpoint_url" {
   type      = string
   default   = "http://localhost:4566"
 }
+variable "secretsmanager_service_endpoint_url" {
+  type      = string
+  default   = "http://localhost:4566"
+}
 
 variable "ecr_registry_endpoint" {
   type      = string

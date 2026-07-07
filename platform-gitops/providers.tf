@@ -10,7 +10,7 @@ provider "aws" {
     ecr             = "http://localhost:4566"
     mwaa            = "http://localhost:4566"
     rds             = "http://localhost:4566"
-    secretsmanager  = "http://localhost:4566"
+    secretsmanager  = var.secretsmanager_service_endpoint_url
     iam             = "http://localhost:4566"
   }
 

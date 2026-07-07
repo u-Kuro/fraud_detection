@@ -12,14 +12,14 @@ class AirflowTaskContext(BaseModel):
     def from_context(cls, context: dict) -> "AirflowTaskContext":
         return cls(ti=context["ti"])
 
-class TrainCallbackConfigurations(BaseModel):
+class TrainingCallbackConfigurations(BaseModel):
     model_config = ConfigDict(strict=False)
 
     workflow_id: UUID
     approved: bool
 
     @classmethod
-    def from_context(cls, context: dict) -> "TrainCallbackConfigurations":
+    def from_context(cls, context: dict) -> "TrainingCallbackConfigurations":
         return cls(**(context["dag_run"].conf or {}))
 
 class TrainingPipelineConfigurations(BaseModel):
@@ -29,4 +29,24 @@ class TrainingPipelineConfigurations(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "TrainingPipelineConfigurations":
+        return cls(**(context["dag_run"].conf or {}))
+
+
+class PromotionCallbackConfigurations(BaseModel):
+    model_config = ConfigDict(strict=False)
+
+    workflow_id: UUID
+    approved: bool
+
+    @classmethod
+    def from_context(cls, context: dict) -> "PromotionCallbackConfigurations":
+        return cls(**(context["dag_run"].conf or {}))
+
+class PromotionPipelineConfigurations(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    model_deployment_workflow_id: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "PromotionPipelineConfigurations":
         return cls(**(context["dag_run"].conf or {}))

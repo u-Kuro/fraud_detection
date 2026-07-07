@@ -31,6 +31,7 @@ module "s3" {
 
 module "secrets_manager" {
   source = "./modules/aws_secrets_manager"
+  aws_account_id = var.aws_account_id
 }
 
 # EKS: creates k3s cluster + runs extract-kubeconfig.ps1 automatically.
@@ -51,15 +52,16 @@ module "eks_cluster" {
 
 # MWAA depends on S3 (requirements.txt) and EKS (internal kubeconfig upload).
 module "aws_mwaa_environment" {
-  source                    = "./modules/aws_mwaa"
-  aws_access_key            = var.aws_access_key
-  aws_secret_key            = var.aws_secret_key
-  aws_region                = var.aws_region
-  aws_account_id            = var.aws_account_id
-  eks_service_endpoint_url  = var.eks_service_endpoint_url
-  s3_service_endpoint_url   = var.s3_service_endpoint_url
-  s3_mle_bucket             = module.s3.mle_bucket_name
-  eks_cluster_name          = module.eks_cluster.name
+  source                              = "./modules/aws_mwaa"
+  aws_access_key                      = var.aws_access_key
+  aws_secret_key                      = var.aws_secret_key
+  aws_region                          = var.aws_region
+  aws_account_id                      = var.aws_account_id
+  eks_service_endpoint_url            = var.eks_service_endpoint_url
+  s3_service_endpoint_url             = var.s3_service_endpoint_url
+  secretsmanager_service_endpoint_url = var.secretsmanager_service_endpoint_url
+  s3_mle_bucket                       = module.s3.mle_bucket_name
+  eks_cluster_name                    = module.eks_cluster.name
 
   depends_on = [
     module.s3,

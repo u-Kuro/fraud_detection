@@ -34,7 +34,7 @@ def approve_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         data = json.loads(action["value"])
         trigger_airflow_dag(
-            "train_callback",
+            "training_callback",
             {
                 "approved": True,
                 "workflow_id": data["workflow_id"]
@@ -57,7 +57,7 @@ def reject_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         data = json.loads(action["value"])
         trigger_airflow_dag(
-            "train_callback",
+            "training_callback",
             {
                 "approved": False,
                 "workflow_id": data["workflow_id"]
@@ -80,7 +80,7 @@ def handle_approve_retraining(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         data = json.loads(action["value"])
         trigger_airflow_dag(
-            "train_callback",
+            "training_callback",
             {
                 "approved": True,
                 "workflow_id": data["workflow_id"]
@@ -103,7 +103,7 @@ def reject_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         data = json.loads(action["value"])
         trigger_airflow_dag(
-            "train_callback",
+            "training_callback",
             {
                 "approved": False,
                 "workflow_id": data["workflow_id"]

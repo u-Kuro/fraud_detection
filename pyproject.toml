@@ -64,6 +64,7 @@ archiving = [
     "sqlalchemy>=2.0.49",
 ]
 dev = [
+    "apache-airflow-providers-amazon>=9.31.0",
     "apache-airflow-providers-cncf-kubernetes>=10.18.0",
     "apache-airflow-providers-postgres>=6.8.0",
     "apache-airflow-providers-slack>=9.10.2",
