@@ -17,7 +17,7 @@ from dags.services.training_callback import training_callback, start_training_pi
         "retry_delay": timedelta(minutes=2),
         "email_on_failure": False
     },
-    tags=["mle", "callback"]
+    tags=["mle", "training", "callback"]
 )
 def training_callback_dag():
     training_callback() >> [start_training_pipeline(), no_action()]

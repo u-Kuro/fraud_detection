@@ -21,3 +21,5 @@ from dags.services.promotion_pipeline import run_promotion
 )
 def promotion_pipeline_dag():
     run_promotion()
+
+promotion_pipeline_dag()
