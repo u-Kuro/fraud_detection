@@ -1,6 +1,11 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.sdk import Variable
+from airflow.sdk import Variable, task
 from kubernetes import client as k8s
+
+@task(task_id="post_cold_start_training_approval")
+def post_cold_start_training_approval():
+    # TODO - add slack hook
+    pass
 
 run_drift_monitor = KubernetesPodOperator(
     task_id="run_drift_monitor",

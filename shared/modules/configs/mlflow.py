@@ -3,8 +3,6 @@ from pydantic import BaseModel, ConfigDict
 class MLflowConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-
-
     MLFLOW_ARCHIVED_ALIAS:          str = "archived"
     CHALLENGER_ALIAS:           str = "challenger"
 

@@ -1,0 +1,1 @@
+from dags.modules.configs.postgres.postgres import postgres_config

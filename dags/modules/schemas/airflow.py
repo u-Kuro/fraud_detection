@@ -22,6 +22,16 @@ class TrainingCallbackConfigurations(BaseModel):
     def from_context(cls, context: dict) -> "TrainingCallbackConfigurations":
         return cls(**(context["dag_run"].conf or {}))
 
+class CreateTrainPendingWorkflowConfigurations(BaseModel):
+    model_config = ConfigDict(strict=False)
+
+    workflow_id: UUID
+    training_approval_slack_ts: str | None
+
+    @classmethod
+    def from_context(cls, context: dict) -> "CreateTrainPendingWorkflowConfigurations":
+        return cls(**(context["dag_run"].conf or {}))
+
 class TrainingPipelineConfigurations(BaseModel):
     model_config = ConfigDict(strict=True)
 

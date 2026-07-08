@@ -1,6 +1,5 @@
-from sqlalchemy import create_engine, Engine
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
-engine: Engine = create_engine(
-    "postgresql+psycopg2://",
-    pool_pre_ping=True
-)
+from dags.modules.configs import postgres_config
+
+postgres_hook: PostgresHook = PostgresHook(postgres_conn_id=postgres_config.SLACK_CONNECTION_ID)
