@@ -103,7 +103,6 @@ def training_pipeline_dag():
     #     config_file="/usr/local/airflow/dags/kubeconfig.yaml",
     # )
     #
-    # # TODO - wait_for_promotion_approval() lints - Expected type 'DependencyMixin | Sequence[DependencyMixin]', got 'Any | None' instead
     # run_training() >> wait_for_promotion_approval() >> run_promotion >> restart_fraud_api
 
 
