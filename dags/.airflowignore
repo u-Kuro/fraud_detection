@@ -1,4 +1,4 @@
-controllers/slack.py
-modules
-repositories
-services
+^controllers/(?!main/)
+^modules/
+^repositories/
+^services/

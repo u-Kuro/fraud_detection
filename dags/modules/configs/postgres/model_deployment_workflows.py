@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ConfigDict
 
-
 class ModelDeploymentWorkflowsConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 

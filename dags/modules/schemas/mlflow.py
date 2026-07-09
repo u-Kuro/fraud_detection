@@ -18,7 +18,6 @@ class ReplaceExpiredChallengerModelConfigurations(BaseModel):
     def from_context(cls, context: dict) -> "ReplaceExpiredChallengerModelConfigurations":
         return cls(**(context["dag_run"].conf or {}))
 
-
 class DeleteExpiredRegisteredModelConfigurations(BaseModel):
     model_config = ConfigDict(strict=False)
 
@@ -28,7 +27,6 @@ class DeleteExpiredRegisteredModelConfigurations(BaseModel):
     @classmethod
     def from_context(cls, context: dict) -> "DeleteExpiredRegisteredModelConfigurations":
         return cls(**(context["dag_run"].conf or {}))
-
 
 class DeleteExpiredMLflowRunConfigurations(BaseModel):
     model_config = ConfigDict(strict=False)

@@ -3,7 +3,7 @@ from airflow.sdk import Variable
 from kubernetes import client as k8s
 
 from dags.modules.configs.dags import dags_config
-from dags.modules.schemas.airflow import TrainingPipelineConfigurations
+from dags.modules.schemas.airflow.training_pipeline import TrainingPipelineConfigurations
 
 def run_training(**context) -> KubernetesPodOperator:
     configurations = TrainingPipelineConfigurations.from_context(context)

@@ -2,8 +2,8 @@ from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperato
 from airflow.sdk import Variable
 from kubernetes import client as k8s
 
-from dags.modules.configs.dags import dags_config
-from dags.modules.schemas.airflow import PromotionPipelineConfigurations
+from dags.modules.configs import dags_config
+from dags.modules.schemas.airflow.promotion_pipeline import PromotionPipelineConfigurations
 
 def run_promotion(**context) -> KubernetesPodOperator:
     configurations = PromotionPipelineConfigurations.from_context(context)

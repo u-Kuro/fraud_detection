@@ -5,7 +5,6 @@ from airflow.sdk import dag
 from dags.modules.configs.dags import dags_config
 from dags.services.training_pipeline import run_training
 
-
 @dag(
     dag_id="training_pipeline",
     schedule=None,

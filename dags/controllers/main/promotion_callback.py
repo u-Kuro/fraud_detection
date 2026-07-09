@@ -5,7 +5,6 @@ from airflow.sdk import dag
 from dags.services.airflow_operators import no_action
 from dags.services.promotion_callback import promotion_callback
 
-
 @dag(
     dag_id="promotion_callback",
     schedule=None,

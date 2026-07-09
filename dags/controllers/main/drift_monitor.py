@@ -2,13 +2,14 @@ from datetime import datetime, timedelta
 
 from airflow.sdk import dag
 
-from dags.controllers.slack import post_cold_start_training_approval
-from dags.modules.configs.dags import dags_config
-from dags.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, \
-    has_no_ongoing_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
+from dags.controllers.slack.drift_monitor import post_training_approval, update_training_approval, post_cold_start_training_approval
+from dags.modules.configs import dags_config
+from dags.repositories.mlflow.registered_model import replace_challenger_model, delete_expired_registered_model
+from dags.repositories.mlflow.run import delete_expired_mlflow_run
+from dags.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, has_no_ongoing_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflow, update_training_pending_workflow
 from dags.repositories.postgres.model_deployments import has_any_active_model
 from dags.services.airflow_operators import no_action
-from dags.services.drift_monitor import run_drift_monitor
+from dags.services.drift_monitor import check_for_drift, has_drift
 
 @dag(
     dag_id="drift_monitor",
@@ -43,16 +44,19 @@ def drift_monitor_dag():
     # TODO - finish this
     has_any_active_model() >> [
         has_expired_promote_pending_workflow_with_replacement() >> [
-            replace_expired_promote_pending_with_replacement(),
-            # replace_challenger_model
-            # >> delete_expired_registered_model
-            # >> delete_expired_mlflow_run,
+            # replace_expired_promote_pending_with_replacement(),
+            replace_challenger_model()
+            >> delete_expired_registered_model()
+            >> delete_expired_mlflow_run(),
             no_action()
         ]
-        >> check_for_drift >> [ # kube inside a branch
-            check_current_model_deployment_workflow >> [
-                post_training_approval,
-                update_training_approval,
+        >> check_for_drift
+        >> has_drift() >> [ # kube inside a branch
+            check_current_model_deployment_workflow() >> [
+                post_training_approval()
+                >> create_train_pending_workflow(),
+                update_training_approval()
+                >> update_training_pending_workflow(),
                 no_action()
             ],
             no_action()
@@ -63,6 +67,5 @@ def drift_monitor_dag():
             no_action()
         ]
     ]
-    run_drift_monitor
 
 drift_monitor_dag()

@@ -2,7 +2,7 @@ from uuid import UUID
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
-from dags.modules.configs.dags import dags_config
+from dags.modules.configs import dags_config
 
 def get_project_id(project_name: str) -> UUID:
     hook = PostgresHook(postgres_conn_id=dags_config.SLACK_CONNECTION_ID)

@@ -1,9 +1,9 @@
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import task
 
-from dags.modules.configs.dags import dags_config
-from dags.modules.schemas.airflow import TrainingCallbackConfigurations, AirflowTaskContext
+from dags.modules.configs import dags_config
+from dags.modules.schemas.airflow import AirflowTaskContext
+from dags.modules.schemas.airflow.training_callback import TrainingCallbackConfigurations
 from dags.repositories.postgres.model_deployment_workflows import training_approved, workflow_rejected
 from dags.services.airflow_operators import no_action
 

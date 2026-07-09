@@ -1,7 +1,7 @@
 import mlflow
 from mlflow import MlflowClient
 
-from dags.modules.configs.mlflow import mlflow_config
+from dags.modules.configs import mlflow_config
 
 mlflow.set_tracking_uri(mlflow_config.TRACKING_URI)
 mlflow.set_experiment(mlflow_config.EXPERIMENT_NAME)

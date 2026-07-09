@@ -1,7 +1,7 @@
 from airflow.sdk import task
 
 from dags.modules.schemas.mlflow import ReplaceExpiredChallengerModelConfigurations, DeleteExpiredRegisteredModelConfigurations
-from dags.repositories.mlflow.mlflow import mlflow_client
+from dags.repositories.mlflow import mlflow_client
 
 @task(task_id="replace_challenger_model")
 def replace_challenger_model(**context) -> None:

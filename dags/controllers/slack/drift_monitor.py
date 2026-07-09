@@ -1,48 +1,19 @@
 import json
-from uuid import uuid4, UUID
+from uuid import uuid4
 
-from airflow.providers.slack.hooks.slack import SlackHook
 from airflow.sdk import task
-from slack_sdk.web.client import WebClient
 
-from dags.modules.configs.dags import dags_config
-from dags.modules.configs.slack import slack_config
+from dags.controllers.slack import slack_client, create_blocks
+from dags.modules.configs.airflow.model_deployment_workflows import model_deployment_workflows_keys_config
 from dags.modules.schemas.airflow import AirflowTaskContext
-from services.drift_monitor.src.modules.schemas import ModelDeploymentWorkflow
-from services.drift_monitor.src.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, update_training_approval_slack_ts
-from shared.modules.environment import slack_environment
-
-client: WebClient = SlackHook(slack_conn_id=slack_config.SLACK_CONNECTION_ID).client
-
-def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
-    blocks: list[dict[str, str | dict | list]] = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": title
-            }
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": body
-            }
-        },
-    ]
-    if buttons:
-        blocks.append({
-            "type": "actions",
-            "elements": buttons
-        })
-    return blocks
+from dags.modules.schemas.airflow.drift_monitor import PostTrainingApprovalXCom, UpdateTrainingPendingWorkflowXCom
 
 @task(task_id="post_cold_start_training_approval")
 def post_cold_start_training_approval(**context):
     workflow_id = str(uuid4())
 
-    response = client.chat_postMessage(
+    response = slack_client.chat_postMessage(
+        # TODO - need to pass secret here
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=create_blocks(
             title="🆕 First Training Required",
@@ -79,39 +50,71 @@ def post_cold_start_training_approval(**context):
         )
     )
 
-    task_context = AirflowTaskContext.from_context(context)
-    task_context.ti.xcom_push(
-        key=dags_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+    ti = AirflowTaskContext.from_context(context).ti
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
         value=workflow_id
     )
-    task_context.ti.xcom_push(
-        key=dags_config.TRAINING_APPROVAL_SLACK_TS_KEY,
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.TRAINING_APPROVAL_SLACK_TS_KEY,
         value=response["ts"]
     )
 
-async def post_training_approval(drift_summary: dict):
-    workflow_id = uuid4()
+@task(task_id="post_training_approval")
+def post_training_approval(**context):
+    post_training_approval_xcom = PostTrainingApprovalXCom.from_context(context)
+    workflow_id = str(uuid4())
 
-    response = client.chat_postMessage(
+    response = slack_client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_retraining_approval_blocks(drift_summary, workflow_id)
+        blocks=format_retraining_approval_blocks(
+            post_training_approval_xcom.drift_summary,
+            workflow_id
+        )
     )
 
-    create_train_pending_workflow(
-        workflow_id=workflow_id,
-        training_approval_slack_ts=response["ts"]
+    training_approval_slack_ts = response["ts"]
+    assert isinstance(training_approval_slack_ts, str)
+
+    ti = AirflowTaskContext.from_context(context).ti
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        value=workflow_id
+    )
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.TRAINING_APPROVAL_SLACK_TS_KEY,
+        value=training_approval_slack_ts
     )
 
-async def update_training_approval(drift_summary: dict, current_model_deployment_workflow: ModelDeploymentWorkflow):
-    response = client.chat_update(
-        ts=current_model_deployment_workflow["training_approval_slack_ts"],
+@task(task_id="update_training_approval")
+def update_training_approval(**context):
+    update_training_approval_xcom = UpdateTrainingPendingWorkflowXCom.from_context(context)
+
+    response = slack_client.chat_update(
+        ts=update_training_approval_xcom.training_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
-        blocks=format_retraining_approval_blocks(drift_summary, current_model_deployment_workflow.id)
+        blocks=format_retraining_approval_blocks(
+            update_training_approval_xcom.drift_summary,
+            update_training_approval_xcom.workflow_id
+        )
     )
 
-    update_training_approval_slack_ts(response["ts"], current_model_deployment_workflow)
+    training_approval_slack_ts = response["ts"]
+    assert isinstance(training_approval_slack_ts, str)
 
-def format_retraining_approval_blocks(drift_summary: dict, workflow_id: UUID) -> list:
+    # update_training_approval_slack_ts(response["ts"], current_model_deployment_workflow)
+
+    ti = AirflowTaskContext.from_context(context).ti
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        value=update_training_approval_xcom.workflow_id
+    )
+    ti.xcom_push(
+        key=model_deployment_workflows_keys_config.TRAINING_APPROVAL_SLACK_TS_KEY,
+        value=training_approval_slack_ts
+    )
+
+def format_retraining_approval_blocks(drift_summary: dict, workflow_id: str) -> list:
     dd = drift_summary.get("data_drift", {})
     cd = drift_summary.get("concept_drift", {})
 
@@ -144,7 +147,7 @@ def format_retraining_approval_blocks(drift_summary: dict, workflow_id: UUID) ->
                 "style": "primary",
                 "action_id": "approve_retraining",
                 "value": json.dumps({
-                    "workflow_id": str(workflow_id)
+                    "workflow_id": workflow_id
                 })
             },
             {
@@ -156,7 +159,7 @@ def format_retraining_approval_blocks(drift_summary: dict, workflow_id: UUID) ->
                 "style": "danger",
                 "action_id": "reject_retraining",
                 "value": json.dumps({
-                    "workflow_id": str(workflow_id)
+                    "workflow_id": workflow_id
                 })
             },
         ]
