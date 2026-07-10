@@ -20,6 +20,7 @@ from dags.train_callback.services.training_callback import training_callback, st
     tags=["mle", "training", "callback"]
 )
 def training_callback_dag():
+    # TODO - continue here 10/07/2026
     # if approved (workflow_id)
         # postgres update_workflow_training_approved (workflow_id)
         # trigger start_training_pipeline (workflow_id)
