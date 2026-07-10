@@ -1,5 +1,5 @@
 from services.drift_monitor.src.services.evidently import check_for_drift
-from shared.controllers.airflow.xcom import xcom_push
+from services.shared.controllers.airflow.xcom import xcom_push
 
 def main() -> None:
     drift_detected, drift_summary = check_for_drift()

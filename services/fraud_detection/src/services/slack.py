@@ -1,4 +1,4 @@
-from shared.modules.logging import logger
+from services.shared import logger
 
 def update_message(client, body: dict, text_markdown: str) -> None:
     try:

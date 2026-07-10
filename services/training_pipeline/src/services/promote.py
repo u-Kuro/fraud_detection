@@ -16,7 +16,7 @@ import mlflow
 import pyarrow.parquet as pq
 from mlflow import MlflowClient
 
-from dags.modules.schemas.model_deployment_workflow import ModelDeploymentWorkflowState
+from dags.drift_monitor.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflowState
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import (
     get_deployment_workflow,
     begin_promoting,
@@ -26,8 +26,8 @@ from services.training_pipeline.src.repositories.s3 import (
     save_permanent_dataset,
     overwrite_reference_dataset,
 )
-from shared.modules.configs import mlflow_config
-from shared.modules.logging import logger
+from services.shared.modules.configs import mlflow_config
+from services.shared import logger
 
 def promote() -> None:
     state = get_deployment_workflow()

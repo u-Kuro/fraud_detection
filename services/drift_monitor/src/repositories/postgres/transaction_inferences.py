@@ -5,8 +5,8 @@ from pandas import DataFrame
 from sqlalchemy import text
 
 from services.drift_monitor.src.repositories.postgres import engine
-from shared.modules.configs.dataset import dataset_config
-from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
+from services.shared.modules.configs.dataset import dataset_config
+from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def load_current_dataset(
     current_dataset_cutoff: datetime,

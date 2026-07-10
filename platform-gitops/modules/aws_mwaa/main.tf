@@ -82,6 +82,7 @@ resource "aws_mwaa_environment" "main" {
     "secrets.backend_kwargs" = jsonencode({
       connections_prefix = "airflow/connections"
       variables_prefix   = "airflow/variables"
+      sep                = "/"
       endpoint_url       = var.secretsmanager_service_endpoint_url  # ministack LocalStack endpoint
     })
   }

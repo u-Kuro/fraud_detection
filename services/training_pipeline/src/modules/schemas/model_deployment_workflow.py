@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from shared.modules.schemas import ModelDeploymentWorkflowState
+from services.shared.modules.schemas import ModelDeploymentWorkflowState
 
 class ModelDeploymentWorkflow(BaseModel):
     model_config = ConfigDict(strict=False)

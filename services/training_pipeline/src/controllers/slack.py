@@ -6,7 +6,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 from services.training_pipeline.src.modules.schemas import ModelDeploymentWorkflow
 from services.training_pipeline.src.repositories.postgres.model_deployment_workflows import \
     update_promotion_approval_slack_ts
-from shared.modules.environment import slack_environment
+from services.shared.modules.environment import slack_environment
 
 client: AsyncWebClient = AsyncWebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
 

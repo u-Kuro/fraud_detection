@@ -1,1 +1,0 @@
-from shared.modules.logging.logging import logger

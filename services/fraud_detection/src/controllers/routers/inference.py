@@ -3,8 +3,8 @@ from fastapi import APIRouter, HTTPException
 from services.fraud_detection.src.modules.schemas import FraudClassificationRequest
 from services.fraud_detection.src.repositories.postgres.transaction_inferences import insert_transaction_inference
 from services.fraud_detection.src.services import model_states
-from shared.modules.logging import logger
-from shared.modules.schemas import FraudClassificationResponse
+from services.shared import logger
+from services.shared.modules.schemas import FraudClassificationResponse
 
 router = APIRouter(prefix="/inference", tags=["inference"])
 

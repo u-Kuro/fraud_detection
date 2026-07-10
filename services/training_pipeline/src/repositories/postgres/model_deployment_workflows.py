@@ -1,6 +1,5 @@
 """All model_deployment_workflows + model_deployments mutations used during training + promotion."""
 
-from datetime import datetime, timezone
 from uuid import UUID
 
 import pandas as pd
@@ -10,9 +9,9 @@ from sqlalchemy import text
 
 from services.training_pipeline.src.modules.schemas import ModelDeploymentWorkflow
 from services.training_pipeline.src.repositories.postgres import engine
-from shared.modules.configs import postgres_config
-from shared.modules.configs.dataset import dataset_config
-from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, ModelDeploymentWorkflowState
+from services.shared.modules.configs import postgres_config
+from services.shared.modules.configs.dataset import dataset_config
+from services.shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, ModelDeploymentWorkflowState
 
 def get_latest_unused_dataset() -> DataFrame:
     with engine.connect() as connection:

@@ -17,7 +17,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --only-group training_pipeline --no-install-project
 
 COPY /services/training_pipeline ./services/training_pipeline
-COPY /shared ./shared
+COPY /services/shared ./services/shared
 
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"

@@ -1,8 +1,8 @@
 import io
 import pyarrow as pa
 import pyarrow.parquet as pq
-from shared.modules.configs import s3_config
-from shared.repositories.s3 import s3_client, ensure_bucket
+from services.shared.modules.configs import s3_config
+from services.shared.repositories.s3 import s3_client, ensure_bucket
 
 def save_permanent_dataset(
     table: pa.Table,

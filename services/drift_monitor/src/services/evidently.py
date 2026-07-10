@@ -9,7 +9,7 @@ from services.drift_monitor.src.modules.configs import evidently_config
 from services.drift_monitor.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_monitor.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_monitor.src.repositories.s3.drift_reports import upload_drift_report
-from shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
+from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def run_drift_report(
     df_reference: DataFrame,

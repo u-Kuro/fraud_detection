@@ -6,7 +6,7 @@ from services.fraud_detection.src.modules.schemas import (
     FraudClassificationOutput,
 )
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
-from shared.modules.schemas import FraudClassificationFeatures
+from services.shared.modules.schemas import FraudClassificationFeatures
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):

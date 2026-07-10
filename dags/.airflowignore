@@ -1,4 +1,2 @@
-^controllers/(?!main/)
-^modules/
-^repositories/
-^services/
+# ignore everything inside root folders except dags in their main.py
+^[^/]+/(?!main\.py$)

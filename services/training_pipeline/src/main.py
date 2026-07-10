@@ -1,11 +1,10 @@
-import json, os, sys, tempfile
+import json, os, tempfile
 import random
 import shutil
 from uuid import UUID
 
 import mlflow
 import numpy as np
-import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import optuna
@@ -29,14 +28,12 @@ from services.training_pipeline.src.repositories.postgres.model_deployment_workf
     get_deployment_workflow,
     get_latest_unused_dataset,
     update_deployment_workflow,
-    update_promotion_approval_slack_ts,
 )
 from services.training_pipeline.src.services.promote import promote
-from shared.modules.configs import mlflow_config
-from shared.modules.configs.dataset import dataset_config
-from shared.modules.environment import slack_environment
-from shared.modules.logging import logger
-from shared.modules.schemas import FraudClassificationLabel, FraudClassificationTransactionTimestamp
+from services.shared.modules.configs import mlflow_config
+from services.shared.modules.environment import slack_environment
+from services.shared import logger
+from services.shared.modules.schemas import FraudClassificationLabel, FraudClassificationTransactionTimestamp
 
 def get_predictions_sklearn(
     model: object,

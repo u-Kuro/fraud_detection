@@ -6,8 +6,8 @@ from services.fraud_detection.src.controller.routers.slack import start_socket_m
 from services.fraud_detection.src.services import model_states
 from services.fraud_detection.src.services.fraud_classifier import FraudClassifier
 from services.fraud_detection.src.controller.routers import health, inference, slack
-from shared.modules.configs import mlflow_config
-from shared.modules.logging import logger
+from services.shared.modules.configs import mlflow_config
+from services.shared import logger
 
 @asynccontextmanager
 async def lifespan(_):

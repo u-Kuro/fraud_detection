@@ -3,9 +3,9 @@ from pandas import DataFrame
 from sqlalchemy import text
 
 from services.training_pipeline.src.repositories.postgres import engine
-from shared.modules.configs import postgres_config
-from shared.modules.configs.dataset import dataset_config
-from shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, FraudClassificationTransactionTimestamp
+from services.shared.modules.configs import postgres_config
+from services.shared.modules.configs.dataset import dataset_config
+from services.shared.modules.schemas import FraudClassificationDataset, FraudClassificationLabel, FraudClassificationTransactionTimestamp
 
 def get_latest_unused_dataset() -> DataFrame:
     with engine.connect() as connection:

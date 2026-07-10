@@ -1,8 +1,8 @@
 import io
 from datetime import datetime, timezone
 
-from shared.modules.configs import s3_config
-from shared.repositories.s3 import s3_client, ensure_bucket
+from services.shared.modules.configs import s3_config
+from services.shared.repositories.s3 import s3_client, ensure_bucket
 
 def upload_drift_report(html_bytes: bytes, json_bytes: bytes) -> None:
     ensure_bucket(s3_config.S3_MLE_BUCKET)

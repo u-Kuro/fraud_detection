@@ -4,8 +4,8 @@ import mlflow
 from pandas import DataFrame
 from pyarrow import parquet
 
-from shared.modules.configs import mlflow_config
-from shared.modules.schemas import FraudClassificationTransactionTimestamp
+from services.shared.modules.configs import mlflow_config
+from services.shared.modules.schemas import FraudClassificationTransactionTimestamp
 
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
     reference_dataset_parquet = mlflow.artifacts.download_artifacts(

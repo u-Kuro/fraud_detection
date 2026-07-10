@@ -9,7 +9,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from services.fraud_detection.src.services.airflow import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
 from services.fraud_detection.src.services.slack import update_message, common_callback_configurations
-from shared.modules.environment import slack_environment
+from services.shared.modules.environment import slack_environment
 
 slack_app = App(
     token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN,

@@ -1,1 +1,0 @@
-from dags.controllers.slack.slack import slack_client, create_blocks

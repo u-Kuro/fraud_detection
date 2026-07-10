@@ -4,7 +4,7 @@ import mlflow
 
 from services.fraud_detection.src.modules.schemas import DeployedModel
 from services.fraud_detection.src.repositories.mlflow import client
-from shared.modules.logging import logger
+from services.shared import logger
 
 class MlflowModel:
     def __init__(self, model_uri: str, class_name: str):

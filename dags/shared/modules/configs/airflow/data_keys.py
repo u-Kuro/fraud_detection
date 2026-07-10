@@ -1,0 +1,5 @@
+from enum import Enum
+
+class ModelDeploymentWorkflowsKeys(str, Enum):
+    MODEL_DEPLOYMENT_WORKFLOW_ID_KEY = "MODEL_DEPLOYMENT_WORKFLOW_ID"
+    TRAINING_APPROVAL_SLACK_TS_KEY = "TRAINING_APPROVAL_SLACK_TS"

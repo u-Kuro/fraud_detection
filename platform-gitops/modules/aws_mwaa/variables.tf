@@ -1,6 +1,6 @@
 variable "environment_name" {
   type    = string
-  default = "mle_mwaa"
+  default = "mwaa"
 }
 
 variable "aws_access_key"  { type = string }
