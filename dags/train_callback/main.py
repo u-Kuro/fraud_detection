@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 
 from airflow.sdk import dag
 
-from dags.shared.services.airflow_operators import no_action
+from dags.train_callback.repositories.model_deployment_workflows import update_approved_training_workflow, \
+    delete_rejected_training_workflow
 from dags.train_callback.services.training_callback import training_callback, start_training_pipeline
 
 @dag(
@@ -20,16 +21,10 @@ from dags.train_callback.services.training_callback import training_callback, st
     tags=["mle", "training", "callback"]
 )
 def training_callback_dag():
-    # TODO - continue here 10/07/2026
-    # if approved (workflow_id)
-        # postgres update_workflow_training_approved (workflow_id)
-        # trigger start_training_pipeline (workflow_id)
-    # else rejected (workflow_id)
-        # postgres delete_workflow
-
     training_callback() >> [
-        start_training_pipeline(),
-        no_action()
+        update_approved_training_workflow()
+        >> start_training_pipeline(),
+        delete_rejected_training_workflow()
     ]
 
 training_callback_dag()

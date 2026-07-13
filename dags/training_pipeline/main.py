@@ -21,6 +21,12 @@ from dags.training_pipeline.services.training_pipeline import run_training
 )
 def training_pipeline_dag():
 
+    # TODO - continue here 13/7/2026
+    # kube train_model (workflow_id, model_name, model_version, model_dataset_min_timestamp, model_dataset_max_timestamp, model_metrics)
+    # postgres update_deployment_workflow (workflow_id, model_name, model_version, model_metrics)
+    # postgres has_no_primary_model_deployment_workflow (workflow_id, model_name, model_version, model_metrics)
+    # slack post_slack_promotion_approval
+    # else no_action
     run_training()
 
     # @task.sensor(

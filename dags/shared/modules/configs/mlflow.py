@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 
-class MLflowConfig(BaseModel):
+class MLFlowConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     # MLFLOW_ARCHIVED_ALIAS:          str = "archived"
-    CHALLENGER_ALIAS:           str = "challenger"
+    CHALLENGER_ALIAS:   str = "challenger"
 
     TRACKING_URI:       str = "http://mlflow:5000"
     EXPERIMENT_NAME:    str = "fraud_detection"
@@ -25,4 +25,4 @@ class MLflowConfig(BaseModel):
     # def REFERENCE_DATASET_URI(self) -> str:
     #     return f"{self.MODEL_URI}/{self.REFERENCE_DATASET_PATH}/{self.REFERENCE_DATASET_FILE_NAME}"
 
-mlflow_config = MLflowConfig()
+mlflow_config = MLFlowConfig()

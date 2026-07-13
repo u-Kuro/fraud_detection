@@ -21,6 +21,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
+from services.shared.modules.logging import logger
 from services.training_pipeline.src.controllers.slack import update_promotion_approval
 from services.training_pipeline.src.modules.configs import training_config
 from services.training_pipeline.src.modules.environments.dags import dags_environment
@@ -32,7 +33,6 @@ from services.training_pipeline.src.repositories.postgres.model_deployment_workf
 from services.training_pipeline.src.services.promote import promote
 from services.shared.modules.configs import mlflow_config
 from services.shared.modules.environment import slack_environment
-from services.shared import logger
 from services.shared.modules.schemas import FraudClassificationLabel, FraudClassificationTransactionTimestamp
 
 def get_predictions_sklearn(
@@ -281,7 +281,7 @@ def train_model(model_deployment_workflow_id: UUID) -> tuple[str, int, dict]:
                 for v in versions:
                     mlflow_client.delete_model_version(name=v.name, version=v.version)
             except: pass
-            raise RuntimeError("Model registration failed.")
+            raise RuntimeError("Model training failed.")
 
         transaction_timestamps = df[FraudClassificationTransactionTimestamp.model_field_key()]
         model_dataset_min_timestamp = int(transaction_timestamps.min())
@@ -294,6 +294,8 @@ def train_model(model_deployment_workflow_id: UUID) -> tuple[str, int, dict]:
             model_dataset_min_timestamp,
             model_dataset_max_timestamp
         )
+
+
 
         return mlflow_config.MODEL_NAME, model_info.registered_model_version, model_metrics
 

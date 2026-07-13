@@ -6,32 +6,33 @@ from dags.drift_monitor.modules.configs.postgres import model_deployment_workflo
 
 from dags.drift_monitor.modules.schemas.airflow.xcom import CreateTrainPendingWorkflowXCom, CheckCurrentModelDeploymentWorkflowXCom, UpdateRetrainingPendingWorkflowXCom
 from dags.drift_monitor.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflows, ModelDeploymentWorkflowState
-from dags.drift_monitor.repositories.mlflow.registered_model import replace_challenger_model
+from dags.drift_monitor.repositories.mlflow.registered_model import replace_expired_model
 
 from dags.shared.modules.configs import postgres_config
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.repositories.postgres import postgres_hook
 from dags.shared.services.airflow_operators import no_action
 
 @task.branch(task_id="has_expired_promote_pending_workflow_with_replacement")
-def has_expired_promote_pending_workflow_with_replacement() -> str:
-    result = postgres_hook.get_first("""
-        SELECT EXISTS (
-            SELECT 1
-            FROM model_deployment_workflows
-            WHERE
-                project_id = %(project_id)s
-            AND state = %(promote_pending_state)s
-            AND trained_at < NOW() - %(TRAINED_MODEL_EXPIRATION_DAYS)s * INTERVAL '1 day'
-        )
-        AND EXISTS (
-            SELECT 1
-            FROM model_deployment_workflows
-            WHERE
-                project_id = %(project_id)s
-            AND state = %(promote_pending_replacement_state)s
-        )
+def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
+    results = postgres_hook.get_pandas_df(f"""
+        SELECT
+            expired.mlflow_run_id                   AS {ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY},
+            expired.registered_model_name           AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME},
+            expired.registered_model_version        AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION},
+            replacement.registered_model_name       AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME},
+            replacement.registered_model_version    AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION}
+        FROM model_deployment_workflows expired
+        JOIN model_deployment_workflows replacement
+            ON replacement.project_id = %(project_id)s
+            AND replacement.state = %(promote_pending_replacement_state)s
+        WHERE
+            expired.project_id = %(project_id)s
+            AND expired.state = %(promote_pending_state)s
+            AND expired.trained_at < NOW() - %(TRAINED_MODEL_EXPIRATION_DAYS)s * INTERVAL '1 day'
+        LIMIT 1
         """, {
             "project_id": postgres_config.PROJECT_ID,
             "promote_pending_state": ModelDeploymentWorkflowState.promote_pending,
@@ -39,12 +40,50 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
             "TRAINED_MODEL_EXPIRATION_DAYS": model_deployment_workflows_config.TRAINED_MODEL_EXPIRATION_DAYS,
         }
     )
-    workflows_exists = bool(result[0])
 
-    if workflows_exists:
-        return replace_challenger_model.__name__
-    else:
+    if results.empty:
         return no_action.__name__
+    else:
+        result = results.iloc[0]
+
+        expired_mlflow_run_id = result[ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY]
+        assert isinstance(expired_mlflow_run_id, str)
+
+        expired_model_name = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME]
+        assert isinstance(expired_model_name, str)
+
+        expired_model_version = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION]
+        assert isinstance(expired_model_version, int)
+
+        replacement_model_name = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME]
+        assert isinstance(replacement_model_name, str)
+
+        replacement_model_version = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION]
+        assert isinstance(replacement_model_version, int)
+
+        ti = AirflowTaskContext.from_context(context).ti
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
+            value=replacement_model_name
+        )
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
+            value=replacement_model_version
+        )
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
+            value=expired_model_name
+        )
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
+            value=expired_model_version
+        )
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+            value=expired_mlflow_run_id
+        )
+
+        return replace_expired_model.__name__
 
 def get_current_model_deployment_workflow() -> ModelDeploymentWorkflows | None:
     model_deployment_workflow_keys = ModelDeploymentWorkflows.model_field_keys()
@@ -88,7 +127,7 @@ def check_current_model_deployment_workflow(**context) -> str:
             value=check_current_model_deployment_workflow_xcom.drift_summary,
         )
         if branch == update_retraining_approval.__name__:
-            assert current_model_deployment_workflow is not None
+            assert isinstance(current_model_deployment_workflow, ModelDeploymentWorkflows)
             ti.xcom_push(
                 key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
                 value=str(current_model_deployment_workflow.id),
@@ -136,10 +175,11 @@ def update_training_pending_workflow(**context) -> None:
         UPDATE model_deployment_workflows
         SET training_approval_slack_ts = %(training_approval_slack_ts)s
         WHERE id = %(id)s
-    """, parameters={
-        "id": update_training_pending_workflow_xcom.workflow_id,
-        "training_approval_slack_ts": update_training_pending_workflow_xcom.training_approval_slack_ts
-    })
+        """, parameters={
+            "id": update_training_pending_workflow_xcom.workflow_id,
+            "training_approval_slack_ts": update_training_pending_workflow_xcom.training_approval_slack_ts
+        }
+    )
 
 @task.branch(task_id="has_no_ongoing_model_deployment_workflow")
 def has_no_ongoing_model_deployment_workflow() -> str:
@@ -147,34 +187,3 @@ def has_no_ongoing_model_deployment_workflow() -> str:
         return post_cold_start_training_approval.__name__
     else:
         return no_action.__name__
-#
-# def training_approved(workflow_id: UUID):
-#     with engine.begin() as connection:
-#         connection.execute(text("""
-#             UPDATE model_deployment_workflows
-#             SET training_approved = :training_approved
-#             WHERE id = :id
-#         """), {
-#             "id": workflow_id,
-#             "training_approved": True
-#         })
-#
-# def promotion_approved(workflow_id: UUID):
-#     with engine.begin() as connection:
-#         connection.execute(text("""
-#             UPDATE model_deployment_workflows
-#             SET promotion_approved = :promotion_approved
-#             WHERE id = :id
-#         """), {
-#             "id": workflow_id,
-#             "promotion_approved": True
-#         })
-#
-# def workflow_rejected(workflow_id: UUID):
-#     with engine.begin() as connection:
-#         connection.execute(text("""
-#             DELETE FROM model_deployment_workflows
-#             WHERE id = :id
-#         """), {
-#             "id": workflow_id
-#         })

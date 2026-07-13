@@ -5,14 +5,95 @@ from pydantic import BaseModel, ConfigDict
 
 from dags.drift_monitor.controllers.slack import post_cold_start_training_approval
 from dags.drift_monitor.modules.configs.airflow import DriftMonitorKeys
-from dags.drift_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow
+from dags.drift_monitor.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
+from dags.drift_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, \
+    has_expired_promote_pending_workflow_with_replacement
 from dags.drift_monitor.services.tasks import check_for_drift_task_id, has_drift
 
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 
+class ReplaceExpiredModelXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    replacement_model_name: str
+    replacement_model_version: int
+
+    expired_model_name: str
+    expired_model_version: int
+
+    expired_mlflow_run_id: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "ReplaceExpiredModelXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            replacement_model_name=ti.xcom_pull(
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
+            ),
+            replacement_model_version=ti.xcom_pull(
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
+            ),
+            expired_model_name=ti.xcom_pull(
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
+            ),
+            expired_model_version=ti.xcom_pull(
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
+            ),
+            expired_mlflow_run_id = ti.xcom_pull(
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+            )
+        )
+
+class DeleteExpiredModelXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    expired_model_name: str
+    expired_model_version: int
+
+    expired_mlflow_run_id: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "DeleteExpiredModelXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            expired_model_name=ti.xcom_pull(
+                task_ids=replace_expired_model.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
+            ),
+            expired_model_version=ti.xcom_pull(
+                task_ids=replace_expired_model.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
+            ),
+            expired_mlflow_run_id=ti.xcom_pull(
+                task_ids=replace_expired_model.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+            )
+        )
+
+class DeleteExpiredMLFlowRunXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    expired_mlflow_run_id: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "DeleteExpiredMLFlowRunXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            expired_mlflow_run_id=ti.xcom_pull(
+                task_ids=delete_expired_model.__name__,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+            )
+        )
+
 class HasDriftXCom(BaseModel):
-    model_config = ConfigDict(strict=False)
+    model_config = ConfigDict(strict=True)
 
     drift_detected: bool
     drift_summary: dict
@@ -32,7 +113,7 @@ class HasDriftXCom(BaseModel):
         )
 
 class CheckCurrentModelDeploymentWorkflowXCom(BaseModel):
-    model_config = ConfigDict(strict=False)
+    model_config = ConfigDict(strict=True)
 
     drift_summary: dict
 
@@ -47,7 +128,7 @@ class CheckCurrentModelDeploymentWorkflowXCom(BaseModel):
         )
 
 class PostRetrainingApprovalXCom(BaseModel):
-    model_config = ConfigDict(strict=False)
+    model_config = ConfigDict(strict=True)
 
     drift_summary: dict
 
@@ -62,10 +143,10 @@ class PostRetrainingApprovalXCom(BaseModel):
         )
 
 class CreateTrainPendingWorkflowXCom(BaseModel):
-    model_config = ConfigDict(strict=False)
+    model_config = ConfigDict(strict=True)
 
     workflow_id: UUID
-    training_approval_slack_ts: str | None
+    training_approval_slack_ts: str
 
     @classmethod
     def from_context(cls, context: dict) -> "CreateTrainPendingWorkflowXCom":
@@ -82,7 +163,7 @@ class CreateTrainPendingWorkflowXCom(BaseModel):
         )
 
 class UpdateRetrainingPendingWorkflowXCom(BaseModel):
-    model_config = ConfigDict(strict=False)
+    model_config = ConfigDict(strict=True)
 
     workflow_id: str
     training_approval_slack_ts: str

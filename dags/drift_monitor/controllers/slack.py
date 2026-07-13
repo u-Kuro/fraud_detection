@@ -15,7 +15,6 @@ def post_cold_start_training_approval(**context):
     workflow_id = str(uuid4())
 
     response = slack_client.chat_postMessage(
-        # TODO - need to pass secret here
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=create_blocks(
             title="🆕 First Training Required",

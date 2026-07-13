@@ -13,6 +13,7 @@ CREATE TABLE model_deployment_workflows (
     state                           TEXT                NOT NULL,
     training_approved               BOOLEAN             NOT NULL        DEFAULT FALSE,
     promotion_approved              BOOLEAN             NOT NULL        DEFAULT FALSE,
+    mlflow_run_id                   TEXT                NULL,
     registered_model_name           TEXT                NULL,
     registered_model_version        INT                 NULL,
     model_dataset_min_timestamp     INT                 NULL,
