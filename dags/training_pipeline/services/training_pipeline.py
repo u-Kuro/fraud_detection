@@ -1,17 +1,20 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.sdk import task
 from kubernetes import client as k8s
 
 from dags.shared.modules.configs import ecr_config
 from dags.shared.modules.configs.airflow import airflow_config
 from dags.training_pipeline.modules.schemas.airflow.configurations import TrainingPipelineConfigurations
 
-def run_training(**context) -> KubernetesPodOperator:
+train_model_task_id = "train_model"
+@task(task_id="train_model_caller")
+def train_model_caller(**context):
     configurations = TrainingPipelineConfigurations.from_context(context)
-    return KubernetesPodOperator(
-        task_id="run_training",
-        name="training",
+    operator = KubernetesPodOperator(
+        task_id=train_model_task_id,
+        name=train_model_task_id,
         namespace="default",
-        image=f"{ecr_config.ECR_URL}/training-pipeline:latest",
+        image=f"{ecr_config.ECR_URL}/train-model:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
             k8s.V1LocalObjectReference(
@@ -42,3 +45,4 @@ def run_training(**context) -> KubernetesPodOperator:
         startup_timeout_seconds=300,
         config_file="/usr/local/airflow/dags/kubeconfig.yaml",
     )
+    return operator.execute(context)

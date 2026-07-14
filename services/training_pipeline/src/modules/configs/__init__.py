@@ -1,1 +1,0 @@
-from services.training_pipeline.src.modules.configs.training import training_config

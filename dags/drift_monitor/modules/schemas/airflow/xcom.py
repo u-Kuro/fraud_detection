@@ -6,9 +6,8 @@ from pydantic import BaseModel, ConfigDict
 from dags.drift_monitor.controllers.slack import post_cold_start_training_approval
 from dags.drift_monitor.modules.configs.airflow import DriftMonitorKeys
 from dags.drift_monitor.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
-from dags.drift_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, \
-    has_expired_promote_pending_workflow_with_replacement
-from dags.drift_monitor.services.tasks import check_for_drift_task_id, has_drift
+from dags.drift_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
+from dags.drift_monitor.services.tasks import drift_check_task_id, has_drift
 
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
@@ -103,11 +102,11 @@ class HasDriftXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             drift_detected=ti.xcom_pull(
-                task_ids=check_for_drift_task_id.__name__,
+                task_ids=drift_check_task_id.__name__,
                 key=DriftMonitorKeys.DRIFT_DETECTED_KEY,
             ),
             drift_summary=ti.xcom_pull(
-                task_ids=check_for_drift_task_id.__name__,
+                task_ids=drift_check_task_id.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
             )
         )

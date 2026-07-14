@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from airflow.sdk import dag
 
 from dags.shared.modules.configs.airflow import airflow_config
-from dags.training_pipeline.services.training_pipeline import run_training
+from dags.shared.services.airflow_operators import no_action
+from dags.training_pipeline.repositories.postgres.model_deployment_workflows import update_deployment_workflow
+from dags.training_pipeline.services.training_pipeline import train_model_caller
 
 @dag(
     dag_id="training_pipeline",
@@ -27,7 +29,12 @@ def training_pipeline_dag():
     # postgres has_no_primary_model_deployment_workflow (workflow_id, model_name, model_version, model_metrics)
     # slack post_slack_promotion_approval
     # else no_action
-    run_training()
+    train_model_caller() \
+    >> update_deployment_workflow() \
+    >> has_no_primary_model_deployment_workflow() >> [
+        post_slack_promotion_approval(),
+        no_action()
+    ]
 
     # @task.sensor(
     #     task_id="wait_for_promotion_approval",
@@ -56,7 +63,7 @@ def training_pipeline_dag():
     #     task_id="run_promotion",
     #     name="promotion-{{ run_id | slugify }}",
     #     namespace="default",
-    #     image=f"{ecr_config.ECR_URL}/training-pipeline:latest",
+    #     image=f"{ecr_config.ECR_URL}/train-model:latest",
     #     image_pull_policy="Always",
     #     image_pull_secrets=[
     #         k8s.V1LocalObjectReference(

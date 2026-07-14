@@ -1,0 +1,1 @@
+from services.train_model.src.modules.configs.training import training_config

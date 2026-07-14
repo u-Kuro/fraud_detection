@@ -1286,7 +1286,7 @@ dev = [
     { name = "ruff" },
     { name = "seaborn" },
 ]
-drift-monitor = [
+drift-check = [
     { name = "boto3" },
     { name = "boto3-stubs", extra = ["s3"] },
     { name = "evidently" },
@@ -1318,7 +1318,7 @@ mlflow = [
     { name = "mlflow" },
     { name = "psycopg2-binary" },
 ]
-training-pipeline = [
+train-model = [
     { name = "boto3" },
     { name = "httpx" },
     { name = "imbalanced-learn" },
@@ -1372,7 +1372,7 @@ dev = [
     { name = "ruff", specifier = ">=0.15.13" },
     { name = "seaborn", specifier = ">=0.13.2" },
 ]
-drift-monitor = [
+drift-check = [
     { name = "boto3", specifier = ">=1.43.14" },
     { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.43.15" },
     { name = "evidently", specifier = ">=0.7.21" },
@@ -1404,7 +1404,7 @@ mlflow = [
     { name = "mlflow", specifier = ">=3.12.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
 ]
-training-pipeline = [
+train-model = [
     { name = "boto3", specifier = ">=1.43.14" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "imbalanced-learn", specifier = ">=0.14.1" },

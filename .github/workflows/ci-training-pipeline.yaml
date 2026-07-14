@@ -3,7 +3,7 @@ name: CI — Training Pipeline
 on:
   push:
     paths:
-      - "services/training_pipeline/**"
+      - "services/train_model/**"
       - "shared/**"
       - "dags/training_pipeline.py"
       - "dags/promotion_callback.py"
@@ -23,10 +23,10 @@ jobs:
         with: { python-version: "3.12.13" }
 
       - run: pip install uv
-      - run: uv sync --frozen --group training_pipeline --group dev --no-install-project
+      - run: uv sync --frozen --group train_model --group dev --no-install-project
 
       - name: Lint
-        run: uv run ruff check services/training_pipeline shared
+        run: uv run ruff check services/train_model shared
 
       - name: Configure AWS
         run: |
@@ -41,12 +41,12 @@ jobs:
 
       - name: Build and push
         env:
-          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/training-pipeline
+          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/train-model
         run: |
           docker build \
             -t $REPO:${{ github.sha }} \
             -t $REPO:latest \
-            -f services/training_pipeline/Dockerfile .
+            -f services/train_model/Dockerfile .
           docker push $REPO:${{ github.sha }}
           docker push $REPO:latest
           echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT

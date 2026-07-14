@@ -1,1 +1,0 @@
-from services.training_pipeline.src.repositories.postgres.postgres import engine

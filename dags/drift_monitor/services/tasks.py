@@ -10,12 +10,12 @@ from dags.shared.modules.configs import ecr_config
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.services.airflow_operators import no_action
 
-check_for_drift_task_id = "check_for_drift"
-check_for_drift = KubernetesPodOperator(
-    task_id=check_for_drift_task_id,
-    name="drift-monitor",
+drift_check_task_id = "drift_check"
+drift_check = KubernetesPodOperator(
+    task_id=drift_check_task_id,
+    name=drift_check_task_id,
     namespace="default",
-    image=f"{ecr_config.ECR_URL}/drift-monitor:latest",
+    image=f"{ecr_config.ECR_URL}/drift-check:latest",
     image_pull_policy="Always",
     image_pull_secrets=[
         k8s.V1LocalObjectReference(

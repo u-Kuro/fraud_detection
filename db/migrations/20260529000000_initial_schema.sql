@@ -16,8 +16,8 @@ CREATE TABLE model_deployment_workflows (
     mlflow_run_id                   TEXT                NULL,
     registered_model_name           TEXT                NULL,
     registered_model_version        INT                 NULL,
-    model_dataset_min_timestamp     INT                 NULL,
-    model_dataset_max_timestamp     INT                 NULL,
+    model_dataset_min_timestamp     TIMESTAMPTZ         NULL,
+    model_dataset_max_timestamp     TIMESTAMPTZ         NULL,
     training_approval_slack_ts      TEXT                NOT NULL,
     promotion_approval_slack_ts     TEXT                NULL,
     CONSTRAINT state_check CHECK (state IN ('train_pending', 'promote_pending_replacement', 'promote_pending')),
@@ -30,8 +30,8 @@ CREATE TABLE model_deployments (
     project_id              UUID                NOT NULL                                        REFERENCES projects(id),
     name                    TEXT                NOT NULL,
     version                 INT                 NOT NULL,
-    dataset_min_date        TIMESTAMPTZ         NULL,
-    dataset_max_date        TIMESTAMPTZ         NOT NULL,
+    dataset_min_timestamp   TIMESTAMPTZ         NULL,
+    dataset_max_timestamp   TIMESTAMPTZ         NOT NULL,
     active                  BOOLEAN             NOT NULL        DEFAULT FALSE,
     CONSTRAINT model_deployment_name_version_key UNIQUE (name, version)
 );

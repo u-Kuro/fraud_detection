@@ -7,7 +7,7 @@ from dags.drift_monitor.repositories.mlflow.registered_model import replace_expi
 from dags.drift_monitor.repositories.mlflow.run import delete_expired_mlflow_run
 from dags.drift_monitor.repositories.postgres.model_deployment_workflows import create_train_pending_workflow, has_no_ongoing_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflow, update_training_pending_workflow
 from dags.drift_monitor.repositories.postgres.model_deployments import has_any_active_model
-from dags.drift_monitor.services.tasks import check_for_drift, has_drift
+from dags.drift_monitor.services.tasks import drift_check, has_drift
 
 from dags.shared.modules.configs import airflow_config
 from dags.shared.services.airflow_operators import no_action
@@ -34,7 +34,7 @@ def drift_monitor_dag():
             >> delete_expired_mlflow_run(),
             no_action()
         ]
-        >> check_for_drift
+        >> drift_check
         >> has_drift() >> [
             check_current_model_deployment_workflow() >> [
                 post_retraining_approval()

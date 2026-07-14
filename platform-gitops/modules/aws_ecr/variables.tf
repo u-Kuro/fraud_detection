@@ -6,8 +6,8 @@ variable "repositories" {
   type = list(string)
   default = [
     "fraud_detection",
-    "drift_monitor",
-    "training_pipeline",
+    "drift_check",
+    "train_model",
     "archiving",
   ]
 }
