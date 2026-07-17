@@ -4,7 +4,8 @@ from airflow.sdk import dag
 
 from dags.shared.modules.configs.airflow import airflow_config
 from dags.shared.services.airflow_operators import no_action
-from dags.training_pipeline.repositories.postgres.model_deployment_workflows import update_deployment_workflow
+from dags.training_pipeline.repositories.postgres.model_deployment_workflows import update_deployment_workflow, \
+    has_no_primary_model_deployment_workflow
 from dags.training_pipeline.services.training_pipeline import train_model_caller
 
 @dag(
@@ -23,12 +24,19 @@ from dags.training_pipeline.services.training_pipeline import train_model_caller
 )
 def training_pipeline_dag():
 
-    # TODO - continue here 13/7/2026
+    # TODO - continue here 14/7/2026
     # kube train_model (workflow_id, model_name, model_version, model_dataset_min_timestamp, model_dataset_max_timestamp, model_metrics)
     # postgres update_deployment_workflow (workflow_id, model_name, model_version, model_metrics)
     # postgres has_no_primary_model_deployment_workflow (workflow_id, model_name, model_version, model_metrics)
     # slack post_slack_promotion_approval
     # else no_action
+
+    """
+    drift check for at least 2 workflow. 1 pending and 1 replacement
+    it continues if
+
+    """
+
     train_model_caller() \
     >> update_deployment_workflow() \
     >> has_no_primary_model_deployment_workflow() >> [
