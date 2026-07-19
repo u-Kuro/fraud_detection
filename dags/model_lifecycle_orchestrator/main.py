@@ -23,25 +23,6 @@ from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
     tags=["mle", "model", "lifecycle", "monitor"]
 )
 def model_lifecycle_monitor():
-    # TODO - May just combine stuff here since they are related. and just use @task_group
-    """
-        ti.xcom_pull(task_ids="outer_group.inner_group.my_task", key="return_value")
-        @task_group
-        def notify_and_log(data: str):  # receives xcom reference here
-
-            @task
-            def send_slack(data: str):
-                print(f"Sending: {data}")
-                return "slack_done"
-
-            @task
-            def write_audit_log(result: str):
-                print(f"Logging: {result}")
-                return "logged"
-
-            slack_result = send_slack(data)       # data flows in from outside
-            return write_audit_log(slack_result)  # ← must explicitly return last task
-    """
     """
 
     trigger dag (check and replace expired challenger model)
@@ -74,6 +55,8 @@ def model_lifecycle_monitor():
             is workflow promotion_pending
                 assert should not happen
     """
+
+    # TODO - 19/07/2026 Continue here main (first-off dispatch_training_approval task_group is unfinished)
     invalidate_expired_challenger_model() \
     >> has_any_active_model() >> [
         drift_check \
@@ -90,7 +73,6 @@ def model_lifecycle_monitor():
     # it may be better this way too since we will be forced to actually name task inside groups with same task id
     # and force us to categorize tasks and naming
 
-    # TODO - transfer and rename to 'model lifecycle orchestrator'
     # I think its better to have DAG on specific pipeline logic (reduction will happen on task_group and helps better dag structure readability)
     # Only separate when they actually are and should be separate.
     # e.g. challenger model rotation can be scheduled too so keeping it separate can be helpful?
