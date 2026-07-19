@@ -1,7 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from dataclasses import dataclass
 
-class MLFlowConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
+@dataclass(frozen=True)
+class MLFlowConfig:
 
     # MLFLOW_ARCHIVED_ALIAS:          str = "archived"
     CHALLENGER_ALIAS:   str = "challenger"
@@ -24,5 +24,3 @@ class MLFlowConfig(BaseModel):
     # @property
     # def REFERENCE_DATASET_URI(self) -> str:
     #     return f"{self.MODEL_URI}/{self.REFERENCE_DATASET_PATH}/{self.REFERENCE_DATASET_FILE_NAME}"
-
-mlflow_config = MLFlowConfig()

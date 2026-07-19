@@ -1,10 +1,10 @@
 from airflow.sdk import task
 
-from dags.model_lifecycle_monitor.controllers.slack import post_training_approval, update_training_approval, post_cold_start_training_approval
-from dags.model_lifecycle_monitor.modules.configs.airflow import DriftMonitorKeys
+from dags.model_lifecycle_orchestrator.controllers.slack import post_training_approval, update_training_approval, post_cold_start_training_approval
+from dags.model_lifecycle_orchestrator.modules.configs.airflow import DriftMonitorKeys
 
-from dags.model_lifecycle_monitor.modules.schemas.airflow.xcom import CreateTrainPendingWorkflowXCom, CheckCurrentModelDeploymentWorkflowXCom, UpdateRetrainingPendingWorkflowXCom
-from dags.model_lifecycle_monitor.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflows, ModelDeploymentWorkflowState
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import CreateTrainPendingWorkflowXCom, CheckCurrentModelDeploymentWorkflowXCom, UpdateRetrainingPendingWorkflowXCom
+from dags.model_lifecycle_orchestrator.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflows, ModelDeploymentWorkflowState
 
 from dags.shared.modules.configs import postgres_config
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys

@@ -1,18 +1,15 @@
-from functools import cached_property
+from dataclasses import dataclass
+from functools import lru_cache
 from uuid import UUID
-
-from pydantic import BaseModel, ConfigDict
 
 from dags.shared.repositories.postgres.projects import get_project_id
 
-class PostgresConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
+@dataclass(frozen=True)
+class PostgresConfig:
 
     POSTGRES_CONNECTION_ID: str = "mle_postgres"
     PROJECT_NAME: str = "fraud-detection"
 
-    @cached_property
+    @lru_cache(maxsize=None)
     def PROJECT_ID(self) -> UUID:
         return get_project_id(self.PROJECT_NAME)
-
-postgres_config = PostgresConfig()

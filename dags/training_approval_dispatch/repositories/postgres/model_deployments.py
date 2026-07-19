@@ -1,6 +1,6 @@
 from airflow.sdk import task
 
-from dags.model_lifecycle_monitor.repositories.postgres.model_deployment_workflows import has_no_ongoing_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
+from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import has_no_ongoing_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
 
 from dags.shared.modules.configs.postgres import postgres_config
 from dags.shared.repositories.postgres import postgres_hook

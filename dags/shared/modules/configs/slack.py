@@ -1,8 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from dataclasses import dataclass
 
-class SlackConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class SlackConfig:
     SLACK_CONNECTION_ID: str = "mle_slack"
-
-slack_config = SlackConfig()

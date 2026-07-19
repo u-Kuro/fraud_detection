@@ -1,9 +1,9 @@
 from airflow.providers.slack.hooks.slack import SlackHook
 from slack_sdk.web.client import WebClient
 
-from dags.shared.modules.configs import slack_config
+from dags.shared.modules.configs.slack import SlackConfig
 
-slack_client: WebClient = SlackHook(slack_conn_id=slack_config.SLACK_CONNECTION_ID).client
+slack_client: WebClient = SlackHook(slack_conn_id=SlackConfig.SLACK_CONNECTION_ID).client
 
 def create_blocks(title: str, body: str, buttons: list[dict] | None = None) -> list:
     blocks: list[dict[str, str | dict | list]] = [

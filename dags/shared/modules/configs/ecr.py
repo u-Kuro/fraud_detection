@@ -1,8 +1,3 @@
-from pydantic import BaseModel, ConfigDict
-
-class ECRConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class ECRConfig:
     ECR_URL: str = "ministack:5000"
-
-ecr_config = ECRConfig()

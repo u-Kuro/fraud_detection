@@ -3,11 +3,11 @@ from uuid import UUID
 from airflow.sdk.types import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
-from dags.model_lifecycle_monitor.controllers.slack import post_cold_start_training_approval
-from dags.model_lifecycle_monitor.modules.configs.airflow import DriftMonitorKeys
-from dags.challenger_model_rotation.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
-from dags.model_lifecycle_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
-from dags.model_lifecycle_monitor.services.tasks import drift_check_task_id, has_drift
+from dags.model_lifecycle_orchestrator.controllers.slack import post_cold_start_training_approval
+from dags.model_lifecycle_orchestrator.modules.configs.airflow import DriftMonitorKeys
+from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
+from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
+from dags.model_lifecycle_orchestrator.services.tasks import drift_check_task_id, has_drift
 
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys

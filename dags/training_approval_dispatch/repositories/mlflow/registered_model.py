@@ -1,6 +1,6 @@
 from airflow.sdk import task
 
-from dags.model_lifecycle_monitor.modules.schemas.airflow.xcom import ReplaceExpiredModelXCom, DeleteExpiredModelXCom
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import ReplaceExpiredModelXCom, DeleteExpiredModelXCom
 from dags.shared.modules.configs import mlflow_config
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext

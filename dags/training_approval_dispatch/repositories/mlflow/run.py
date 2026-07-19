@@ -1,6 +1,6 @@
 from airflow.sdk import task
 
-from dags.model_lifecycle_monitor.modules.schemas.airflow.xcom import DeleteExpiredMLFlowRunXCom
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DeleteExpiredMLFlowRunXCom
 from dags.shared.repositories.mlflow import mlflow_client
 
 @task(task_id="delete_expired_mlflow_run")

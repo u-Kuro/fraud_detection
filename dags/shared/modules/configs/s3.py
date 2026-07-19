@@ -1,8 +1,8 @@
-from pydantic import BaseModel, ConfigDict
+from dataclasses import dataclass
 
-class S3Config(BaseModel):
-    model_config = ConfigDict(frozen=True)
 
+@dataclass(frozen=True)
+class S3Config:
     S3_CONNECTION_ID: str = "mle_s3"
 
     S3_MLE_BUCKET: str = "mle"
@@ -10,5 +10,3 @@ class S3Config(BaseModel):
     S3_PIPELINE_DATASETS_PATH: str = "pipeline/fraud-detection/models"
     S3_PIPELINE_DRIFT_REPORTS_PATH: str = "pipeline/fraud-detection/drift/reports"
     S3_PIPELINE_ARCHIVE_PATH: str = "pipeline/fraud-detection/archive"
-
-s3_config = S3Config()

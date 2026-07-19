@@ -2,20 +2,17 @@ from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperato
 from airflow.sdk import task
 from kubernetes import client as k8s
 
-from dags.model_lifecycle_monitor.modules.configs.airflow import DriftMonitorKeys
-from dags.model_lifecycle_monitor.modules.schemas.airflow.xcom import HasDriftXCom
-from dags.model_lifecycle_monitor.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow
-
-from dags.shared.modules.configs import ecr_config
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import HasDriftXCom
+from dags.shared.modules.configs.airflow.data_keys import DriftMonitorKeys
+from dags.shared.modules.configs.ecr import ECRConfig
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
-from dags.shared.services.airflow_operators import no_action
 
 drift_check_task_id = "drift_check"
 drift_check = KubernetesPodOperator(
     task_id=drift_check_task_id,
     name=drift_check_task_id,
     namespace="default",
-    image=f"{ecr_config.ECR_URL}/drift-check:latest",
+    image=f"{ECRConfig.ECR_URL}/drift-check:latest",
     image_pull_policy="Always",
     image_pull_secrets=[
         k8s.V1LocalObjectReference(
