@@ -18,13 +18,6 @@ class ReplaceExpiredModelXCom(BaseModel):
     replacement_model_name: str
     replacement_model_version: int
 
-    expired_model_name: str
-    expired_model_version: int
-
-    expired_mlflow_run_id: str
-
-    expired_id: str
-
     @classmethod
     def from_context(cls, context: dict) -> "ReplaceExpiredModelXCom":
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
@@ -36,22 +29,6 @@ class ReplaceExpiredModelXCom(BaseModel):
             replacement_model_version=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
                 key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
-            ),
-            expired_model_name=ti.xcom_pull(
-                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
-            ),
-            expired_model_version=ti.xcom_pull(
-                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
-            ),
-            expired_mlflow_run_id = ti.xcom_pull(
-                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
-            ),
-            expired_id=ti.xcom_pull(
-                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -61,29 +38,17 @@ class DeleteExpiredModelXCom(BaseModel):
     expired_model_name: str
     expired_model_version: int
 
-    expired_mlflow_run_id: str
-
-    expired_id: str
-
     @classmethod
     def from_context(cls, context: dict) -> "DeleteExpiredModelXCom":
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             expired_model_name=ti.xcom_pull(
-                task_ids=replace_expired_model.__name__,
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
                 key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             ),
             expired_model_version=ti.xcom_pull(
-                task_ids=replace_expired_model.__name__,
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
                 key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
-            ),
-            expired_mlflow_run_id=ti.xcom_pull(
-                task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
-            ),
-            expired_id=ti.xcom_pull(
-                task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -92,19 +57,13 @@ class DeleteExpiredMLFlowRunXCom(BaseModel):
 
     expired_mlflow_run_id: str
 
-    expired_id: str
-
     @classmethod
     def from_context(cls, context: dict) -> "DeleteExpiredMLFlowRunXCom":
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             expired_mlflow_run_id=ti.xcom_pull(
-                task_ids=delete_expired_model.__name__,
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
                 key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
-            ),
-            expired_id=ti.xcom_pull(
-                task_ids=delete_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -118,14 +77,10 @@ class DeleteExpiredPromotePendingWorkflowXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             expired_id=ti.xcom_pull(
-                task_ids=delete_expired_model.__name__,
+                task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
                 key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
-
-class DispatchTrainingApprovalBranches(StrEnum):
-    cold_start = "cold_start"
-    drifted = "drifted"
 
 class CheckCurrentModelDeploymentWorkflowDriftedXCom(BaseModel):
     model_config = ConfigDict(strict=True)

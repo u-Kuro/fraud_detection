@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState
 
-class ModelDeploymentWorkflows(BaseModel):
+class ModelDeploymentWorkflow(BaseModel):
     model_config = ConfigDict(strict=False)
 
     id: UUID

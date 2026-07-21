@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from dags.model_lifecycle_orchestrator.controllers.slack import post_cold_start_training_approval
 from dags.model_lifecycle_orchestrator.modules.configs.airflow import DriftMonitorKeys
 from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
-from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflow, has_expired_promote_pending_workflow_with_replacement
+from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflows, has_expired_promote_pending_workflow_with_replacement
 from dags.model_lifecycle_orchestrator.services.tasks import drift_check_task_id, has_drift
 
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
@@ -136,7 +136,7 @@ class PostRetrainingApprovalXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             drift_summary=ti.xcom_pull(
-                task_ids=check_current_model_deployment_workflow.__name__,
+                task_ids=check_current_model_deployment_workflows.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
@@ -173,15 +173,15 @@ class UpdateRetrainingPendingWorkflowXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             workflow_id=ti.xcom_pull(
-                task_ids=check_current_model_deployment_workflow.__name__,
+                task_ids=check_current_model_deployment_workflows.__name__,
                 key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),
             training_approval_slack_ts=ti.xcom_pull(
-                task_ids=check_current_model_deployment_workflow.__name__,
+                task_ids=check_current_model_deployment_workflows.__name__,
                 key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
             ),
             drift_summary=ti.xcom_pull(
-                task_ids=check_current_model_deployment_workflow.__name__,
+                task_ids=check_current_model_deployment_workflows.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )

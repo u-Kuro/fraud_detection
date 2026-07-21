@@ -49,6 +49,6 @@ def has_drift(**context):
     )
 
     if has_drift_xcom.drift_detected:
-        return check_current_model_deployment_workflow.__name__
+        return check_current_model_deployment_workflows.__name__
     else:
         return no_action.__name__

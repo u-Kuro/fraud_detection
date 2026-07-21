@@ -4,7 +4,7 @@ from dags.model_lifecycle_orchestrator.controllers.slack import post_training_ap
 from dags.model_lifecycle_orchestrator.modules.configs.airflow import DriftMonitorKeys
 
 from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import CreateTrainPendingWorkflowXCom, CheckCurrentModelDeploymentWorkflowXCom, UpdateRetrainingPendingWorkflowXCom
-from dags.model_lifecycle_orchestrator.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflows, ModelDeploymentWorkflowState
+from dags.model_lifecycle_orchestrator.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow, ModelDeploymentWorkflowState
 
 from dags.shared.modules.configs import postgres_config
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
@@ -12,8 +12,8 @@ from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.repositories.postgres import postgres_hook
 from dags.shared.services.airflow_operators import no_action
 
-def get_current_model_deployment_workflow() -> ModelDeploymentWorkflows | None:
-    model_deployment_workflow_keys = ModelDeploymentWorkflows.model_field_keys()
+def get_current_model_deployment_workflow() -> ModelDeploymentWorkflow | None:
+    model_deployment_workflow_keys = ModelDeploymentWorkflow.model_field_keys()
     model_deployment_workflow_row = postgres_hook.get_first(f"""
         SELECT {",".join(model_deployment_workflow_keys)}
         FROM model_deployment_workflows
@@ -29,7 +29,7 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflows | None:
         return None
     else:
         model_deployment_workflow = dict(zip(model_deployment_workflow_keys, model_deployment_workflow_row))
-        return ModelDeploymentWorkflows.model_validate(
+        return ModelDeploymentWorkflow.model_validate(
             model_deployment_workflow,
             from_attributes=True
         )
@@ -54,7 +54,7 @@ def check_current_model_deployment_workflow(**context) -> str:
             value=check_current_model_deployment_workflow_xcom.drift_summary,
         )
         if branch == update_training_approval.__name__:
-            assert isinstance(current_model_deployment_workflow, ModelDeploymentWorkflows)
+            assert isinstance(current_model_deployment_workflow, ModelDeploymentWorkflow)
             ti.xcom_push(
                 key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
                 value=str(current_model_deployment_workflow.id),
@@ -89,7 +89,6 @@ def create_train_pending_workflow(**context) -> None:
             "id": create_train_pending_workflow_xcom.workflow_id,
             "project_id": postgres_config.PROJECT_ID,
             "state": ModelDeploymentWorkflowState.train_pending,
-            "training_approved": False,
             "training_approval_slack_ts": create_train_pending_workflow_xcom.training_approval_slack_ts,
         }
     )
