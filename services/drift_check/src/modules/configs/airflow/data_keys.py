@@ -1,5 +1,6 @@
-from enum import Enum
+from dataclasses import dataclass
 
-class DriftMonitorKeys(str, Enum):
-    DRIFT_DETECTED_KEY = "DRIFT_DETECTED"
-    DRIFT_SUMMARY_KEY = "DRIFT_SUMMARY"
+@dataclass(frozen=True)
+class DriftMonitorKeys:
+    DRIFT_DETECTED: str = "DRIFT_DETECTED"
+    DRIFT_SUMMARY: str = "DRIFT_SUMMARY"

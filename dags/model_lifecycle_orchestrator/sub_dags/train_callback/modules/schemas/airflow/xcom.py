@@ -17,7 +17,7 @@ class UpdateTrainingWorkflowXCom(BaseModel):
         return cls(
             workflow_id=ti.xcom_pull(
                 task_ids=training_callback_task_id,
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             )
         )
 
@@ -32,6 +32,6 @@ class StartTrainingPipelineXCom(BaseModel):
         return cls(
             workflow_id=ti.xcom_pull(
                 task_ids=update_approved_training_workflow.__name__,
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             )
         )

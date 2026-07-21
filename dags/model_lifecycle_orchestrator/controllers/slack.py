@@ -56,11 +56,11 @@ def post_cold_start_training_approval(**context):
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
         value=workflow_id
     )
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
         value=training_approval_slack_ts
     )
 
@@ -82,11 +82,11 @@ def post_training_approval(**context):
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
         value=workflow_id
     )
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
         value=training_approval_slack_ts
     )
 
@@ -108,11 +108,11 @@ def update_training_approval(**context):
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
         value=update_retraining_approval_xcom.workflow_id
     )
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
         value=training_approval_slack_ts
     )
 

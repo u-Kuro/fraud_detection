@@ -44,7 +44,7 @@ def has_drift(**context):
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+        key=DriftMonitorKeys.DRIFT_SUMMARY,
         value=has_drift_xcom.drift_summary
     )
 

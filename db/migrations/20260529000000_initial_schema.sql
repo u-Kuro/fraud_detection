@@ -35,6 +35,7 @@ CREATE TABLE model_deployments (
     active                  BOOLEAN             NOT NULL        DEFAULT FALSE,
     CONSTRAINT model_deployment_name_version_key UNIQUE (name, version)
 );
+CREATE UNIQUE INDEX one_active_model_deployment_per_project ON model_deployments (project_id) WHERE active = TRUE;
 
 CREATE TABLE transaction_inferences (
     id                      UUID                NOT NULL        DEFAULT gen_random_uuid()       PRIMARY KEY,

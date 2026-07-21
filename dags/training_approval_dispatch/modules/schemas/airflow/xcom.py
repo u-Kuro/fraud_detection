@@ -30,23 +30,23 @@ class ReplaceExpiredModelXCom(BaseModel):
         return cls(
             replacement_model_name=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
             ),
             replacement_model_version=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
             ),
             expired_model_name=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             ),
             expired_model_version=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
             ),
             expired_mlflow_run_id = ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             )
         )
 
@@ -64,15 +64,15 @@ class DeleteExpiredModelXCom(BaseModel):
         return cls(
             expired_model_name=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             ),
             expired_model_version=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
             ),
             expired_mlflow_run_id=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             )
         )
 
@@ -87,7 +87,7 @@ class DeleteExpiredMLFlowRunXCom(BaseModel):
         return cls(
             expired_mlflow_run_id=ti.xcom_pull(
                 task_ids=delete_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             )
         )
 
@@ -103,11 +103,11 @@ class HasDriftXCom(BaseModel):
         return cls(
             drift_detected=ti.xcom_pull(
                 task_ids=drift_check_task_id.__name__,
-                key=DriftMonitorKeys.DRIFT_DETECTED_KEY,
+                key=DriftMonitorKeys.DRIFT_DETECTED,
             ),
             drift_summary=ti.xcom_pull(
                 task_ids=drift_check_task_id.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
 
@@ -122,7 +122,7 @@ class CheckCurrentModelDeploymentWorkflowXCom(BaseModel):
         return cls(
             drift_summary=ti.xcom_pull(
                 task_ids=has_drift.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
 
@@ -137,7 +137,7 @@ class PostRetrainingApprovalXCom(BaseModel):
         return cls(
             drift_summary=ti.xcom_pull(
                 task_ids=check_current_model_deployment_workflow.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
 
@@ -153,11 +153,11 @@ class CreateTrainPendingWorkflowXCom(BaseModel):
         return cls(
             workflow_id=ti.xcom_pull(
                 task_ids=post_cold_start_training_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),
             training_approval_slack_ts=ti.xcom_pull(
                 task_ids=post_cold_start_training_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
             ),
         )
 
@@ -174,14 +174,14 @@ class UpdateRetrainingPendingWorkflowXCom(BaseModel):
         return cls(
             workflow_id=ti.xcom_pull(
                 task_ids=check_current_model_deployment_workflow.__name__,
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),
             training_approval_slack_ts=ti.xcom_pull(
                 task_ids=check_current_model_deployment_workflow.__name__,
-                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
             ),
             drift_summary=ti.xcom_pull(
                 task_ids=check_current_model_deployment_workflow.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )

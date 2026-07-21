@@ -1,10 +1,7 @@
-from enum import Enum
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
-class ModelDeploymentStatus(str, Enum):
-    promoting = "promoting"
-    active = "active"
 
 class ModelDeployment(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
@@ -13,5 +10,5 @@ class ModelDeployment(BaseModel):
     model_version:    int
     dataset_min_date: datetime | None
     dataset_max_date: datetime
-    status:           ModelDeploymentStatus
+    status:           bool
     promoted_at:      datetime

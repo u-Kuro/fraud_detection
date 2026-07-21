@@ -13,6 +13,6 @@ def delete_expired_mlflow_run(**context) -> None:
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
         value=delete_expired_mlflow_run_xcom.expired_id
     )

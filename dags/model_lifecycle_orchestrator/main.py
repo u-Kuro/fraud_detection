@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 
+from airflow.providers.standard.operators import branch
 from airflow.sdk import dag
 
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DispatchTrainingApprovalBranches
 from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployments import has_any_active_model
-from dags.model_lifecycle_orchestrator.services.tasks import invalidate_expired_challenger_model, drift_check
+from dags.model_lifecycle_orchestrator.services.tasks import invalidate_expired_challenger_model, drift_check, dispatch_training_approval
 
 from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
 
@@ -61,10 +63,10 @@ def model_lifecycle_monitor():
     >> has_any_active_model() >> [
         drift_check \
         # >> has_drift() >> [
-    #         dispatch_training_approval,
+            dispatch_training_approval(branch=DispatchTrainingApprovalBranches.drifted),
     #         no_action()
     #     ],
-        dispatch_training_approval()
+        dispatch_training_approval(branch=DispatchTrainingApprovalBranches.cold_start)
     ]
 
     # BELOW is dispatch_training_approval

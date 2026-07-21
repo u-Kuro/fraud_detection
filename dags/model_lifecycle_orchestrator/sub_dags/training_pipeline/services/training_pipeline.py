@@ -23,7 +23,7 @@ def train_model_caller(**context):
         ],
         env_vars=[
             k8s.V1EnvVar(
-                name=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                name=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
                 value=configurations.model_deployment_workflow_id
             ),
         ],

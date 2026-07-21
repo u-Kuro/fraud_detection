@@ -26,34 +26,34 @@ class UpdateDeploymentWorkflowXCom(BaseModel):
         return cls(
             workflow_id=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),
             model_trained_at_iso_datetime=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME_KEY,
+                key=TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME,
             ),
             mlflow_run_id=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MLFLOW_RUN_ID_KEY,
+                key=TrainingPipelineKeys.MLFLOW_RUN_ID,
             ),
             model_name=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_NAME_KEY,
+                key=TrainingPipelineKeys.MODEL_NAME,
             ),
             model_version=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_VERSION_KEY,
+                key=TrainingPipelineKeys.MODEL_VERSION,
             ),
             model_dataset_min_iso_datetime=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME_KEY,
+                key=TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME,
             ),
             model_dataset_max_iso_datetime=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME_KEY,
+                key=TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME,
             ),
             model_metrics=ti.xcom_pull(
                 task_ids=train_model_task_id,
-                key=TrainingPipelineKeys.MODEL_METRICS_KEY,
+                key=TrainingPipelineKeys.MODEL_METRICS,
             ),
         )

@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
-class ModelDeploymentWorkflowState(str, Enum):
+class ModelDeploymentWorkflowState(StrEnum):
     train_pending = "train_pending"
     promote_pending = "promote_pending"
     promote_pending_replacement = "promote_pending_replacement"

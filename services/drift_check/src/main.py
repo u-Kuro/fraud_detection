@@ -5,8 +5,8 @@ from services.shared.controllers.airflow.xcom import xcom_push
 def main() -> None:
     drift_detected, drift_summary = drift_check()
     xcom_push({
-        DriftMonitorKeys.DRIFT_DETECTED_KEY: drift_detected,
-        DriftMonitorKeys.DRIFT_SUMMARY_KEY: drift_summary
+        DriftMonitorKeys.DRIFT_DETECTED: drift_detected,
+        DriftMonitorKeys.DRIFT_SUMMARY: drift_summary
     })
 
 if __name__ == "__main__":

@@ -50,17 +50,17 @@ def check_current_model_deployment_workflow(**context) -> str:
     if branch != no_action.__name__:
         ti = AirflowTaskContext.from_context(context).ti
         ti.xcom_push(
-            key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+            key=DriftMonitorKeys.DRIFT_SUMMARY,
             value=check_current_model_deployment_workflow_xcom.drift_summary,
         )
         if branch == update_training_approval.__name__:
             assert isinstance(current_model_deployment_workflow, ModelDeploymentWorkflows)
             ti.xcom_push(
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
                 value=str(current_model_deployment_workflow.id),
             )
             ti.xcom_push(
-                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
                 value=current_model_deployment_workflow.training_approval_slack_ts,
             )
 

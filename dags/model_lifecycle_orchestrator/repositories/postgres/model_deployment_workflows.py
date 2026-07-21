@@ -3,7 +3,8 @@ from uuid import UUID
 from airflow.sdk import task
 
 from dags.model_lifecycle_orchestrator.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom, \
+    DispatchTrainingApprovalBranches, CheckCurrentModelDeploymentWorkflowDriftedXCom
 from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.shared.modules.configs.postgres import PostgresConfig
@@ -17,15 +18,15 @@ from dags.shared.services.airflow_operators import no_action
 def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
     results = postgres_hook.get_pandas_df(f"""
         SELECT
-            replacement.registered_model_name       AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME_KEY},
-            replacement.registered_model_version    AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION_KEY},
+            replacement.registered_model_name       AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME},
+            replacement.registered_model_version    AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION},
             
-            expired.registered_model_name           AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY},
-            expired.registered_model_version        AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY},
+            expired.registered_model_name           AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME},
+            expired.registered_model_version        AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION},
                         
-            expired.mlflow_run_id                   AS {ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY},
+            expired.mlflow_run_id                   AS {ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID},
             
-            expired.id                              AS {ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY}
+            expired.id                              AS {ModelDeploymentSuccessionKeys.EXPIRED_ID}
         FROM model_deployment_workflows expired
         JOIN model_deployment_workflows replacement
             ON replacement.project_id = %(project_id)s
@@ -48,50 +49,50 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
     else:
         result = results.iloc[0]
 
-        replacement_model_name = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME_KEY]
+        replacement_model_name = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME]
         assert isinstance(replacement_model_name, str)
 
-        replacement_model_version = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION_KEY]
+        replacement_model_version = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION]
         assert isinstance(replacement_model_version, int)
 
-        expired_model_name = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY]
+        expired_model_name = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME]
         assert isinstance(expired_model_name, str)
 
-        expired_model_version = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY]
+        expired_model_version = result[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION]
         assert isinstance(expired_model_version, int)
 
-        expired_mlflow_run_id = result[ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY]
+        expired_mlflow_run_id = result[ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID]
         assert isinstance(expired_mlflow_run_id, str)
 
-        expired_id = result[ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY]
+        expired_id = result[ModelDeploymentSuccessionKeys.EXPIRED_ID]
         assert isinstance(expired_id, UUID)
 
         ti = AirflowTaskContext.from_context(context).ti
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME_KEY,
+            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
             value=replacement_model_name
         )
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION_KEY,
+            key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
             value=replacement_model_version
         )
 
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             value=expired_model_name
         )
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
             value=expired_model_version
         )
 
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+            key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             value=expired_mlflow_run_id
         )
 
         ti.xcom_push(
-            key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+            key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             value=str(expired_id)
         )
 
@@ -137,9 +138,18 @@ def get_current_model_deployment_workflow() -> ModelDeploymentWorkflows | None:
         )
 
 @task.branch(task_id="check_current_model_deployment_workflow")
-def check_current_model_deployment_workflow(**context) -> str:
+def check_current_model_deployment_workflow(branch: DispatchTrainingApprovalBranches, **context) -> str:
     # TODO - 19/07/2026 Need to align with new stuff/branch in task group
-    check_current_model_deployment_workflow_xcom = CheckCurrentModelDeploymentWorkflowXCom.from_context(context)
+    """
+    1) post cold-start
+    2) replace cold-start
+    3) post retrain (drift)
+    4) replace retrain (drift)
+    """
+    if branch == DispatchTrainingApprovalBranches.drifted:
+        check_current_model_deployment_workflow_xcom = CheckCurrentModelDeploymentWorkflowDriftedXCom.from_context(context)
+    else:
+        pass
 
     current_model_deployment_workflow = get_current_model_deployment_workflow()
 
@@ -153,17 +163,17 @@ def check_current_model_deployment_workflow(**context) -> str:
     if branch != no_action.__name__:
         ti = AirflowTaskContext.from_context(context).ti
         ti.xcom_push(
-            key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+            key=DriftMonitorKeys.DRIFT_SUMMARY,
             value=check_current_model_deployment_workflow_xcom.drift_summary,
         )
         if branch == update_training_approval.__name__:
             assert isinstance(current_model_deployment_workflow, ModelDeploymentWorkflows)
             ti.xcom_push(
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
                 value=str(current_model_deployment_workflow.id),
             )
             ti.xcom_push(
-                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS_KEY,
+                key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
                 value=current_model_deployment_workflow.training_approval_slack_ts,
             )
 

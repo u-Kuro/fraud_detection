@@ -15,7 +15,7 @@ def training_callback(**context) -> str:
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
         value=str(configurations.workflow_id)
     )
 
@@ -32,6 +32,6 @@ def start_training_pipeline(**context) -> TriggerDagRunOperator:
         trigger_dag_id="training_pipeline",
         wait_for_completion=False,
         conf={
-            ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY: configurations.workflow_id
+            ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID: configurations.workflow_id
         }
     )

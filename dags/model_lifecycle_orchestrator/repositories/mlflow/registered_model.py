@@ -19,21 +19,21 @@ def replace_expired_model(**context) -> None:
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
         value=replace_expired_model_xcom.expired_model_name
     )
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
         value=replace_expired_model_xcom.expired_model_version
     )
 
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
         value=replace_expired_model_xcom.expired_mlflow_run_id
     )
 
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
         value=replace_expired_model_xcom.expired_id
     )
 
@@ -48,11 +48,11 @@ def delete_expired_model(**context) -> None:
 
     ti = AirflowTaskContext.from_context(context).ti
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
         value=delete_expired_model_xcom.expired_mlflow_run_id
     )
 
     ti.xcom_push(
-        key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+        key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
         value=delete_expired_model_xcom.expired_id
     )

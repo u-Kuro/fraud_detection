@@ -65,14 +65,14 @@ def main() -> None:
     )
 
     xcom_push({
-        ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY: dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID,
-        TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME_KEY: unused_dataset_outputs.retrieved_iso_datetime,
-        TrainingPipelineKeys.MLFLOW_RUN_ID_KEY: registered_model_info.run_id,
-        TrainingPipelineKeys.MODEL_NAME_KEY: registered_model_info.model_name,
-        TrainingPipelineKeys.MODEL_VERSION_KEY: registered_model_info.model_version,
-        TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME_KEY: dataset_min_max_timestamps.model_dataset_min_iso_datetime,
-        TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME_KEY: dataset_min_max_timestamps.model_dataset_max_iso_datetime,
-        TrainingPipelineKeys.MODEL_METRICS_KEY: model_evaluations.metrics,
+        ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID: dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID,
+        TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME: unused_dataset_outputs.retrieved_iso_datetime,
+        TrainingPipelineKeys.MLFLOW_RUN_ID: registered_model_info.run_id,
+        TrainingPipelineKeys.MODEL_NAME: registered_model_info.model_name,
+        TrainingPipelineKeys.MODEL_VERSION: registered_model_info.model_version,
+        TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_min_iso_datetime,
+        TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_max_iso_datetime,
+        TrainingPipelineKeys.MODEL_METRICS: model_evaluations.metrics,
     })
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from enum import StrEnum, Enum
 from uuid import UUID
 
 from airflow.sdk.types import TaskInstance
@@ -5,10 +6,11 @@ from pydantic import BaseModel, ConfigDict
 
 from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement
+from dags.model_lifecycle_orchestrator.services.tasks import drift_check_task_id, has_drift
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys, DriftMonitorKeys
 
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
-from dags.training_approval_dispatch.services.tasks import drift_check_task_id
+
 
 class ReplaceExpiredModelXCom(BaseModel):
     model_config = ConfigDict(strict=True)
@@ -29,27 +31,27 @@ class ReplaceExpiredModelXCom(BaseModel):
         return cls(
             replacement_model_name=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
             ),
             replacement_model_version=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION,
             ),
             expired_model_name=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             ),
             expired_model_version=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
             ),
             expired_mlflow_run_id = ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             ),
             expired_id=ti.xcom_pull(
                 task_ids=has_expired_promote_pending_workflow_with_replacement.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -69,19 +71,19 @@ class DeleteExpiredModelXCom(BaseModel):
         return cls(
             expired_model_name=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME,
             ),
             expired_model_version=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION,
             ),
             expired_mlflow_run_id=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             ),
             expired_id=ti.xcom_pull(
                 task_ids=replace_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -98,11 +100,11 @@ class DeleteExpiredMLFlowRunXCom(BaseModel):
         return cls(
             expired_mlflow_run_id=ti.xcom_pull(
                 task_ids=delete_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID,
             ),
             expired_id=ti.xcom_pull(
                 task_ids=delete_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
             )
         )
 
@@ -117,7 +119,26 @@ class DeleteExpiredPromotePendingWorkflowXCom(BaseModel):
         return cls(
             expired_id=ti.xcom_pull(
                 task_ids=delete_expired_model.__name__,
-                key=ModelDeploymentSuccessionKeys.EXPIRED_ID_KEY,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
+            )
+        )
+
+class DispatchTrainingApprovalBranches(StrEnum):
+    cold_start = "cold_start"
+    drifted = "drifted"
+
+class CheckCurrentModelDeploymentWorkflowDriftedXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    drift_summary: dict
+
+    @classmethod
+    def from_context(cls, context: dict) -> "CheckCurrentModelDeploymentWorkflowDriftedXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            drift_summary=ti.xcom_pull(
+                task_ids=has_drift.__name__,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
 
@@ -133,10 +154,10 @@ class HasDriftXCom(BaseModel):
         return cls(
             drift_detected=ti.xcom_pull(
                 task_ids=drift_check_task_id.__name__,
-                key=DriftMonitorKeys.DRIFT_DETECTED_KEY,
+                key=DriftMonitorKeys.DRIFT_DETECTED,
             ),
             drift_summary=ti.xcom_pull(
                 task_ids=drift_check_task_id.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+                key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )

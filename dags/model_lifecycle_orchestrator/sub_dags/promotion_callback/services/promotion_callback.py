@@ -29,7 +29,7 @@ def promotion_callback(**context) -> str:
         # created aws_secretsmanager_secret name is "airflow/connections/mle_postgres"
         promotion_approved(configurations.workflow_id)
         task_context.ti.xcom_push(
-            key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY,
+            key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             value=str(configurations.workflow_id)
         )
         return start_promotion_pipeline.__name__
@@ -41,13 +41,13 @@ def start_promotion_pipeline(**context) -> TriggerDagRunOperator:
     task_context = AirflowTaskContext.from_context(context)
     model_deployment_workflow_id = task_context.ti.xcom_pull(
         task_ids=promotion_callback_task_id,
-        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY
+        key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID
     )
     return TriggerDagRunOperator(
         task_id=start_promotion_pipeline.__name__,
         trigger_dag_id="promotion_pipeline",
         wait_for_completion=False,
         conf={
-            ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID_KEY: model_deployment_workflow_id
+            ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID: model_deployment_workflow_id
         }
     )

@@ -1,7 +1,8 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.sdk import task_group
+from airflow.sdk import task_group, task
 from kubernetes import client as k8s
 
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DispatchTrainingApprovalBranches
 from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.repositories.mlflow.run import delete_expired_mlflow_run
 from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import \
@@ -27,8 +28,17 @@ def invalidate_expired_challenger_model() -> None:
     group_id="dispatch_training_approval",
     prefix_group_id=False
 )
-def dispatch_training_approval() -> None:
-    check_current_model_deployment_workflow() >> [
+def dispatch_training_approval(branch: DispatchTrainingApprovalBranches) -> None:
+    """
+    1) post cold-start
+    2) replace cold-start
+    3) post retrain (drift)
+    4) replace retrain (drift)
+    """
+
+    check_current_model_deployment_workflow(branch=branch) >> [
+
+
         # probably should just use xcom to do training or replacement (along with cold-start or retraining).
         # so to keep same task names to avoid too much duplicate
 
@@ -79,21 +89,21 @@ drift_check = KubernetesPodOperator(
     config_file="/usr/local/airflow/dags/kubeconfig.yaml",
 )
 
-# @task.branch(task_id="has_drift")
-# def has_drift(**context):
-#     has_drift_xcom = HasDriftXCom.from_context(context)
-#
-#     ti = AirflowTaskContext.from_context(context).ti
-#     ti.xcom_push(
-#         key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
-#         value=has_drift_xcom.drift_summary
-#     )
-#
-#     if has_drift_xcom.drift_detected:
-#         return check_current_model_deployment_workflow.__name__
-#     else:
-#         return no_action.__name__
-#
+@task.branch(task_id="has_drift")
+def has_drift(**context):
+    has_drift_xcom = HasDriftXCom.from_context(context)
+
+    ti = AirflowTaskContext.from_context(context).ti
+    ti.xcom_push(
+        key=DriftMonitorKeys.DRIFT_SUMMARY_KEY,
+        value=has_drift_xcom.drift_summary
+    )
+
+    if has_drift_xcom.drift_detected:
+        return check_current_model_deployment_workflow.__name__
+    else:
+        return no_action.__name__
+
 # trigger_training_approval_dispatch_task_id = "trigger_training_approval_dispatch"
 # trigger_training_approval_dispatch = TriggerDagRunOperator(
 #     task_id=trigger_training_approval_dispatch_task_id,
