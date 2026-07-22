@@ -9,7 +9,6 @@ class ModelDeploymentWorkflow(BaseModel):
 
     id: UUID
     state: ModelDeploymentWorkflowState
-    training_approved: bool
     training_approval_slack_ts: str
 
     @classmethod

@@ -14,7 +14,7 @@ from services.shared.modules.schemas import FraudClassificationFeatures, FraudCl
 def run_drift_report(
     df_reference: DataFrame,
     df_current: DataFrame
-) -> tuple[dict, bytes]:
+) -> tuple[dict[str, dict], bytes]:
     data_definition = DataDefinition(
         classification=[BinaryClassification(
             target=FraudClassificationLabel.model_field_key(),
@@ -109,7 +109,7 @@ def extract_drift_summary(
         evidently_config.CONCEPT_DRIFT_KEY: concept_drift,
     }
 
-def drift_check() -> tuple[bool, dict]:
+def drift_check() -> tuple[bool, dict[str, dict]]:
     df_reference, current_dataset_cutoff = load_reference_dataset()
     df_current = load_current_dataset(current_dataset_cutoff)
 

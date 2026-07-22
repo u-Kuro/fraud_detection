@@ -14,7 +14,7 @@ def update_deployment_workflow(**context) -> str:
 
     postgres_hook.run("""
         UPDATE model_deployment_workflows
-        SET trained_at = %(trained_at)s,
+        SET model_trained_at = %(model_trained_at)s,
             mlflow_run_id = %(mlflow_run_id)s,
             registered_model_name = %(registered_model_name)s,
             registered_model_version = %(registered_model_version)s,
@@ -23,7 +23,7 @@ def update_deployment_workflow(**context) -> str:
         WHERE id = %(id)s
         """, parameters={
             "id": update_deployment_workflow_xcom.workflow_id,
-            "trained_at": datetime.fromisoformat(update_deployment_workflow_xcom.model_trained_at_iso_datetime),
+            "model_trained_at": datetime.fromisoformat(update_deployment_workflow_xcom.model_trained_at_iso_datetime),
             "mlflow_run_id": update_deployment_workflow_xcom.mlflow_run_id,
             "registered_model_name": update_deployment_workflow_xcom.model_name,
             "registered_model_version": update_deployment_workflow_xcom.model_version,

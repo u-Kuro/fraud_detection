@@ -1,59 +1,50 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.sdk import task_group, task
 from airflow.sdk.definitions._internal.node import DAGNode
 from kubernetes import client as k8s
 
-from dags.model_lifecycle_orchestrator.controllers.slack import invalidate_old_training_approval, \
-    initialize_training_approval, update_training_approval
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, \
-    SetupTrainingApprovalBranches
+from dags.model_lifecycle_orchestrator.controllers.slack import initialize_training_approval, update_training_approval, invalidate_old_training_approval
+from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import NoActionBranches, SetupTrainingApprovalBranches, DispatchTrainingApprovalBranches
 from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import HasDriftXCom
 from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.repositories.mlflow.run import delete_expired_mlflow_run
-from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import \
-    has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, \
-    check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow, \
-    update_train_pending_workflow
+from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, update_train_pending_workflow, check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow
 from dags.shared.modules.configs.ecr import ECRConfig
-from dags.shared.services.airflow_operators import no_action
+from dags.shared.modules.utilities.airflow.xcom import build_task_id
 
-@task_group(
-    group_id="invalidate_expired_challenger_model",
-    prefix_group_id=False
-)
+def no_action(branch: NoActionBranches) -> EmptyOperator:
+    return EmptyOperator(task_id=build_task_id((no_action.__name__, branch)))
+
+@task_group(group_id="invalidate_expired_challenger_model")
 def invalidate_expired_challenger_model() -> None:
     has_expired_promote_pending_workflow_with_replacement() >> [
-        replace_expired_model()
-        >> delete_expired_model()
-        >> delete_expired_mlflow_run()
+        replace_expired_model() \
+        >> delete_expired_model() \
+        >> delete_expired_mlflow_run() \
         >> delete_expired_promote_pending_workflow(),
-        no_action()
+
+        no_action(branch=NoActionBranches.no_expired_promote_pending_workflow_with_replacement)
     ]
 
 def setup_training_approval(branch: SetupTrainingApprovalBranches) -> DAGNode:
-    @task_group(group_id=f"{setup_training_approval.__name__}.{branch}")
+    @task_group(group_id=build_task_id((setup_training_approval.__name__, branch)))
     def group() -> None:
-        initialize_training_approval() \ # post slack approval without action to avoid inconsistency
-        >> update_train_pending_workflow() \  # update item with posted slack ts
-        >> update_training_approval() # update slack with the action buttons
+        initialize_training_approval() \
+        >> update_train_pending_workflow() \
+        >> update_training_approval()
 
     return group()
 
 def dispatch_training_approval(branch: DispatchTrainingApprovalBranches) -> DAGNode:
-    # TODO - 21/07/2026 Need to check each nested tasks included here
-    @task_group(group_id=f"{dispatch_training_approval.__name__}.{branch}")
+    @task_group(group_id=build_task_id((dispatch_training_approval.__name__, branch)))
     def group() -> None:
         check_current_model_deployment_workflows(branch=branch) >> [
-            # probably should just use xcom to do training or replacement (along with cold-start or retraining).
-            # so to keep same task names to avoid too much duplicate
-
-            # post train pending workflow (cold-start or retraining depends on trigger for slack post)
-            initialize_train_pending_workflow() # add item first to avoid not finding it when slack approval is posted
+            initialize_train_pending_workflow() \
             >> setup_training_approval(branch=SetupTrainingApprovalBranches.post),
 
-            # replace workflow (cold-start or retraining)
-            invalidate_old_training_approval() # invalidating (greying out. not delete) training approval to avoid breakage
-            >> reinitialize_train_pending_workflow() # setting new workflow (e.g. date)
+            invalidate_old_training_approval() \
+            >> reinitialize_train_pending_workflow() \
             >> setup_training_approval(branch=SetupTrainingApprovalBranches.replace),
 
             no_action()
@@ -97,17 +88,13 @@ def has_drift(**context):
     has_drift_xcom = HasDriftXCom.from_context(context)
 
     if has_drift_xcom.drift_detected:
-        return ".".join((
+        return build_task_id((
             dispatch_training_approval.__name__,
             DispatchTrainingApprovalBranches.drifted,
             check_current_model_deployment_workflows.__name__
         ))
     else:
-        return no_action.__name__
-
-# trigger_training_approval_dispatch_task_id = "trigger_training_approval_dispatch"
-# trigger_training_approval_dispatch = TriggerDagRunOperator(
-#     task_id=trigger_training_approval_dispatch_task_id,
-#     trigger_dag_id=DagIDs.TRAINING_APPROVAL_DISPATCH,
-#     wait_for_completion=True
-# )
+        return build_task_id((
+            no_action.__name__,
+            NoActionBranches.no_drift
+        ))

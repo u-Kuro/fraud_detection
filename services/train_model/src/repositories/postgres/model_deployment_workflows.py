@@ -32,7 +32,7 @@ def update_deployment_workflow(
     with engine.connect() as connection:
         connection.execute(text("""
             UPDATE model_deployment_workflows
-            SET trained_at = NOW(),
+            SET model_trained_at = NOW(),
                 state = :state,
                 registered_model_name = :registered_model_name,
                 registered_model_version = :registered_model_version,
