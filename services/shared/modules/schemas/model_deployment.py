@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-
 class ModelDeployment(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     model_id:         int

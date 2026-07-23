@@ -5,8 +5,9 @@ from pydantic import BaseModel, ConfigDict
 class TrainingCallbackConfigurations(BaseModel):
     model_config = ConfigDict(strict=False)
 
-    workflow_id: UUID
     approved: bool
+    workflow_id: UUID
+    for_promotion: bool
 
     @classmethod
     def from_context(cls, context: dict) -> "TrainingCallbackConfigurations":

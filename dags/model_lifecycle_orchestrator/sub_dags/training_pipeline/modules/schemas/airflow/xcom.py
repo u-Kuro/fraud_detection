@@ -25,6 +25,7 @@ class UpdateDeploymentWorkflowXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             workflow_id=ti.xcom_pull(
+                # TODO - Need to be in callback (removed in services)
                 task_ids=train_model_task_id,
                 key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),

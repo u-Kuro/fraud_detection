@@ -218,6 +218,10 @@ def check_current_model_deployment_workflows(**context) -> str:
     current_model_deployment_workflows = get_current_model_deployment_workflows()
 
     if current_model_deployment_workflows is None:
+        ti.xcom_push(
+            key=ModelDeploymentWorkflowsKeys.TRAIN_MODEL_FOR_PROMOTION,
+            value=True,
+        )
         return initialize_train_pending_workflow.__name__
     elif len(current_model_deployment_workflows) == 1:
         latest_workflow = current_model_deployment_workflows.pop()
@@ -228,10 +232,18 @@ def check_current_model_deployment_workflows(**context) -> str:
             )
             ti.xcom_push(
                 key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
-                value=str(latest_workflow.training_approval_slack_ts),
+                value=latest_workflow.training_approval_slack_ts,
+            )
+            ti.xcom_push(
+                key=ModelDeploymentWorkflowsKeys.TRAIN_MODEL_FOR_PROMOTION,
+                value=True,
             )
             return invalidate_old_training_approval.__name__
         elif latest_workflow.state == ModelDeploymentWorkflowState.promote_pending:
+            ti.xcom_push(
+                key=ModelDeploymentWorkflowsKeys.TRAIN_MODEL_FOR_PROMOTION,
+                value=False,
+            )
             return initialize_train_pending_workflow.__name__
         else:
             raise ValueError(f"Unexpected workflow state with 1 active workflow: {latest_workflow.state!r}")
@@ -248,7 +260,11 @@ def check_current_model_deployment_workflows(**context) -> str:
             )
             ti.xcom_push(
                 key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
-                value=str(latest_workflow.training_approval_slack_ts),
+                value=latest_workflow.training_approval_slack_ts,
+            )
+            ti.xcom_push(
+                key=ModelDeploymentWorkflowsKeys.TRAIN_MODEL_FOR_PROMOTION,
+                value=True,
             )
             return invalidate_old_training_approval.__name__
         elif latest_workflow.state == ModelDeploymentWorkflowState.promote_pending_replacement:

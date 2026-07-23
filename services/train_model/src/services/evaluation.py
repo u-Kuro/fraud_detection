@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from sklearn.metrics import f1_score, average_precision_score, recall_score, precision_score, roc_auc_score, accuracy_score, ConfusionMatrixDisplay
 
-from services.shared.modules.configs import mlflow_config
+from services.shared.modules.configs import MLFlowConfig
 from services.train_model.src.modules.schemas.evaluate import EvaluateModelOutputs
 
 def evaluate_model(
@@ -23,7 +23,7 @@ def evaluate_model(
         metric_figures=visualize_model_predictions(
             **model_predictions,
             y_true=y_test,
-            title=mlflow_config.MODEL_NAME
+            title=MLFlowConfig.MODEL_NAME
         )
     )
 

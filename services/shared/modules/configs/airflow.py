@@ -1,8 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from dataclasses import dataclass
 
-class AirflowConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class AirflowConfig:
     MWAA_WEBSERVER_URL: str = "http://airflow-webserver:8080"
-
-airflow_config = AirflowConfig()

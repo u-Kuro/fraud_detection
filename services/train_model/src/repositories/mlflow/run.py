@@ -10,8 +10,8 @@ import pyarrow.parquet as pq
 from matplotlib.figure import Figure
 from pandas import DataFrame
 
-from services.shared.modules.configs import mlflow_config
-from services.train_model.src.modules.configs.mlflow import mlflow_artifacts_config
+from services.shared.modules.configs import MLFlowConfig
+from services.train_model.src.modules.configs.mlflow import MLFlowArtifactsConfig
 from services.train_model.src.repositories.mlflow.mlflow import mlflow_client
 
 @contextmanager
@@ -39,7 +39,7 @@ def save_model_reference_dataset(
     try:
         dataset_reference_file_path = os.path.join(
             temporary_directory,
-            mlflow_artifacts_config.reference_dataset_filename
+            MLFlowArtifactsConfig.reference_dataset_filename
         )
         pq.write_table(
             table=pa.table(model_reference_dataset),
@@ -47,15 +47,15 @@ def save_model_reference_dataset(
         )
         mlflow.log_artifact(
             local_path=dataset_reference_file_path,
-            artifact_path=mlflow_config.REFERENCE_DATASET_PATH,
+            artifact_path=MLFlowConfig.REFERENCE_DATASET_PATH,
             run_id=mlflow_model_run_id
         )
     finally:
         shutil.rmtree(temporary_directory)
 
 def save_model_hyperparameters(
-        mlflow_model_run_id: str,
-        model_hyperparameters: dict[str, Any]
+    mlflow_model_run_id: str,
+    model_hyperparameters: dict[str, Any]
 ) -> None:
     mlflow.log_params(
         params=model_hyperparameters,
@@ -64,10 +64,10 @@ def save_model_hyperparameters(
     )
 
 def save_model_metrics(
-        mlflow_model_run_id: str,
-        mlflow_model_id: str,
-        model_metrics: dict[str, Any],
-        model_metric_figures: dict[str, Figure]
+    mlflow_model_run_id: str,
+    mlflow_model_id: str,
+    model_metrics: dict[str, Any],
+    model_metric_figures: dict[str, Figure]
 ) -> None:
     mlflow.log_metrics(
         metrics=model_metrics,

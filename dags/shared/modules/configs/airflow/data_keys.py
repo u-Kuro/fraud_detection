@@ -8,6 +8,7 @@ class ModelDeploymentKeys:
 class ModelDeploymentWorkflowsKeys:
     MODEL_DEPLOYMENT_WORKFLOW_ID: str = "MODEL_DEPLOYMENT_WORKFLOW_ID"
     TRAINING_APPROVAL_SLACK_TS: str = "TRAINING_APPROVAL_SLACK_TS"
+    TRAIN_MODEL_FOR_PROMOTION: str = "TRAIN_MODEL_FOR_PROMOTION"
 
 @dataclass(frozen=True)
 class ModelDeploymentSuccessionKeys:

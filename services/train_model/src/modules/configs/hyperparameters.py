@@ -1,12 +1,11 @@
+from dataclasses import dataclass, fields
 from typing import Callable
 
 from optuna import Trial
-from pydantic import BaseModel, ConfigDict
 
-type HyperparamSampler = Callable[[Trial], int | float]
-
-class XGBHyperparametersSampler(BaseModel):
-    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+@dataclass(frozen=True)
+class XGBHyperparametersSampler:
+    type HyperparamSampler = Callable[[Trial], int | float]
 
     n_estimators: HyperparamSampler = lambda trial: trial.suggest_int("n_estimators", 100, 500)
     max_depth: HyperparamSampler = lambda trial: trial.suggest_int("max_depth", 3, 10)
@@ -20,6 +19,6 @@ class XGBHyperparametersSampler(BaseModel):
 
     def resolve(self, trial: Trial) -> dict[str, int | float]:
         return {
-            key: sampler(trial)
-            for key, sampler in vars(self).items()
+            f.name: getattr(self, f.name)(trial)
+            for f in fields(self)
         }

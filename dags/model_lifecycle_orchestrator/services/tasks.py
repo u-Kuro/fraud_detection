@@ -19,6 +19,7 @@ def no_action(branch: NoActionBranches) -> EmptyOperator:
 @task_group(group_id="invalidate_expired_challenger_model")
 def invalidate_expired_challenger_model() -> None:
     has_expired_promote_pending_workflow_with_replacement() >> [
+        # TODO - invalidate_slack_promotion_approval
         replace_expired_model() \
         >> delete_expired_model() \
         >> delete_expired_mlflow_run() \

@@ -1,8 +1,5 @@
-from pydantic import BaseModel, ConfigDict, computed_field
+from dataclasses import dataclass
 
-class MLFlowArtifactsConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class MLFlowArtifactsConfig:
     reference_dataset_filename: str = "reference.parquet"
-
-mlflow_artifacts_config = MLFlowArtifactsConfig()

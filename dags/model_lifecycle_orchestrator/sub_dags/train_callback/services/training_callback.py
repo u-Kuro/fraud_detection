@@ -2,8 +2,8 @@ from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOpe
 from airflow.sdk import task
 
 from dags.model_lifecycle_orchestrator.sub_dags.train_callback.modules.schemas.airflow.configurations import TrainingCallbackConfigurations
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 
-from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.model_lifecycle_orchestrator.sub_dags.train_callback.modules.schemas.airflow.xcom import StartTrainingPipelineXCom
 from dags.model_lifecycle_orchestrator.sub_dags.train_callback.repositories.model_deployment_workflows import update_approved_training_workflow, delete_rejected_training_workflow

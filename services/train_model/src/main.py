@@ -2,12 +2,11 @@ from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
 from services.shared.controllers.airflow.xcom import xcom_push
-from services.shared.modules.configs import mlflow_config
+from services.shared.modules.configs import MLFlowConfig
 from services.shared.modules.schemas import FraudClassificationTransactionTimestamp
-from services.train_model.src.modules.configs import training_config
-from services.train_model.src.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys, TrainingPipelineKeys
+from services.train_model.src.modules.configs import TrainingConfig
+from services.train_model.src.modules.configs.airflow.data_keys import TrainingPipelineKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
-from services.train_model.src.modules.environments.dags import dags_environment
 from services.train_model.src.repositories.mlflow.registered_model import save_and_register_model
 from services.train_model.src.repositories.mlflow.run import transactional_mlflow_run, save_model_reference_dataset, save_model_hyperparameters, save_model_metrics
 from services.train_model.src.repositories.postgres.transaction_inferences import get_timed_latest_unused_dataset
@@ -18,12 +17,12 @@ from services.train_model.src.services.preprocessing import preprocess
 from services.train_model.src.services.training import train_model
 
 def main() -> None:
-    seed_everything(training_config.RANDOM_STATE)
+    seed_everything(TrainingConfig.RANDOM_STATE)
 
     unused_dataset_outputs = get_timed_latest_unused_dataset()
     preprocess_outputs = preprocess(unused_dataset_outputs.dataset)
 
-    with transactional_mlflow_run(run_name=mlflow_config.MODEL_NAME):
+    with transactional_mlflow_run(run_name=MLFlowConfig.MODEL_NAME):
         train_model_outputs = train_model(
             preprocess_outputs=preprocess_outputs,
             scaler=RobustScaler,
@@ -65,7 +64,6 @@ def main() -> None:
     )
 
     xcom_push({
-        ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID: dags_environment.MODEL_DEPLOYMENT_WORKFLOW_ID,
         TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME: unused_dataset_outputs.retrieved_iso_datetime,
         TrainingPipelineKeys.MLFLOW_RUN_ID: registered_model_info.run_id,
         TrainingPipelineKeys.MODEL_NAME: registered_model_info.model_name,

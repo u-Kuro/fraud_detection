@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel#, ConfigDict
 
 class MLFlowRegisteredModelInfo(BaseModel):
     run_id: str

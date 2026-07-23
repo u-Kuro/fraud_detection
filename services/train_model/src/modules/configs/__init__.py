@@ -1,1 +1,1 @@
-from services.train_model.src.modules.configs.training import training_config
+from services.train_model.src.modules.configs.training import TrainingConfig

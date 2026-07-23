@@ -6,14 +6,14 @@ from services.fraud_detection.src.controller.routers.slack import start_socket_m
 from services.fraud_detection.src.services import model_states
 from services.fraud_detection.src.services.fraud_classifier import FraudClassifier
 from services.fraud_detection.src.controller.routers import health, inference, slack
-from services.shared.modules.configs import mlflow_config
+from services.shared.modules.configs import MLFlowConfig
 from services.shared import logger
 
 @asynccontextmanager
 async def lifespan(_):
     try:
         model_states.fraud_classifier = FraudClassifier(
-            mlflow_model_uri=mlflow_config.MODEL_URI,
+            mlflow_model_uri=MLFlowConfig.MODEL_URI,
         )
     except Exception as exception:
         logger.critical(f"Startup failed: {exception}", exc_info=True)

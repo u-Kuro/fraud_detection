@@ -1,4 +1,3 @@
-import json
 import threading
 
 from fastapi import APIRouter, Request
@@ -6,6 +5,7 @@ from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
+from services.fraud_detection.src.modules.schemas.slack import TrainingValue
 from services.fraud_detection.src.services.airflow import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
 from services.fraud_detection.src.services.slack import update_message, common_callback_configurations
@@ -32,12 +32,13 @@ def approve_training(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
-        data = json.loads(action["value"])
+        training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
             "training_callback",
             {
                 "approved": True,
-                "workflow_id": data["workflow_id"]
+                "workflow_id": str(training_value.workflow_id),
+                "for_promotion": training_value.for_promotion
             }
         )
         update_message(
@@ -55,12 +56,13 @@ def reject_training(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
-        data = json.loads(action["value"])
+        training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
             "training_callback",
             {
                 "approved": False,
-                "workflow_id": data["workflow_id"]
+                "workflow_id": str(training_value.workflow_id),
+                "for_promotion": training_value.for_promotion
             }
         )
         update_message(
@@ -70,7 +72,7 @@ def reject_training(
         )
 
 @slack_app.action("approve_retraining")
-def handle_approve_retraining(
+def approve_retraining(
     ack,
     body,
     action,
@@ -78,12 +80,13 @@ def handle_approve_retraining(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
-        data = json.loads(action["value"])
+        training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
             "training_callback",
             {
                 "approved": True,
-                "workflow_id": data["workflow_id"]
+                "workflow_id": str(training_value.workflow_id),
+                "for_promotion": training_value.for_promotion
             }
         )
         update_message(
@@ -101,12 +104,13 @@ def reject_training(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
-        data = json.loads(action["value"])
+        training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
             "training_callback",
             {
                 "approved": False,
-                "workflow_id": data["workflow_id"]
+                "workflow_id": str(training_value.workflow_id),
+                "for_promotion": training_value.for_promotion
             }
         )
         update_message(
@@ -116,7 +120,7 @@ def reject_training(
         )
 
 @slack_app.action("approve_promotion")
-def handle_approve_promotion(
+def approve_promotion(
     ack,
     body,
     action,
@@ -138,7 +142,7 @@ def handle_approve_promotion(
         )
 
 @slack_app.action("reject_promotion")
-def handle_reject_promotion(
+def reject_promotion(
     ack,
     body,
     action,

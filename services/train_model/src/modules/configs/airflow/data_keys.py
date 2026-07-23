@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-@dataclass(frozen=True)
-class ModelDeploymentWorkflowsKeys:
-    MODEL_DEPLOYMENT_WORKFLOW_ID: str = "MODEL_DEPLOYMENT_WORKFLOW_ID"
+# @dataclass(frozen=True)
+# class ModelDeploymentWorkflowsKeys:
+#     MODEL_DEPLOYMENT_WORKFLOW_ID: str = "MODEL_DEPLOYMENT_WORKFLOW_ID"
 
 @dataclass(frozen=True)
 class TrainingPipelineKeys:

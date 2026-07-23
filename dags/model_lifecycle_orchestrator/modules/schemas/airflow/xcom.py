@@ -213,6 +213,7 @@ class UpdateTrainingApproval(BaseModel):
     workflow_id: UUID
     training_approval_slack_ts: str
     drift_summary: dict[str, dict] | None
+    for_promotion: bool
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdateTrainingApproval":
@@ -244,6 +245,15 @@ class UpdateTrainingApproval(BaseModel):
             drift_summary=ti.xcom_pull(
                 task_ids=drift_check_task_id.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY,
+            ),
+            for_promotion=xcom_pull_coalesce(
+                ti=ti,
+                task_id_segments=(
+                    dispatch_training_approval.__name__,
+                    DispatchTrainingApprovalBranches,
+                    check_current_model_deployment_workflows.__name__
+                ),
+                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             )
         )
 

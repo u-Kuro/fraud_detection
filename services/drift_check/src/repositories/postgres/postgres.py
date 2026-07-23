@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.pool import NullPool
 
-from services.shared.modules.configs import postgres_config
+from services.shared.modules.configs import PostgresConfig
 
 engine: Engine = create_engine(
-    postgres_config.POSTGRES_DB_URL,
+    PostgresConfig.POSTGRES_DB_URL,
     poolclass=NullPool
 )

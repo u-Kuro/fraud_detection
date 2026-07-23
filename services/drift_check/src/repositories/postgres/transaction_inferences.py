@@ -5,7 +5,7 @@ from pandas import DataFrame
 from sqlalchemy import text
 
 from services.drift_check.src.repositories.postgres import engine
-from services.shared.modules.configs.dataset import dataset_config
+from services.shared.modules.configs.dataset import DatasetConfig
 from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
 
 def load_current_dataset(
@@ -34,11 +34,11 @@ def load_current_dataset(
            connection,
            params={
                 "current_dataset_cutoff": current_dataset_cutoff,
-                "MAXIMUM_DATASET_ROWS": dataset_config.MAXIMUM_DATASET_ROWS
+                "MAXIMUM_DATASET_ROWS": DatasetConfig.MAXIMUM_DATASET_ROWS
            }
        )
 
-        if len(df_current) < dataset_config.MINIMUM_ROWS:
-            raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {dataset_config.MINIMUM_ROWS}.")
+        if len(df_current) < DatasetConfig.MINIMUM_ROWS:
+            raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.MINIMUM_ROWS}.")
 
         return df_current
