@@ -20,7 +20,7 @@ from dags.model_lifecycle_orchestrator.sub_dags.train_callback.services.training
     tags=["mle", "training", "callback"]
 )
 def training_callback_dag():
-    # TODO - 23/07/2026 Continue here
+    # TODO - 23/07/2026 Continue here...
     training_callback() >> [
         update_approved_training_workflow() \
         >> start_training_pipeline(),
