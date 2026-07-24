@@ -1,2 +1,2 @@
-# ignore everything inside root folders except [any]/main.py and [any]/sub_dags/[any]/main.py
-^[^/]+/(?!main\.py$|sub_dags/[^/]+/main\.py$)
+# ignore everything inside root folders except [any]/main.py and [any]/[any]/main.py
+^[^/]+/(?!main\.py$|[^/]+/main\.py$)

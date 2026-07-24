@@ -3,11 +3,40 @@ from uuid import UUID
 
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import InitializeTrainingApprovalXCom, InvalidateOldTrainingApprovalXCom, UpdateTrainingApproval
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import InitializeTrainingApprovalXCom, InvalidateOldTrainingApprovalXCom, UpdateTrainingApproval, InvalidateExpiredPromotionApprovalXCom
 from dags.shared.controllers.slack import create_blocks, slack_client
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.environment.slack import slack_environment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
+
+@task(task_id="invalidate_expired_promotion_approval")
+def invalidate_expired_promotion_approval(**context) -> None:
+    invalidate_expired_promotion_approval_xcom = InvalidateExpiredPromotionApprovalXCom.from_context(context)
+
+    slack_client.chat_update(
+        ts=invalidate_expired_promotion_approval_xcom.promotion_approval_slack_ts,
+        channel=slack_environment.SLACK_CHANNEL_ID,
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"~{(
+                        "⚠️ Challenger Model Promotion Required"
+                    )}~"
+                }
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "🔄 Expired: a newer request will be issued."
+                    }
+                ]
+            }
+        ]
+    )
 
 @task(task_id="invalidate_old_training_approval")
 def invalidate_old_training_approval(**context) -> None:

@@ -5,7 +5,7 @@ from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from services.fraud_detection.src.modules.schemas.slack import TrainingValue
+from services.fraud_detection.src.modules.schemas.slack import TrainingValue, PromotionValue
 from services.fraud_detection.src.services.airflow import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
 from services.fraud_detection.src.services.slack import update_message, common_callback_configurations
@@ -34,7 +34,7 @@ def approve_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "training_callback",
+            "on_training_decision",
             {
                 "approved": True,
                 "workflow_id": str(training_value.workflow_id),
@@ -58,7 +58,7 @@ def reject_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "training_callback",
+            "on_training_decision",
             {
                 "approved": False,
                 "workflow_id": str(training_value.workflow_id),
@@ -68,7 +68,7 @@ def reject_training(
         update_message(
             client,
             body,
-            f"❌ *Training rejected* by @{body['user']['username']}."
+            f"❌ *Training dismissed* by @{body['user']['username']}."
         )
 
 @slack_app.action("approve_retraining")
@@ -82,7 +82,7 @@ def approve_retraining(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "training_callback",
+            "on_training_decision",
             {
                 "approved": True,
                 "workflow_id": str(training_value.workflow_id),
@@ -106,7 +106,7 @@ def reject_training(
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
         training_value = TrainingValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "training_callback",
+            "on_training_decision",
             {
                 "approved": False,
                 "workflow_id": str(training_value.workflow_id),
@@ -116,7 +116,7 @@ def reject_training(
         update_message(
             client,
             body,
-            f"❌ *Retraining rejected* by @{body['user']['username']}."
+            f"❌ *Retraining dismissed* by @{body['user']['username']}."
         )
 
 @slack_app.action("approve_promotion")
@@ -128,11 +128,12 @@ def approve_promotion(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
+        promotion_value = PromotionValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "promotion_callback",
+            "on_promotion_decision",
             {
                 "approved": True,
-                **common_callback_configurations(body)
+                "workflow_id": str(promotion_value.workflow_id),
             }
         )
         update_message(
@@ -150,17 +151,18 @@ def reject_promotion(
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
+        promotion_value = PromotionValue.model_validate_json(action["value"])
         trigger_airflow_dag(
-            "promotion_callback",
+            "on_promotion_decision",
             {
                 "approved": False,
-                **common_callback_configurations(body)
+                "workflow_id": str(promotion_value.workflow_id),
              }
         )
         update_message(
             client,
             body,
-            f"❌ *Promotion rejected* by @{body['user']['username']}."
+            f"❌ *Promotion dismissed* by @{body['user']['username']}."
         )
 
 def start_socket_mode() -> None:

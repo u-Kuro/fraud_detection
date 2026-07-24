@@ -54,8 +54,8 @@ def main() -> None:
         save_model_metrics(
             mlflow_model_run_id=registered_model_info.run_id,
             mlflow_model_id=registered_model_info.model_id,
-            model_metrics=model_evaluations.metrics,
-            model_metric_figures=model_evaluations.metric_figures
+            model_metrics=model_evaluations.metrics.model_dump(),
+            model_metric_figures=model_evaluations.metric_figures.model_dump()
         )
 
     dataset_min_max_timestamps = get_dataset_min_and_max_timestamps(
@@ -70,7 +70,10 @@ def main() -> None:
         TrainingPipelineKeys.MODEL_VERSION: registered_model_info.model_version,
         TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_min_iso_datetime,
         TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_max_iso_datetime,
-        TrainingPipelineKeys.MODEL_METRICS: model_evaluations.metrics,
+        TrainingPipelineKeys.MODEL_F1_SCORE: model_evaluations.metrics.f1_score,
+        TrainingPipelineKeys.MODEL_PR_AUC: model_evaluations.metrics.pr_auc,
+        TrainingPipelineKeys.MODEL_RECALL: model_evaluations.metrics.recall,
+        TrainingPipelineKeys.MODEL_PRECISION: model_evaluations.metrics.precision,
     })
 
 if __name__ == "__main__":

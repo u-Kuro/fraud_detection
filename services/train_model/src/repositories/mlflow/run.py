@@ -9,9 +9,11 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from matplotlib.figure import Figure
 from pandas import DataFrame
+from pydantic import validate_call
 
 from services.shared.modules.configs import MLFlowConfig
 from services.train_model.src.modules.configs.mlflow import MLFlowArtifactsConfig
+from services.train_model.src.modules.schemas.evaluation import ModelEvaluationMetrics, ModelEvaluationFigures
 from services.train_model.src.repositories.mlflow.mlflow import mlflow_client
 
 @contextmanager
@@ -63,10 +65,11 @@ def save_model_hyperparameters(
         run_id=mlflow_model_run_id
     )
 
+@validate_call()
 def save_model_metrics(
     mlflow_model_run_id: str,
     mlflow_model_id: str,
-    model_metrics: dict[str, Any],
+    model_metrics: dict[str, float],
     model_metric_figures: dict[str, Figure]
 ) -> None:
     mlflow.log_metrics(
@@ -78,6 +81,7 @@ def save_model_metrics(
 
     save_model_metric_figures(model_metric_figures)
 
+@validate_call()
 def save_model_metric_figures(
     model_metric_figures: dict[str, Figure]
 ) -> None:

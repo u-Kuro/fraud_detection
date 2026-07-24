@@ -1,8 +1,8 @@
 from airflow.sdk import task, TriggerRule
 
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches
-from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflows
-from dags.model_lifecycle_orchestrator.services.tasks import drift_check_task_id, dispatch_training_approval
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches
+from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflows
+from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import dispatch_training_approval, drift_check
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
@@ -29,7 +29,7 @@ def has_any_active_model() -> str:
     has_active_model = bool(result[0])
 
     if has_active_model:
-        return drift_check_task_id
+        return drift_check.__name__
     else:
         return build_task_id((
             dispatch_training_approval.__name__,

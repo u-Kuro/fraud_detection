@@ -3,6 +3,9 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class AirflowConfig:
     owner: str = "mle"
+
+    kubeconfig_file_path: str = "/usr/local/airflow/dags/kubeconfig.yaml"
+
     base_environment_prefix: str = "AIRFLOW_VAR_"
     mle_environment_prefix: str = "MLE"
 
@@ -12,6 +15,6 @@ class AirflowConfig:
 
 @dataclass(frozen=True)
 class DagIDs:
-    model_lifecycle_orchestrator: str = "model_lifecycle_orchestrator"
-    challenger_model_invalidation: str = "challenger_model_invalidation"
-    training_approval_dispatch: str = "training_approval_dispatch"
+    check_training_need: str = "check_training_eligibility"
+    on_training_decision: str = "on_training_decision"
+    on_promotion_decision: str = "on_promotion_decision"

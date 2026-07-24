@@ -12,7 +12,6 @@ def run_promotion(**context) -> KubernetesPodOperator:
         task_id="run_promotion",
         name="promotion",
         namespace="default",
-        # TODO - no promotion-pipeline in platform-gitops infra i think?
         image=f"{ecr_config.ECR_URL}/promotion-pipeline:latest",
         image_pull_policy="Always",
         image_pull_secrets=[

@@ -1,12 +1,9 @@
-from typing import Any
-
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
+from matplotlib import pyplot as plt, ticker
 from sklearn.metrics import f1_score, average_precision_score, recall_score, precision_score, roc_auc_score, accuracy_score, ConfusionMatrixDisplay
 
 from services.shared.modules.configs import MLFlowConfig
-from services.train_model.src.modules.schemas.evaluate import EvaluateModelOutputs
+from services.train_model.src.modules.schemas.evaluation import EvaluateModelOutputs, ModelEvaluationMetrics, ModelEvaluationFigures
 
 def evaluate_model(
     model: object,
@@ -42,15 +39,15 @@ def evaluate_model_predictions(
     y_pred: np.ndarray,
     y_prob: np.ndarray,
     y_true: np.ndarray
-) -> dict[str, Any]:
-    return {
-        "F1 score": f1_score(y_true, y_pred),
-        "PR-AUC": average_precision_score(y_true, y_prob),
-        "Recall": recall_score(y_true, y_pred),
-        "Precision": precision_score(y_true, y_pred),
-        "ROC-AUC": roc_auc_score(y_true, y_prob),
-        "Accuracy": accuracy_score(y_true, y_pred),
-    }
+) -> ModelEvaluationMetrics:
+    return ModelEvaluationMetrics(
+        f1_score=float(f1_score(y_true, y_pred)),
+        pr_auc=float(average_precision_score(y_true, y_prob)),
+        recall=float(recall_score(y_true, y_pred)),
+        precision=float(precision_score(y_true, y_pred)),
+        roc_auc=float(roc_auc_score(y_true, y_prob)),
+        accuracy=float(accuracy_score(y_true, y_pred)),
+    )
 
 def visualize_model_predictions(
     title: str,
@@ -58,7 +55,7 @@ def visualize_model_predictions(
     y_prob: np.ndarray,
     y_true: np.ndarray,
     threshold: float = 0.5,
-) -> dict[str, Figure]:
+) -> ModelEvaluationFigures:
     confusion_matrix_figure, confusion_matrix_ax = plt.subplots()
     ConfusionMatrixDisplay.from_predictions(
         y_true,
@@ -87,7 +84,7 @@ def visualize_model_predictions(
     probability_scatter_ax.set_xlabel("Fraud Probability Score")
     probability_scatter_ax.set_title(title)
 
-    return {
-        f"probability_scatter_{title.lower()}": probability_scatter_figure,
-        f"confusion_matrix_{title.lower()}": confusion_matrix_figure,
-    }
+    return ModelEvaluationFigures(
+        probability_scatter=probability_scatter_figure,
+        confusion_matrix=confusion_matrix_figure,
+    )

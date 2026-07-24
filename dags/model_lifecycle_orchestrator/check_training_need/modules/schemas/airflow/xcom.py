@@ -3,13 +3,32 @@ from uuid import UUID
 from airflow.sdk.types import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
-from dags.model_lifecycle_orchestrator.controllers.slack import initialize_training_approval
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, SetupTrainingApprovalBranches
-from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflows, initialize_train_pending_workflow
-from dags.model_lifecycle_orchestrator.services.tasks import invalidate_expired_challenger_model, drift_check_task_id, dispatch_training_approval, setup_training_approval
-from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys, DriftMonitorKeys, ModelDeploymentWorkflowsKeys
+from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import initialize_training_approval
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftMonitorKeys, ModelDeploymentSuccessionKeys
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, SetupTrainingApprovalBranches
+from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflows, initialize_train_pending_workflow
+from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, drift_check, dispatch_training_approval, setup_training_approval
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.modules.utilities.airflow.xcom import build_task_id, xcom_pull_coalesce
+
+class InvalidateExpiredPromotionApprovalXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    promotion_approval_slack_ts: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "InvalidateExpiredPromotionApprovalXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            promotion_approval_slack_ts=ti.xcom_pull(
+                task_ids=build_task_id((
+                    invalidate_expired_challenger_model.__name__,
+                    has_expired_promote_pending_workflow_with_replacement.__name__
+                )),
+                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
+            )
+        )
 
 class ReplaceExpiredModelXCom(BaseModel):
     model_config = ConfigDict(strict=True)
@@ -110,7 +129,7 @@ class InvalidateOldTrainingApprovalXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             drift_detected=ti.xcom_pull(
-                task_ids=drift_check_task_id.__name__,
+                task_ids=drift_check.__name__,
                 key=DriftMonitorKeys.DRIFT_DETECTED,
             ),
             training_approval_slack_ts=xcom_pull_coalesce(
@@ -167,7 +186,7 @@ class InitializeTrainingApprovalXCom(BaseModel):
                 key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
             ),
             drift_summary=ti.xcom_pull(
-                task_ids=drift_check_task_id.__name__,
+                task_ids=drift_check.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY,
             )
         )
@@ -243,7 +262,7 @@ class UpdateTrainingApproval(BaseModel):
                 key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
             ),
             drift_summary=ti.xcom_pull(
-                task_ids=drift_check_task_id.__name__,
+                task_ids=drift_check.__name__,
                 key=DriftMonitorKeys.DRIFT_SUMMARY,
             ),
             for_promotion=xcom_pull_coalesce(
@@ -267,7 +286,7 @@ class HasDriftXCom(BaseModel):
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
             drift_detected=ti.xcom_pull(
-                task_ids=drift_check_task_id.__name__,
+                task_ids=drift_check.__name__,
                 key=DriftMonitorKeys.DRIFT_DETECTED,
             )
         )

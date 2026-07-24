@@ -1,6 +1,6 @@
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import ReplaceExpiredModelXCom, DeleteExpiredModelXCom
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import ReplaceExpiredModelXCom, DeleteExpiredModelXCom
 from dags.shared.modules.configs.mlflow import MLFlowConfig
 from dags.shared.repositories.mlflow import mlflow_client
 

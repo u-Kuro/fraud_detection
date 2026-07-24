@@ -14,7 +14,6 @@ def promotion_callback(**context) -> str:
     configurations = PromotionCallbackConfigurations.from_context(context)
     if configurations.approved:
         task_context = AirflowTaskContext.from_context(context)
-        # TODO - try and check if PostgresHook()
         # hook = PostgresHook(postgres_conn_id="mle_postgres")
         #
         #     # get_records() for simple iteration

@@ -2,14 +2,14 @@ from uuid import UUID
 
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.controllers.slack import invalidate_old_training_approval
-from dags.model_lifecycle_orchestrator.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import NoActionBranches
-from dags.model_lifecycle_orchestrator.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom, ReinitializeTrainPendingWorkflow, UpdateTrainPendingWorkflow
-from dags.model_lifecycle_orchestrator.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
-from dags.model_lifecycle_orchestrator.repositories.mlflow.registered_model import replace_expired_model
-from dags.model_lifecycle_orchestrator.services.tasks import invalidate_expired_challenger_model, no_action
-from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys, ModelDeploymentWorkflowsKeys
+from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom, ReinitializeTrainPendingWorkflow, UpdateTrainPendingWorkflow
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
+from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, no_action
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState, ModelDeploymentWorkflowsColumnKeys
@@ -21,6 +21,9 @@ from dags.shared.repositories.postgres import postgres_hook
 def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
     results = postgres_hook.get_pandas_df(f"""
         SELECT
+            expired.{ModelDeploymentWorkflowsColumnKeys.promotion_approval_slack_ts}
+                 AS {ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS},
+                 
             replacement.{ModelDeploymentWorkflowsColumnKeys.registered_model_name}
                  AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME},
             replacement.{ModelDeploymentWorkflowsColumnKeys.registered_model_version}
@@ -62,6 +65,9 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
     else:
         result = results.iloc[0]
 
+        expired_promotion_approval_slack_ts = result[ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS]
+        assert isinstance(expired_promotion_approval_slack_ts, str)
+
         replacement_model_name = result[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME]
         assert isinstance(replacement_model_name, str)
 
@@ -81,6 +87,11 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
         assert isinstance(expired_id, UUID)
 
         ti = AirflowTaskContext.from_context(context).ti
+        ti.xcom_push(
+            key=ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS,
+            value=expired_promotion_approval_slack_ts
+        )
+
         ti.xcom_push(
             key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
             value=replacement_model_name
@@ -111,7 +122,7 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
 
         return build_task_id((
             invalidate_expired_challenger_model.__name__,
-            replace_expired_model.__name__
+            invalidate_slack_promotion_approval.__name__
         ))
 
 @task(task_id="delete_expired_promote_pending_workflow")
