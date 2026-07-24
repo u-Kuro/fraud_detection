@@ -9,3 +9,10 @@ class AirflowTaskContext(BaseModel):
     @classmethod
     def from_context(cls, context: dict) -> "AirflowTaskContext":
         return cls(ti=context["ti"])
+
+class AirflowDAGRunConfigurationsContext(BaseModel):
+    conf: dict
+
+    @classmethod
+    def from_context(cls, context: dict) -> "AirflowDAGRunConfigurationsContext":
+        return cls(conf=context["dag_run"].conf)

@@ -12,7 +12,8 @@ from dags.model_lifecycle_orchestrator.services.tasks import invalidate_expired_
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys, ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
-from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState
+from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState, ModelDeploymentWorkflowsColumnKeys
+from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
 from dags.shared.repositories.postgres import postgres_hook
 
@@ -20,23 +21,29 @@ from dags.shared.repositories.postgres import postgres_hook
 def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
     results = postgres_hook.get_pandas_df(f"""
         SELECT
-            replacement.registered_model_name       AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME},
-            replacement.registered_model_version    AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION},
+            replacement.{ModelDeploymentWorkflowsColumnKeys.registered_model_name}
+                 AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME},
+            replacement.{ModelDeploymentWorkflowsColumnKeys.registered_model_version}
+                 AS {ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION},
             
-            expired.registered_model_name           AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME},
-            expired.registered_model_version        AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION},
+            expired.{ModelDeploymentWorkflowsColumnKeys.registered_model_name}
+                 AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME},
+            expired.{ModelDeploymentWorkflowsColumnKeys.registered_model_version}
+                 AS {ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION},
                         
-            expired.mlflow_run_id                   AS {ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID},
+            expired.{ModelDeploymentWorkflowsColumnKeys.mlflow_run_id}
+                 AS {ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID},
             
-            expired.id                              AS {ModelDeploymentSuccessionKeys.EXPIRED_ID}
-        FROM model_deployment_workflows expired
-        JOIN model_deployment_workflows replacement
-            ON replacement.project_id = %(project_id)s
-            AND replacement.state = %(promote_pending_replacement_state)s
+            expired.{ModelDeploymentWorkflowsColumnKeys.id}
+                  AS {ModelDeploymentSuccessionKeys.EXPIRED_ID}
+        FROM {PostgresTableKeys.model_deployment_workflows} expired
+        JOIN {PostgresTableKeys.model_deployment_workflows} replacement
+            ON replacement.{ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+            AND replacement.{ModelDeploymentWorkflowsColumnKeys.state} = %(promote_pending_replacement_state)s
         WHERE
-            expired.project_id = %(project_id)s
-        AND expired.state = %(promote_pending_state)s
-        AND expired.model_trained_at < NOW() - %(challenger_model_expiration_days)s * INTERVAL '1 day'
+            expired.{ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+        AND expired.{ModelDeploymentWorkflowsColumnKeys.state} = %(promote_pending_state)s
+        AND expired.{ModelDeploymentWorkflowsColumnKeys.model_trained_at} < NOW() - %(challenger_model_expiration_days)s * INTERVAL '1 day'
         LIMIT 1
         """, {
             "project_id": PostgresConfig.PROJECT_ID,
@@ -111,12 +118,12 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
 def delete_expired_promote_pending_workflow(**context) -> None:
     delete_expired_promote_pending_workflow_xcom = DeleteExpiredPromotePendingWorkflowXCom.from_context(context)
 
-    postgres_hook.run("""
-        DELETE FROM model_deployment_workflows
+    postgres_hook.run(f"""
+        DELETE FROM {PostgresTableKeys.model_deployment_workflows}
         WHERE 
-            id = %(id)s
-        AND project_id = %(project_id)s
-        AND state = %(state)s
+            {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
+        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+        AND {ModelDeploymentWorkflowsColumnKeys.state} = %(state)s
         """, parameters={
             "id": delete_expired_promote_pending_workflow_xcom.expired_id,
             "project_id": PostgresConfig.PROJECT_ID,
@@ -128,9 +135,9 @@ def get_current_model_deployment_workflows() -> list[ModelDeploymentWorkflow] | 
     model_deployment_workflow_keys = ModelDeploymentWorkflow.model_field_keys()
     model_deployment_workflow_rows = postgres_hook.get_records(f"""
         SELECT {",".join(model_deployment_workflow_keys)}
-        FROM model_deployment_workflows
-        WHERE project_id = %(project_id)s
-        ORDER BY created_at DESC
+        FROM {PostgresTableKeys.model_deployment_workflows}
+        WHERE {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+        ORDER BY {ModelDeploymentWorkflowsColumnKeys.created_at} DESC
         LIMIT 2
         """, {
             "project_id": PostgresConfig.PROJECT_ID
@@ -150,16 +157,16 @@ def get_current_model_deployment_workflows() -> list[ModelDeploymentWorkflow] | 
 
 @task(task_id="initialize_train_pending_workflow")
 def initialize_train_pending_workflow(**context) -> None:
-    result = postgres_hook.get_first("""
-        INSERT INTO model_deployment_workflows (
-            project_id,
-            state
+    result = postgres_hook.get_first(f"""
+        INSERT INTO {PostgresTableKeys.model_deployment_workflows} (
+            {ModelDeploymentWorkflowsColumnKeys.project_id},
+            {ModelDeploymentWorkflowsColumnKeys.state}
         )
         VALUES (
             %(project_id)s,
             %(state)s
         )
-        RETURNING id
+        RETURNING {ModelDeploymentWorkflowsColumnKeys.id}
         """, parameters={
             "project_id": PostgresConfig.PROJECT_ID,
             "state": ModelDeploymentWorkflowState.train_pending
@@ -180,13 +187,13 @@ def initialize_train_pending_workflow(**context) -> None:
 def reinitialize_train_pending_workflow(**context) -> None:
     reinitialize_train_pending_workflow_xcom = ReinitializeTrainPendingWorkflow.from_context(context)
 
-    postgres_hook.run("""
-        UPDATE model_deployment_workflows
-        SET created_at = NOW(),
-            state = %(state)s
+    postgres_hook.run(f"""
+        UPDATE {PostgresTableKeys.model_deployment_workflows}
+        SET {ModelDeploymentWorkflowsColumnKeys.created_at} = NOW(),
+            {ModelDeploymentWorkflowsColumnKeys.state} = %(state)s
         WHERE
-            id = %(id)s
-        AND project_id = %(project_id)s
+            {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
+        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
             "id": reinitialize_train_pending_workflow_xcom.workflow_id,
             "project_id": PostgresConfig.PROJECT_ID,
@@ -198,12 +205,12 @@ def reinitialize_train_pending_workflow(**context) -> None:
 def update_train_pending_workflow(**context) -> None:
     update_train_pending_workflow_xcom = UpdateTrainPendingWorkflow.from_context(context)
 
-    postgres_hook.run("""
-        UPDATE model_deployment_workflows
-        SET training_approval_slack_ts = %(training_approval_slack_ts)s
+    postgres_hook.run(f"""
+        UPDATE {PostgresTableKeys.model_deployment_workflows}
+        SET {ModelDeploymentWorkflowsColumnKeys.training_approval_slack_ts} = %(training_approval_slack_ts)s
         WHERE
-            id = %(id)s
-        AND project_id = %(project_id)s
+            {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
+        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
             "id": update_train_pending_workflow_xcom.workflow_id,
             "project_id": PostgresConfig.PROJECT_ID,

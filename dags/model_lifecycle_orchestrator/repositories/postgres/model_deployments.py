@@ -4,6 +4,8 @@ from dags.model_lifecycle_orchestrator.modules.schemas.airflow.branches import D
 from dags.model_lifecycle_orchestrator.repositories.postgres.model_deployment_workflows import check_current_model_deployment_workflows
 from dags.model_lifecycle_orchestrator.services.tasks import drift_check_task_id, dispatch_training_approval
 from dags.shared.modules.configs.postgres import PostgresConfig
+from dags.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
+from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
 from dags.shared.repositories.postgres import postgres_hook
 
@@ -12,12 +14,13 @@ from dags.shared.repositories.postgres import postgres_hook
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
 )
 def has_any_active_model() -> str:
-    result = postgres_hook.get_first("""
+    result = postgres_hook.get_first(f"""
         SELECT EXISTS (
-            SELECT 1 FROM model_deployments
+            SELECT 1
+            FROM {PostgresTableKeys.model_deployments}
             WHERE
-                project_id = %(project_id)s
-            AND active
+                {ModelDeploymentsColumnKeys.project_id} = %(project_id)s
+            AND {ModelDeploymentsColumnKeys.active}
         )
         """, {
             "project_id": PostgresConfig.PROJECT_ID

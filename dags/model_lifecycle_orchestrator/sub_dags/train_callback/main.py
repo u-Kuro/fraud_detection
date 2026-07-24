@@ -20,17 +20,20 @@ from dags.model_lifecycle_orchestrator.sub_dags.train_callback.services.training
     tags=["mle", "training", "callback"]
 )
 def training_callback_dag():
-    # TODO - 23/07/2026 Continue here...
+    # TODO - 24/07/2026 Continue here
     training_callback() >> [
         update_approved_training_workflow() \
-        >> start_training_pipeline(),
+        >> train_model
+        >> update_trained_model_info_in_workflow()
+        >> initialize_promotion_approval()
+        >> update_promotion_pending_workflow()
+        >> update_promotion_approval(),
 
         delete_rejected_training_workflow()
     ]
 
     """
     training_callback
-    >> acknowledge_training_approval (already approved/rejected)
         >> update_approved_training_workflow (training_approved = true)
         >> train_model
         >> update_trained_model_info_in_workflow (model_name = xgboost) 
