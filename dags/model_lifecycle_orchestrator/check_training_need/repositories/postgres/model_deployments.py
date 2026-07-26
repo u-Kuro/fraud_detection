@@ -23,7 +23,7 @@ def has_any_active_model() -> str:
             AND {ModelDeploymentsColumnKeys.active}
         )
         """, {
-            "project_id": PostgresConfig.PROJECT_ID
+            "project_id": PostgresConfig.PROJECT_ID()
         }
     )
     has_active_model = bool(result[0])

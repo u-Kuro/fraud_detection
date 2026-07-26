@@ -33,7 +33,7 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
             """),
             connection,
             params={
-                "project_id": PostgresConfig.PROJECT_ID,
+                "project_id": PostgresConfig.PROJECT_ID(),
                 "MAXIMUM_DATASET_ROWS": DatasetConfig.MAXIMUM_DATASET_ROWS
             }
         )

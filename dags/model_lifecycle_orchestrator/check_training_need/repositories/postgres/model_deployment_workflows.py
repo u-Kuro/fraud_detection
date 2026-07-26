@@ -49,7 +49,7 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
         AND expired.{ModelDeploymentWorkflowsColumnKeys.model_trained_at} < NOW() - %(challenger_model_expiration_days)s * INTERVAL '1 day'
         LIMIT 1
         """, {
-            "project_id": PostgresConfig.PROJECT_ID,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "promote_pending_state": ModelDeploymentWorkflowState.promote_pending,
             "promote_pending_replacement_state": ModelDeploymentWorkflowState.promote_pending_replacement,
             "challenger_model_expiration_days": ModelDeploymentWorkflowsConfig.challenger_model_expiration_days,
@@ -137,7 +137,7 @@ def delete_expired_promote_pending_workflow(**context) -> None:
         AND {ModelDeploymentWorkflowsColumnKeys.state} = %(state)s
         """, parameters={
             "id": delete_expired_promote_pending_workflow_xcom.expired_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "state": ModelDeploymentWorkflowState.promote_pending,
         }
     )
@@ -151,7 +151,7 @@ def get_current_model_deployment_workflows() -> list[ModelDeploymentWorkflow] | 
         ORDER BY {ModelDeploymentWorkflowsColumnKeys.created_at} DESC
         LIMIT 2
         """, {
-            "project_id": PostgresConfig.PROJECT_ID
+            "project_id": PostgresConfig.PROJECT_ID()
         }
     )
 
@@ -179,7 +179,7 @@ def initialize_train_pending_workflow(**context) -> None:
         )
         RETURNING {ModelDeploymentWorkflowsColumnKeys.id}
         """, parameters={
-            "project_id": PostgresConfig.PROJECT_ID,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "state": ModelDeploymentWorkflowState.train_pending
         }
     )
@@ -207,7 +207,7 @@ def reinitialize_train_pending_workflow(**context) -> None:
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
             "id": reinitialize_train_pending_workflow_xcom.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "state": ModelDeploymentWorkflowState.train_pending
         }
     )
@@ -224,7 +224,7 @@ def update_train_pending_workflow(**context) -> None:
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
             "id": update_train_pending_workflow_xcom.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "training_approval_slack_ts": update_train_pending_workflow_xcom.training_approval_slack_ts
         }
     )

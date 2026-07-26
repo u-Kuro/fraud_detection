@@ -30,6 +30,7 @@ CREATE TABLE model_deployments (
     project_id              UUID                NOT NULL                                        REFERENCES projects(id),
     name                    TEXT                NOT NULL,
     version                 INT                 NOT NULL,
+    mlflow_run_id           TEXT                NOT NULL,
     dataset_min_timestamp   TIMESTAMPTZ         NULL,
     dataset_max_timestamp   TIMESTAMPTZ         NOT NULL,
     active                  BOOLEAN             NOT NULL        DEFAULT FALSE,

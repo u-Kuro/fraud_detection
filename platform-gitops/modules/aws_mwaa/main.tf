@@ -12,6 +12,7 @@ resource "aws_s3_object" "requirements" {
   content = <<-REQ
     apache-airflow-providers-amazon==9.31.0
     apache-airflow-providers-cncf-kubernetes==10.18.0
+    apache-airflow-providers-http==6.0.4
     apache-airflow-providers-postgres==6.8.0
     apache-airflow-providers-slack==9.10.2
     kubernetes==36.0.2
@@ -80,6 +81,7 @@ resource "aws_mwaa_environment" "main" {
   airflow_configuration_options = {
     "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
     "secrets.backend_kwargs" = jsonencode({
+      # TODO - adding postgres and github and s3?
       connections_prefix = "airflow/connections"
       variables_prefix   = "airflow/variables"
       sep                = "/"

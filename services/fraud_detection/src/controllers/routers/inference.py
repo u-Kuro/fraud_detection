@@ -3,7 +3,6 @@ from fastapi import APIRouter, HTTPException
 from services.fraud_detection.src.modules.schemas import FraudClassificationRequest
 from services.fraud_detection.src.repositories.postgres.transaction_inferences import insert_transaction_inference
 from services.fraud_detection.src.services import model_states
-from services.shared import logger
 from services.shared.modules.schemas import FraudClassificationResponse
 
 router = APIRouter(prefix="/inference", tags=["inference"])
@@ -20,8 +19,7 @@ def classify(transaction_details: FraudClassificationRequest) -> FraudClassifica
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=f"Bad input: {exc}")
     except Exception as exc:
-        logger.error(f"Prediction error: {exc}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Inference error.")
+        raise HTTPException(status_code=500, detail=f"Inference error: {exc}")
 
     insert_transaction_inference(transaction_inference)
 

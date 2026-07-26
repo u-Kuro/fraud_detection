@@ -2,6 +2,6 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ProjectsColumnKeys:
-    id = "id"
-    created_at = "created_at"
-    name = "name"
+    id: str = "id"
+    created_at: str = "created_at"
+    name: str = "name"

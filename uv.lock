@@ -1266,6 +1266,7 @@ archiving = [
 dev = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-cncf-kubernetes" },
+    { name = "apache-airflow-providers-http" },
     { name = "apache-airflow-providers-postgres" },
     { name = "apache-airflow-providers-slack" },
     { name = "httpx" },
@@ -1352,6 +1353,7 @@ archiving = [
 dev = [
     { name = "apache-airflow-providers-amazon", specifier = ">=9.31.0" },
     { name = "apache-airflow-providers-cncf-kubernetes", specifier = ">=10.18.0" },
+    { name = "apache-airflow-providers-http", specifier = ">=6.0.4" },
     { name = "apache-airflow-providers-postgres", specifier = ">=6.8.0" },
     { name = "apache-airflow-providers-slack", specifier = ">=9.10.2" },
     { name = "httpx", specifier = ">=0.28.1" },

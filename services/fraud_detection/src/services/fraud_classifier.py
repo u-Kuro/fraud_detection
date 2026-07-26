@@ -1,16 +1,16 @@
 import pandas as pd
 
-from services.fraud_detection.src.modules.configs import fraud_classifier_config
+from services.fraud_detection.src.modules.configs import FraudClassifierConfig
 from services.fraud_detection.src.modules.schemas import (
     FraudClassificationRequest,
     FraudClassificationOutput,
 )
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
-from services.shared.modules.schemas import FraudClassificationFeatures
+from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationTransactionTimestamp
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, class_name=self.__class__.__name__)
+        super().__init__(*args, **kwargs)
 
     def classify(
         self,
@@ -21,12 +21,12 @@ class FraudClassifier(MlflowModel):
         )
 
         features_df = pd.DataFrame([features])
-        features_df["transaction_timestamp"] = features_df[
-            "transaction_timestamp"
+        features_df[FraudClassificationTransactionTimestamp.model_field_key()] = features_df[
+            FraudClassificationTransactionTimestamp.model_field_key()
         ].apply(lambda x: int(x.timestamp()))
 
         fraud_probability = float(self.model.predict_proba(features_df)[0][1])
-        fraud_prediction = fraud_probability > fraud_classifier_config.CLASSIFICATION_THRESHOLD
+        fraud_prediction = fraud_probability > FraudClassifierConfig.CLASSIFICATION_THRESHOLD
 
         return FraudClassificationOutput(
             **transaction_details.model_dump(),

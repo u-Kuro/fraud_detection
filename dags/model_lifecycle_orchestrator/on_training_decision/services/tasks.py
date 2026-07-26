@@ -2,19 +2,18 @@ from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperato
 from airflow.sdk import task
 from kubernetes import client as k8s
 
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingCallbackConfigurations
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
 
-from dags.model_lifecycle_orchestrator.on_training_decision.repositories.model_deployment_workflows import update_approved_training_workflow, delete_rejected_training_workflow
+from dags.model_lifecycle_orchestrator.on_training_decision.repositories.postgres.model_deployment_workflows import update_approved_training_workflow, delete_rejected_training_workflow
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
 from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKeys
 from dags.shared.modules.configs.kubernetes import K8sConfig, K8sConfigMapKeys, K8sSecretKeys
 
-
 @task.branch(task_id="training_decision_callback")
 def training_decision_callback(**context) -> str:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
 
-    if training_callback_configurations.approved:
+    if training_decision_callback_configurations.approved:
         return update_approved_training_workflow.__name__
     else:
         return delete_rejected_training_workflow.__name__

@@ -2,9 +2,8 @@ from datetime import datetime
 
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingCallbackConfigurations
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.xcom import \
-    UpdateTrainedModelInfoInWorkflowXCom, UpdatePromotionPendingWorkflow
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.xcom import UpdateTrainedModelInfoInWorkflowXCom, UpdatePromotionPendingWorkflow
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
@@ -12,7 +11,7 @@ from dags.shared.repositories.postgres import postgres_hook
 
 @task.branch(task_id="update_approved_training_workflow")
 def update_approved_training_workflow(**context) -> None:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
 
     postgres_hook.run(f"""
         UPDATE {PostgresTableKeys.model_deployment_workflows}
@@ -21,15 +20,15 @@ def update_approved_training_workflow(**context) -> None:
             {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
-            "id": training_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "id": training_decision_callback_configurations.workflow_id,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "training_approved": True
         }
     )
 
 @task.branch(task_id="delete_rejected_training_workflow")
 def delete_rejected_training_workflow(**context) -> None:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
 
     postgres_hook.run(f"""
         DELETE FROM {PostgresTableKeys.model_deployment_workflows}
@@ -37,14 +36,14 @@ def delete_rejected_training_workflow(**context) -> None:
             {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
-            "id": training_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID
+            "id": training_decision_callback_configurations.workflow_id,
+            "project_id": PostgresConfig.PROJECT_ID()
         }
     )
 
 @task(task_id="update_trained_model_info_in_workflow")
 def update_trained_model_info_in_workflow(**context) -> None:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
     update_trained_model_info_in_workflow_xcom = UpdateTrainedModelInfoInWorkflowXCom.from_context(context)
 
     postgres_hook.run(f"""
@@ -59,8 +58,8 @@ def update_trained_model_info_in_workflow(**context) -> None:
             {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
-            "id": training_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "id": training_decision_callback_configurations.workflow_id,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "model_trained_at": datetime.fromisoformat(update_trained_model_info_in_workflow_xcom.model_trained_at_iso_datetime),
             "mlflow_run_id": update_trained_model_info_in_workflow_xcom.mlflow_run_id,
             "registered_model_name": update_trained_model_info_in_workflow_xcom.model_name,
@@ -72,7 +71,7 @@ def update_trained_model_info_in_workflow(**context) -> None:
 
 @task(task_id="update_promotion_pending_workflow")
 def update_promotion_pending_workflow(**context) -> None:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
     update_promotion_pending_workflow_xcom = UpdatePromotionPendingWorkflow.from_context(context)
 
     postgres_hook.run(f"""
@@ -82,8 +81,8 @@ def update_promotion_pending_workflow(**context) -> None:
             {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
         AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
         """, parameters={
-            "id": training_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID,
+            "id": training_decision_callback_configurations.workflow_id,
+            "project_id": PostgresConfig.PROJECT_ID(),
             "promotion_approval_slack_ts": update_promotion_pending_workflow_xcom.promotion_approval_slack_ts
         }
     )

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingCallbackConfigurations
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.xcom import InitializePromotionApprovalXCom, UpdatePromotionApproval
 from dags.shared.controllers.slack import slack_client, create_blocks
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
@@ -70,7 +70,7 @@ def model_promotion_buttons(workflow_id: UUID) -> list:
 
 @task(task_id="update_promotion_approval")
 def update_promotion_approval(**context) -> None:
-    training_callback_configurations = TrainingCallbackConfigurations.from_context(context)
+    training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
     update_promotion_approval_xcom = UpdatePromotionApproval.from_context(context)
 
     slack_client.chat_update(
@@ -89,7 +89,7 @@ def update_promotion_approval(**context) -> None:
                 "Click Approve Promotion to promote to production."
             ),
             buttons=model_promotion_buttons(
-                workflow_id=training_callback_configurations.workflow_id
+                workflow_id=training_decision_callback_configurations.workflow_id
             )
         )
     )

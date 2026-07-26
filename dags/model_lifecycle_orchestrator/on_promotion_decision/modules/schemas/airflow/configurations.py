@@ -4,13 +4,12 @@ from pydantic import BaseModel, ConfigDict
 
 from dags.shared.modules.schemas.airflow import AirflowDAGRunConfigurationsContext
 
-class TrainingDecisionCallbackConfigurations(BaseModel):
+class PromotionDecisionCallbackConfigurations(BaseModel):
     model_config = ConfigDict(strict=False)
 
     approved: bool
     workflow_id: UUID
-    for_promotion: bool
 
     @classmethod
-    def from_context(cls, context: dict) -> "TrainingDecisionCallbackConfigurations":
+    def from_context(cls, context: dict) -> "PromotionDecisionCallbackConfigurations":
         return cls.model_validate(AirflowDAGRunConfigurationsContext.from_context(context).conf)
