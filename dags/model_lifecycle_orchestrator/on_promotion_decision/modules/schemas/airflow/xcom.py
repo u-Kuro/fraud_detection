@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from airflow.models import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
@@ -6,9 +8,9 @@ from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgr
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 
 class ArchiveUsedTransactionInferencesXCom(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
-    transaction_inferences_archive_cutoff_iso_datetime: str
+    transaction_inferences_archive_cutoff_iso_datetime: datetime
 
     @classmethod
     def from_context(cls, context: dict) -> "ArchiveUsedTransactionInferencesXCom":

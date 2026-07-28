@@ -63,7 +63,7 @@ def archive_used_transaction_inferences() -> None:
         env=[
             k8s.V1EnvVar(
                 name=ArchiveKeys.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
-                value=archive_used_transaction_inferences_xcom.transaction_inferences_archive_cutoff_iso_datetime
+                value=archive_used_transaction_inferences_xcom.transaction_inferences_archive_cutoff_iso_datetime.isoformat()
             )
         ],
         env_from=[
