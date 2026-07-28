@@ -4,7 +4,7 @@ from airflow.sdk.types import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import initialize_training_approval
-from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftMonitorKeys, ModelDeploymentSuccessionKeys
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftCheckKeys, ModelDeploymentSuccessionKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, SetupTrainingApprovalBranches
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflows, initialize_train_pending_workflow
 from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, drift_check, dispatch_training_approval, setup_training_approval
@@ -130,7 +130,7 @@ class InvalidateOldTrainingApprovalXCom(BaseModel):
         return cls(
             drift_detected=ti.xcom_pull(
                 task_ids=drift_check.__name__,
-                key=DriftMonitorKeys.DRIFT_DETECTED,
+                key=DriftCheckKeys.DRIFT_DETECTED,
             ),
             training_approval_slack_ts=xcom_pull_coalesce(
                 ti=ti,
@@ -187,7 +187,7 @@ class InitializeTrainingApprovalXCom(BaseModel):
             ),
             drift_summary=ti.xcom_pull(
                 task_ids=drift_check.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY,
+                key=DriftCheckKeys.DRIFT_SUMMARY,
             )
         )
 
@@ -263,7 +263,7 @@ class UpdateTrainingApproval(BaseModel):
             ),
             drift_summary=ti.xcom_pull(
                 task_ids=drift_check.__name__,
-                key=DriftMonitorKeys.DRIFT_SUMMARY,
+                key=DriftCheckKeys.DRIFT_SUMMARY,
             ),
             for_promotion=xcom_pull_coalesce(
                 ti=ti,
@@ -287,6 +287,6 @@ class HasDriftXCom(BaseModel):
         return cls(
             drift_detected=ti.xcom_pull(
                 task_ids=drift_check.__name__,
-                key=DriftMonitorKeys.DRIFT_DETECTED,
+                key=DriftCheckKeys.DRIFT_DETECTED,
             )
         )

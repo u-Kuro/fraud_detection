@@ -7,7 +7,7 @@ from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgr
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import \
     promote_model_deployment
 from dags.model_lifecycle_orchestrator.on_promotion_decision.services.tasks import promotion_decision_callback, \
-    apply_model_deployment
+    apply_model_deployment, archive_used_transaction_inferences
 from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
 
 @dag(
@@ -28,7 +28,8 @@ def on_promotion_decision():
     promotion_decision_callback() >> [
         update_approved_promotion_workflow() \
         >> promote_model_deployment() \
-        >> apply_model_deployment(),
+        >> apply_model_deployment() \
+        >> archive_used_transaction_inferences(),
 
         delete_rejected_promotion_workflow()
     ]

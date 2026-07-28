@@ -1,4 +1,5 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.sdk import get_current_context
 from kubernetes import client as k8s
 
 from dags.model_lifecycle_orchestrator.sub_dags.promotion_pipeline.modules.schemas.airflow.configurations import PromotionPipelineConfigurations
@@ -6,7 +7,9 @@ from dags.model_lifecycle_orchestrator.sub_dags.promotion_pipeline.modules.schem
 from dags.shared.modules.configs import ecr_config
 from dags.shared.modules.configs.airflow import ModelDeploymentWorkflowsKeys
 
-def run_promotion(**context) -> KubernetesPodOperator:
+def run_promotion() -> KubernetesPodOperator:
+    context = get_current_context()
+
     configurations = PromotionPipelineConfigurations.from_context(context)
     return KubernetesPodOperator(
         task_id="run_promotion",

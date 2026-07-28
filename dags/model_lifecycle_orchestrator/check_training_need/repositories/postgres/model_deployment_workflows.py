@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from airflow.sdk import task
+from airflow.sdk import task, get_current_context
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
@@ -18,7 +18,9 @@ from dags.shared.modules.utilities.airflow.xcom import build_task_id
 from dags.shared.repositories.postgres import postgres_hook
 
 @task.branch(task_id="has_expired_promote_pending_workflow_with_replacement")
-def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
+def has_expired_promote_pending_workflow_with_replacement() -> str:
+    context = get_current_context()
+
     results = postgres_hook.get_pandas_df(f"""
         SELECT
             expired.{ModelDeploymentWorkflowsColumnKeys.promotion_approval_slack_ts}
@@ -126,7 +128,9 @@ def has_expired_promote_pending_workflow_with_replacement(**context) -> str:
         ))
 
 @task(task_id="delete_expired_promote_pending_workflow")
-def delete_expired_promote_pending_workflow(**context) -> None:
+def delete_expired_promote_pending_workflow() -> None:
+    context = get_current_context()
+
     delete_expired_promote_pending_workflow_xcom = DeleteExpiredPromotePendingWorkflowXCom.from_context(context)
 
     postgres_hook.run(f"""
@@ -167,7 +171,9 @@ def get_current_model_deployment_workflows() -> list[ModelDeploymentWorkflow] | 
         ]
 
 @task(task_id="initialize_train_pending_workflow")
-def initialize_train_pending_workflow(**context) -> None:
+def initialize_train_pending_workflow() -> None:
+    context = get_current_context()
+
     result = postgres_hook.get_first(f"""
         INSERT INTO {PostgresTableKeys.model_deployment_workflows} (
             {ModelDeploymentWorkflowsColumnKeys.project_id},
@@ -195,7 +201,9 @@ def initialize_train_pending_workflow(**context) -> None:
     )
 
 @task(task_id="reinitialize_train_pending_workflow")
-def reinitialize_train_pending_workflow(**context) -> None:
+def reinitialize_train_pending_workflow() -> None:
+    context = get_current_context()
+
     reinitialize_train_pending_workflow_xcom = ReinitializeTrainPendingWorkflow.from_context(context)
 
     postgres_hook.run(f"""
@@ -213,7 +221,9 @@ def reinitialize_train_pending_workflow(**context) -> None:
     )
 
 @task(task_id="update_train_pending_workflow")
-def update_train_pending_workflow(**context) -> None:
+def update_train_pending_workflow() -> None:
+    context = get_current_context()
+
     update_train_pending_workflow_xcom = UpdateTrainPendingWorkflow.from_context(context)
 
     postgres_hook.run(f"""
@@ -230,7 +240,9 @@ def update_train_pending_workflow(**context) -> None:
     )
 
 @task.branch(task_id="check_current_model_deployment_workflows")
-def check_current_model_deployment_workflows(**context) -> str:
+def check_current_model_deployment_workflows() -> str:
+    context = get_current_context()
+
     ti = AirflowTaskContext.from_context(context).ti
 
     current_model_deployment_workflows = get_current_model_deployment_workflows()

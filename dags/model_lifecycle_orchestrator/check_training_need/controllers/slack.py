@@ -1,7 +1,7 @@
 import json
 from uuid import UUID
 
-from airflow.sdk import task
+from airflow.sdk import task, get_current_context
 
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import InitializeTrainingApprovalXCom, InvalidateOldTrainingApprovalXCom, UpdateTrainingApproval, InvalidateExpiredPromotionApprovalXCom
 from dags.shared.controllers.slack import create_blocks, slack_client
@@ -10,7 +10,9 @@ from dags.shared.modules.environment.slack import slack_environment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 
 @task(task_id="invalidate_expired_promotion_approval")
-def invalidate_expired_promotion_approval(**context) -> None:
+def invalidate_expired_promotion_approval() -> None:
+    context = get_current_context()
+
     invalidate_expired_promotion_approval_xcom = InvalidateExpiredPromotionApprovalXCom.from_context(context)
 
     slack_client.chat_update(
@@ -39,7 +41,9 @@ def invalidate_expired_promotion_approval(**context) -> None:
     )
 
 @task(task_id="invalidate_old_training_approval")
-def invalidate_old_training_approval(**context) -> None:
+def invalidate_old_training_approval() -> None:
+    context = get_current_context()
+
     invalidate_old_training_approval_xcom = InvalidateOldTrainingApprovalXCom.from_context(context)
 
     slack_client.chat_update(
@@ -104,7 +108,9 @@ def build_training_approval_blocks_initializing(
         )
 
 @task(task_id="initialize_training_approval")
-def initialize_training_approval(**context) -> None:
+def initialize_training_approval() -> None:
+    context = get_current_context()
+
     initialize_training_approval_xcom = InitializeTrainingApprovalXCom.from_context(context)
 
     response = slack_client.chat_postMessage(
@@ -234,7 +240,9 @@ def build_training_approval_blocks(
         )
 
 @task(task_id="update_training_approval")
-def update_training_approval(**context) -> None:
+def update_training_approval() -> None:
+    context = get_current_context()
+
     update_training_approval_xcom = UpdateTrainingApproval.from_context(context)
 
     slack_client.chat_update(

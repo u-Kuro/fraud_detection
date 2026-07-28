@@ -1,6 +1,6 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
-from airflow.sdk import task_group, task
+from airflow.sdk import task_group, task, get_current_context
 from airflow.sdk.definitions._internal.node import DAGNode
 from kubernetes import client as k8s
 
@@ -21,7 +21,7 @@ def no_action(branch: NoActionBranches) -> EmptyOperator:
 @task_group(group_id="invalidate_expired_challenger_model")
 def invalidate_expired_challenger_model() -> None:
     has_expired_promote_pending_workflow_with_replacement() >> [
-        invalidate_expired_promotion_approval()
+        invalidate_expired_promotion_approval() \
         >> replace_expired_model() \
         >> delete_expired_model() \
         >> delete_expired_mlflow_run() \
@@ -87,7 +87,9 @@ def drift_check() -> KubernetesPodOperator:
     )
 
 @task.branch(task_id="has_drift")
-def has_drift(**context):
+def has_drift():
+    context = get_current_context()
+
     has_drift_xcom = HasDriftXCom.from_context(context)
 
     if has_drift_xcom.drift_detected:

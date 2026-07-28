@@ -9,6 +9,7 @@ class ECRImageKeys:
     # TODO - check image names in terraform
     drift_check: str = "drift_check"
     train_model: str = "train_model"
+    archive: str = "archive"
 
 @dataclass(frozen=True)
 class ECRSecretKeys:

@@ -1,11 +1,11 @@
-name: CI — Archiving
+name: CI — Archive
 
 on:
   push:
     paths:
-      - "services/archiving/**"
+      - "services/archive/**"
       - "shared/**"
-      - "dags/archiving.py"
+      - "dags/archive.py"
       - "pyproject.toml"
       - "uv.lock"
     branches: ["**"]
@@ -22,10 +22,10 @@ jobs:
         with: { python-version: "3.12.13" }
 
       - run: pip install uv
-      - run: uv sync --frozen --group archiving --group dev --no-install-project
+      - run: uv sync --frozen --group archive --group dev --no-install-project
 
       - name: Lint
-        run: uv run ruff check services/archiving shared
+        run: uv run ruff check services/archive shared
 
       - name: Configure AWS
         run: |
@@ -40,12 +40,12 @@ jobs:
 
       - name: Build and push
         env:
-          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/archiving
+          REPO: localhost:4566/000000000000.dkr.ecr.us-east-1.amazonaws.com/archive
         run: |
           docker build \
             -t $REPO:${{ github.sha }} \
             -t $REPO:latest \
-            -f services/archiving/Dockerfile .
+            -f services/archive/Dockerfile .
           docker push $REPO:${{ github.sha }}
           docker push $REPO:latest
           echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
@@ -53,5 +53,5 @@ jobs:
   deploy:
     needs: build
     if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/cd-archiving.yml
+    uses: ./.github/workflows/cd-archive.yml
     secrets: inherit

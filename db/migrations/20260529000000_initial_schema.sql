@@ -31,7 +31,7 @@ CREATE TABLE model_deployments (
     name                    TEXT                NOT NULL,
     version                 INT                 NOT NULL,
     mlflow_run_id           TEXT                NOT NULL,
-    dataset_min_timestamp   TIMESTAMPTZ         NULL,
+    dataset_min_timestamp   TIMESTAMPTZ         NOT NULL,
     dataset_max_timestamp   TIMESTAMPTZ         NOT NULL,
     active                  BOOLEAN             NOT NULL        DEFAULT FALSE,
     CONSTRAINT model_deployment_name_version_key UNIQUE (name, version)

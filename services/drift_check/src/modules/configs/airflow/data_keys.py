@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class DriftMonitorKeys:
+class DriftCheckKeys:
     DRIFT_DETECTED: str = "DRIFT_DETECTED"
     DRIFT_SUMMARY: str = "DRIFT_SUMMARY"

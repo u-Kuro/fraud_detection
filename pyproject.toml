@@ -54,7 +54,7 @@ train_model = [
     "sqlalchemy>=2.0.49",
     "xgboost>=3.2.0",
 ]
-archiving = [
+archive = [
     "boto3>=1.43.14",
     "psycopg2-binary>=2.9.12",
     "pydantic>=2.13.4",

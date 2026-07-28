@@ -1,3 +1,4 @@
+# TODO - 28/07/2026 - Continue here... NEED TO UPDATE workflows
 # TODO - Need to update all secret manager stuff in CI/CD as team manually creates secret manager e.g. "aws secretsmanager create-secret"
 
 # Prerequisites — .secrets file (gitignored):
@@ -15,12 +16,12 @@ Add-Content .secrets "KUBECONFIG_B64=$b64"
 act push --network ministack_network -W .github/workflows/ci-fraud-detection.yml     --secret-file .secrets
 act push --network ministack_network -W .github/workflows/ci-drift-monitor.yml       --secret-file .secrets
 act push --network ministack_network -W .github/workflows/ci-training-pipeline.yml   --secret-file .secrets
-act push --network ministack_network -W .github/workflows/ci-archiving.yml           --secret-file .secrets
+act push --network ministack_network -W .github/workflows/ci-archive.yml           --secret-file .secrets
 act push --network ministack_network -W .github/workflows/ci-atlas.yml               --secret-file .secrets
 
 # ── Run CD workflows directly (manual rerollout after secret change) ─────────
 act workflow_dispatch --network ministack_network -W .github/workflows/cd-fraud-detection.yml     --secret-file .secrets
 act workflow_dispatch --network ministack_network -W .github/workflows/cd-drift-monitor.yml       --secret-file .secrets
 act workflow_dispatch --network ministack_network -W .github/workflows/cd-training-pipeline.yml   --secret-file .secrets
-act workflow_dispatch --network ministack_network -W .github/workflows/cd-archiving.yml           --secret-file .secrets
+act workflow_dispatch --network ministack_network -W .github/workflows/cd-archive.yml           --secret-file .secrets
 act workflow_dispatch --network ministack_network -W .github/workflows/cd-atlas.yml               --secret-file .secrets

@@ -1,7 +1,7 @@
 import json
 from uuid import UUID
 
-from airflow.sdk import task
+from airflow.sdk import task, get_current_context
 
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.xcom import InitializePromotionApprovalXCom, UpdatePromotionApproval
@@ -11,7 +11,9 @@ from dags.shared.modules.environment.slack import slack_environment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 
 @task(task_id="initialize_promotion_approval")
-def initialize_promotion_approval(**context) -> None:
+def initialize_promotion_approval() -> None:
+    context = get_current_context()
+
     initialize_promotion_approval_xcom = InitializePromotionApprovalXCom.from_context(context)
 
     response = slack_client.chat_postMessage(
@@ -69,7 +71,9 @@ def model_promotion_buttons(workflow_id: UUID) -> list:
     ]
 
 @task(task_id="update_promotion_approval")
-def update_promotion_approval(**context) -> None:
+def update_promotion_approval() -> None:
+    context = get_current_context()
+
     training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
     update_promotion_approval_xcom = UpdatePromotionApproval.from_context(context)
 

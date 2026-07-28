@@ -14,12 +14,12 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.10 /uv /usr/local/bin/uv
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --only-group archiving --no-install-project
+RUN uv sync --frozen --only-group archive --no-install-project
 
-COPY /services/archiving ./services/archiving
+COPY /services/archive ./services/archive
 COPY /services/shared ./services/shared
 
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["python", "-m", "services.archiving.src.main"]
+CMD ["python", "-m", "services.archive.src.main"]

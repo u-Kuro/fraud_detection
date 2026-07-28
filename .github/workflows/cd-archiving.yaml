@@ -1,4 +1,4 @@
-name: CD — Archiving
+name: CD — Archive
 
 on:
   workflow_call:
@@ -42,7 +42,7 @@ jobs:
 
           rm /tmp/mle-pipeline-secret.env
 
-      - name: Sync archiving DAG file to S3
+      - name: Sync archive DAG file to S3
         run: |
           aws --endpoint-url http://ministack:4566 s3 cp \
-            dags/archiving.py s3://mle/dags/
+            dags/archive.py s3://mle/dags/

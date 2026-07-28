@@ -1,5 +1,5 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.sdk import task
+from airflow.sdk import task, get_current_context
 from kubernetes import client as k8s
 
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
@@ -10,7 +10,9 @@ from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKe
 from dags.shared.modules.configs.kubernetes import K8sConfig, K8sConfigMapKeys, K8sSecretKeys
 
 @task.branch(task_id="training_decision_callback")
-def training_decision_callback(**context) -> str:
+def training_decision_callback() -> str:
+    context = get_current_context()
+
     training_decision_callback_configurations = TrainingDecisionCallbackConfigurations.from_context(context)
 
     if training_decision_callback_configurations.approved:

@@ -8,6 +8,6 @@ variable "repositories" {
     "fraud_detection",
     "drift_check",
     "train_model",
-    "archiving",
+    "archive",
   ]
 }
