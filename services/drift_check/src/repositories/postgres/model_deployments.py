@@ -1,27 +1,18 @@
-from sqlalchemy import text
+from sqlalchemy import select
 
-from services.drift_check.src.repositories.postgres.postgres import engine
+from services.drift_check.src.repositories.postgres.postgres import sql_session
 from services.shared.modules.configs.postgres import PostgresConfig
-from services.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
-from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
+from services.shared.modules.schemas.postgres.model_deployments import ModelDeployment
 
 def get_active_model_deployment_mlflow_run_id() -> str:
-    with engine.connect() as connection:
-        row = connection.execute(text(f"""
-            SELECT {ModelDeploymentsColumnKeys.mlflow_run_id}
-            FROM {PostgresTableKeys.model_deployments}
-            WHERE
-                {ModelDeploymentsColumnKeys.project_id} = :{ModelDeploymentsColumnKeys.project_id}
-            AND {ModelDeploymentsColumnKeys.active}
-            LIMIT 1
-            """), {
-                ModelDeploymentsColumnKeys.project_id: PostgresConfig.PROJECT_ID()
-            }
-        ).fetchone()
+    with sql_session.begin() as session:
+        (mlflow_run_id, ) = session.execute(
+            select(ModelDeployment.mlflow_run_id)
+            .where(
+                ModelDeployment.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeployment.active.is_(True)
+            )
+            .limit(1)
+        ).one().t
 
-    if row is None:
-        raise ValueError(f"No active model deployment found.")
-
-    assert isinstance(row.mlflow_run_id, str)
-
-    return row.mlflow_run_id
+    return mlflow_run_id

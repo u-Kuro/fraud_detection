@@ -12,10 +12,10 @@ def upload_transaction_inference_batch(
     transaction_inferences_by_date: defaultdict[date, list[dict]],
     batch_by_date: defaultdict[date, int]
 ):
-    for date_key, rows in transaction_inferences_by_date.items():
+    for date_key, item in transaction_inferences_by_date.items():
         buffer = io.BytesIO()
         pq.write_table(
-            pa.Table.from_pylist(mapping=rows),
+            pa.Table.from_pylist(mapping=item),
             buffer
         )
         buffer.seek(0)

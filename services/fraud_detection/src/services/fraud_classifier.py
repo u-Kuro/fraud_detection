@@ -4,7 +4,7 @@ from services.fraud_detection.src.modules.configs.fraud_classifier import FraudC
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationOutput
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
 from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInference
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
@@ -19,8 +19,8 @@ class FraudClassifier(MlflowModel):
         )
 
         features_df = pd.DataFrame([features])
-        features_df[TransactionInferencesColumnKeys.transaction_timestamp] = features_df[
-            TransactionInferencesColumnKeys.transaction_timestamp
+        features_df[TransactionInference.transaction_timestamp.key] = features_df[
+            TransactionInference.transaction_timestamp.key
         ].apply(lambda x: int(x.timestamp()))
 
         fraud_probability = float(self.model.predict_proba(features_df)[0][1])

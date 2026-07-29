@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import date
 
 from dags.shared.modules.configs.s3 import S3Config
-from services.archive.src.repositories.postgres.postgres import engine
+from services.archive.src.repositories.postgres.postgres import sql_session
 from services.archive.src.repositories.postgres.transaction_inferences import get_transaction_inferences_batch, delete_transaction_inferences_batch
 from services.archive.src.repositories.s3.archive import upload_transaction_inference_batch
 from services.shared.repositories.s3.bucket import ensure_bucket
@@ -13,9 +13,9 @@ def archive_transaction_inferences():
     batch_by_date: defaultdict[date, int] = defaultdict(int)
 
     while True:
-        with engine.begin() as connection:
+        with sql_session.begin() as session:
             # get existing transaction inferences to archive
-            transaction_inferences: list[dict] = get_transaction_inferences_batch(connection)
+            transaction_inferences: list[dict] = get_transaction_inferences_batch(session)
             if len(transaction_inferences) == 0: break
 
             # group transaction inferences by date
@@ -34,6 +34,6 @@ def archive_transaction_inferences():
 
             # delete archived transaction inferences
             delete_transaction_inferences_batch(
-                connection,
+                session,
                 transaction_inferences
             )

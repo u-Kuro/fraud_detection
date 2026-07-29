@@ -21,7 +21,6 @@ CREATE TABLE model_deployment_workflows (
     training_approval_slack_ts      TEXT                NOT NULL,
     promotion_approval_slack_ts     TEXT                NULL,
     CONSTRAINT state_check CHECK (state IN ('train_pending', 'promote_pending_replacement', 'promote_pending')),
-    CONSTRAINT unique_project_id UNIQUE (project_id)
 );
 
 CREATE TABLE model_deployments (
@@ -47,7 +46,7 @@ CREATE TABLE transaction_inferences (
     is_fraud                BOOLEAN             NULL,
     is_fraud_prediction     BOOLEAN             NULL,
     is_fraud_probability    DOUBLE PRECISION    NULL,
-    deployed_model_id       INT                 NULL                                            REFERENCES model_deployments(id),
+    model_deployment_id     UUID                NULL                                            REFERENCES model_deployments(id),
     v1                      DOUBLE PRECISION    NOT NULL,
     v2                      DOUBLE PRECISION    NOT NULL,
     v3                      DOUBLE PRECISION    NOT NULL,

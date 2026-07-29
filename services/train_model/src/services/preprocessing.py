@@ -2,13 +2,13 @@ from imblearn.over_sampling import SMOTE
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInference
 from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs
 
 def preprocess(dataset: DataFrame) -> PreprocessOutputs:
-    x = dataset.drop(TransactionInferencesColumnKeys.is_fraud, axis=1).values
-    y = dataset[TransactionInferencesColumnKeys.is_fraud].values
+    x = dataset.drop(TransactionInference.is_fraud.key, axis=1).values
+    y = dataset[TransactionInference.is_fraud.key].values
 
     X_train, X_test, y_train, y_test = train_test_split(
         x, y,

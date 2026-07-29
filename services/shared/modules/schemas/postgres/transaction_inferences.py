@@ -1,40 +1,79 @@
-from services.shared.modules.schemas.str_enum import BaseStrEnum
+import uuid
+from datetime import datetime
 
-class TransactionInferencesColumnKeys(BaseStrEnum):
-    id = "id"
-    created_at = "created_at"
-    transaction_id = "transaction_id"
-    transaction_timestamp = "transaction_timestamp"
-    amount = "amount"
-    is_fraud = "is_fraud"
-    is_fraud_prediction = "is_fraud_prediction"
-    is_fraud_probability = "is_fraud_probability"
-    deployed_model_id = "deployed_model_id"
-    v1 = "v1"
-    v2 = "v2"
-    v3 = "v3"
-    v4 = "v4"
-    v5 = "v5"
-    v6 = "v6"
-    v7 = "v7"
-    v8 = "v8"
-    v9 = "v9"
-    v10 = "v10"
-    v11 = "v11"
-    v12 = "v12"
-    v13 = "v13"
-    v14 = "v14"
-    v15 = "v15"
-    v16 = "v16"
-    v17 = "v17"
-    v18 = "v18"
-    v19 = "v19"
-    v20 = "v20"
-    v21 = "v21"
-    v22 = "v22"
-    v23 = "v23"
-    v24 = "v24"
-    v25 = "v25"
-    v26 = "v26"
-    v27 = "v27"
-    v28 = "v28"
+from sqlalchemy import UUID, func, Double, Boolean, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
+
+from services.shared.modules.schemas.postgres.model_deployments import ModelDeployment
+from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
+
+class TransactionInference(PostgresTableBase):
+    __tablename__ = "transaction_inferences"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=func.gen_random_uuid()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+    transaction_timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False
+    )
+    amount: Mapped[float] = mapped_column(
+        Double,
+        nullable=False
+    )
+    is_fraud: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True
+    )
+    is_fraud_prediction: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True
+    )
+    is_fraud_probability: Mapped[float | None] = mapped_column(
+        Double,
+        nullable=True
+    )
+    model_deployment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(ModelDeployment.id),
+        nullable=True
+    )
+    v1: Mapped[float] = mapped_column(Double, nullable=False)
+    v2: Mapped[float] = mapped_column(Double, nullable=False)
+    v3: Mapped[float] = mapped_column(Double, nullable=False)
+    v4: Mapped[float] = mapped_column(Double, nullable=False)
+    v5: Mapped[float] = mapped_column(Double, nullable=False)
+    v6: Mapped[float] = mapped_column(Double, nullable=False)
+    v7: Mapped[float] = mapped_column(Double, nullable=False)
+    v8: Mapped[float] = mapped_column(Double, nullable=False)
+    v9: Mapped[float] = mapped_column(Double, nullable=False)
+    v10: Mapped[float] = mapped_column(Double, nullable=False)
+    v11: Mapped[float] = mapped_column(Double, nullable=False)
+    v12: Mapped[float] = mapped_column(Double, nullable=False)
+    v13: Mapped[float] = mapped_column(Double, nullable=False)
+    v14: Mapped[float] = mapped_column(Double, nullable=False)
+    v15: Mapped[float] = mapped_column(Double, nullable=False)
+    v16: Mapped[float] = mapped_column(Double, nullable=False)
+    v17: Mapped[float] = mapped_column(Double, nullable=False)
+    v18: Mapped[float] = mapped_column(Double, nullable=False)
+    v19: Mapped[float] = mapped_column(Double, nullable=False)
+    v20: Mapped[float] = mapped_column(Double, nullable=False)
+    v21: Mapped[float] = mapped_column(Double, nullable=False)
+    v22: Mapped[float] = mapped_column(Double, nullable=False)
+    v23: Mapped[float] = mapped_column(Double, nullable=False)
+    v24: Mapped[float] = mapped_column(Double, nullable=False)
+    v25: Mapped[float] = mapped_column(Double, nullable=False)
+    v26: Mapped[float] = mapped_column(Double, nullable=False)
+    v27: Mapped[float] = mapped_column(Double, nullable=False)
+    v28: Mapped[float] = mapped_column(Double, nullable=False)

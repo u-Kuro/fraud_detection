@@ -3,6 +3,7 @@ from xgboost import XGBClassifier
 
 from services.shared.controllers.airflow.xcom import xcom_push
 from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInference
 from services.train_model.src.modules.configs.airflow.data_keys import TrainingPipelineKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
 from services.train_model.src.modules.configs.training import TrainingConfig
@@ -59,7 +60,7 @@ def main() -> None:
 
     dataset_min_max_timestamps = get_dataset_min_and_max_timestamps(
         dataset=unused_dataset_outputs.dataset,
-        timestamp_feature_key=TransactionInferencesColumnKeys.transaction_timestamp
+        timestamp_feature_key=TransactionInference.transaction_timestamp.key
     )
 
     xcom_push({

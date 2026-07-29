@@ -1,10 +1,11 @@
-from sqlalchemy import create_engine, Engine
+from sqlalchemy import create_engine, NullPool
+from sqlalchemy.orm import sessionmaker
 
 from services.shared.modules.configs.postgres import PostgresConfig
 
-engine: Engine = create_engine(
-    PostgresConfig.POSTGRES_DB_URL,
-    pool_pre_ping=True,
-    pool_size=2,
-    max_overflow=3,
+sql_session: sessionmaker = sessionmaker(
+    create_engine(
+        PostgresConfig.POSTGRES_DB_URL,
+        poolclass=NullPool
+    )
 )

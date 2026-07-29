@@ -1,4 +1,3 @@
-# TODO - 29/07/2026 - Continue here... NEED TO UPDATE workflows...
 # TODO - Need to update all secret manager stuff in CI/CD as team manually creates secret manager e.g. "aws secretsmanager create-secret"
 
 # Prerequisites — .secrets file (gitignored):

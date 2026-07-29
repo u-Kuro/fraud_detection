@@ -8,5 +8,5 @@ from services.shared.modules.configs.mlflow import MLFlowConfig as BaseMLFlowCon
 class MLFlowConfig(BaseMLFlowConfig):
     @classmethod
     @lru_cache(maxsize=None)
-    def REFERENCE_DATASET_URI(self) -> str:
-        return f"runs:/{get_active_model_deployment_mlflow_run_id()}/{MLFlowConfig.REFERENCE_DATASET_PATH}/{MLFlowConfig.REFERENCE_DATASET_FILE_NAME}/{self.REFERENCE_DATASET_FILE_NAME}"
+    def REFERENCE_DATASET_URI(cls) -> str:
+        return f"runs:/{get_active_model_deployment_mlflow_run_id()}/{MLFlowConfig.REFERENCE_DATASET_PATH}/{MLFlowConfig.REFERENCE_DATASET_FILE_NAME}/{cls.REFERENCE_DATASET_FILE_NAME}"
