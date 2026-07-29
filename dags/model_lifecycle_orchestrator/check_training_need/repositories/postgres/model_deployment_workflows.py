@@ -43,15 +43,15 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
                   AS {ModelDeploymentSuccessionKeys.EXPIRED_ID}
         FROM {PostgresTableKeys.model_deployment_workflows} expired
         JOIN {PostgresTableKeys.model_deployment_workflows} replacement
-            ON replacement.{ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+            ON replacement.{ModelDeploymentWorkflowsColumnKeys.project_id} = %({ModelDeploymentWorkflowsColumnKeys.project_id})s
             AND replacement.{ModelDeploymentWorkflowsColumnKeys.state} = %(promote_pending_replacement_state)s
         WHERE
-            expired.{ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+            expired.{ModelDeploymentWorkflowsColumnKeys.project_id} = %({ModelDeploymentWorkflowsColumnKeys.project_id})s
         AND expired.{ModelDeploymentWorkflowsColumnKeys.state} = %(promote_pending_state)s
         AND expired.{ModelDeploymentWorkflowsColumnKeys.model_trained_at} < NOW() - %(challenger_model_expiration_days)s * INTERVAL '1 day'
         LIMIT 1
         """, {
-            "project_id": PostgresConfig.PROJECT_ID(),
+            ModelDeploymentWorkflowsColumnKeys.project_id: PostgresConfig.PROJECT_ID(),
             "promote_pending_state": ModelDeploymentWorkflowState.promote_pending,
             "promote_pending_replacement_state": ModelDeploymentWorkflowState.promote_pending_replacement,
             "challenger_model_expiration_days": ModelDeploymentWorkflowsConfig.challenger_model_expiration_days,

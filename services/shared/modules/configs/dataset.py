@@ -2,5 +2,5 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class DatasetConfig:
-    MAXIMUM_DATASET_ROWS: int = 500_000
-    MINIMUM_ROWS: int = 100_000
+    maximum_dataset_rows: int = 500_000
+    minimum_rows: int = 100_000

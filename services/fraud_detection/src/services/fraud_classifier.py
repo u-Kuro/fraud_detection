@@ -1,12 +1,10 @@
 import pandas as pd
 
 from services.fraud_detection.src.modules.configs import FraudClassifierConfig
-from services.fraud_detection.src.modules.schemas import (
-    FraudClassificationRequest,
-    FraudClassificationOutput,
-)
+from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationOutput
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
-from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationTransactionTimestamp
+from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationLabelKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 
 class FraudClassifier(MlflowModel):
     def __init__(self, *args, **kwargs):
@@ -17,12 +15,12 @@ class FraudClassifier(MlflowModel):
         transaction_details: FraudClassificationRequest
     ) -> FraudClassificationOutput:
         features = transaction_details.model_dump(
-            include=FraudClassificationFeatures.model_fields.keys()
+            include=set(FraudClassificationLabelKeys)
         )
 
         features_df = pd.DataFrame([features])
-        features_df[FraudClassificationTransactionTimestamp.model_field_key()] = features_df[
-            FraudClassificationTransactionTimestamp.model_field_key()
+        features_df[TransactionInferencesColumnKeys.transaction_timestamp] = features_df[
+            TransactionInferencesColumnKeys.transaction_timestamp
         ].apply(lambda x: int(x.timestamp()))
 
         fraud_probability = float(self.model.predict_proba(features_df)[0][1])

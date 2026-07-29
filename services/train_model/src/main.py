@@ -3,7 +3,7 @@ from xgboost import XGBClassifier
 
 from services.shared.controllers.airflow.xcom import xcom_push
 from services.shared.modules.configs import MLFlowConfig
-from services.shared.modules.schemas import FraudClassificationTransactionTimestamp
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 from services.train_model.src.modules.configs import TrainingConfig
 from services.train_model.src.modules.configs.airflow.data_keys import TrainingPipelineKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
@@ -60,7 +60,7 @@ def main() -> None:
 
     dataset_min_max_timestamps = get_dataset_min_and_max_timestamps(
         dataset=unused_dataset_outputs.dataset,
-        timestamp_feature_key=FraudClassificationTransactionTimestamp.model_field_key()
+        timestamp_feature_key=TransactionInferencesColumnKeys.transaction_timestamp
     )
 
     xcom_push({
@@ -78,98 +78,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-# def delete_stale_candidates(
-#     client: MlflowClient,
-#     model_name: str,
-#     current_version: int
-# ) -> None:
-#     try:
-#         versions = client.search_model_versions(f"name='{model_name}'")
-#         for item in versions:
-#             aliases = getattr(item, "aliases", []) or []
-#             version = int(item.version)
-#             if version == current_version: continue
-#             # Version has candidate alias on it but is not the new one — remove alias and delete
-#             if "candidate" in aliases:
-#                 try:
-#                     client.delete_registered_model_alias(model_name, "candidate")
-#                 except: pass
-#             # Delete versions that have no aliases and are not in production
-#             if "production" not in aliases and "archived" not in aliases:
-#                 try:
-#                     client.delete_model_version(model_name, str(version))
-#                     logger.info(f"Deleted stale candidate model version {model_name} v{version}")
-#                 except Exception as e:
-#                     logger.warning(f"Could not delete stale version {version}: {e}")
-#     except Exception as e:
-#         logger.warning(f"Stale candidate cleanup failed (non-fatal): {e}")
-
-# def post_or_update_promotion_slack(
-#     promotion_approval_slack_ts: str | None,
-#     model_name: str,
-#     model_version: int,
-#     metrics: dict,
-# ) -> str:
-#     """Post or update in-place the promotion approval Slack message."""
-#     slack = slack_sdk.WebClient(token=slack_environment.SLACK_BOT_USER_AUTH_TOKEN)
-#     blocks = [
-#         {
-#             "type": "header",
-#             "text": {
-#                 "type": "plain_text",
-#                 "text": "✅ Training Complete — Approve for Promotion"
-#             }
-#         },
-#         {
-#             "type": "section",
-#             "text": {
-#                 "type": "mrkdwn",
-#                 "text": (
-#                     f"Model `{model_name}` v{model_version} is ready.\n"
-#                     f"F1: `{metrics['f1']:.4f}` | ROC-AUC: `{metrics['roc_auc']:.4f}`\n\n"
-#                     "Approve to promote to production (zero-downtime rolling reload)."
-#                 ),
-#             },
-#         },
-#         {
-#             "type": "actions",
-#             "elements": [
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "text": "🚀 Approve Promotion"
-#                     },
-#                     "style": "primary",
-#                     "action_id": "approve_promotion",
-#                 },
-#                 {
-#                     "type": "button",
-#                     "text": {
-#                         "type": "plain_text",
-#                         "text": "❌ Reject"
-#                     },
-#                     "style": "danger",
-#                     "action_id": "reject_promotion",
-#                 },
-#             ],
-#         },
-#     ]
-#
-#     try:
-#         if promotion_approval_slack_ts:
-#             response = slack.chat_update(
-#                 channel=slack_environment.SLACK_CHANNEL_ID,
-#                 ts=promotion_approval_slack_ts,
-#                 blocks=blocks
-#             )
-#         else:
-#             response = slack.chat_postMessage(
-#                 channel=slack_environment.SLACK_CHANNEL_ID,
-#                 blocks=blocks
-#             )
-#         return response["ts"]
-#     except Exception as e:
-#         logger.warning(f"Slack notification failed (non-fatal): {e}")
-#         return promotion_approval_slack_ts or ""

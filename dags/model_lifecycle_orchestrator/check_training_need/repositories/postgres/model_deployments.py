@@ -19,11 +19,11 @@ def has_any_active_model() -> str:
             SELECT 1
             FROM {PostgresTableKeys.model_deployments}
             WHERE
-                {ModelDeploymentsColumnKeys.project_id} = %(project_id)s
+                {ModelDeploymentsColumnKeys.project_id} = %({ModelDeploymentsColumnKeys.project_id})s
             AND {ModelDeploymentsColumnKeys.active}
         )
         """, {
-            "project_id": PostgresConfig.PROJECT_ID()
+            ModelDeploymentsColumnKeys.project_id: PostgresConfig.PROJECT_ID()
         }
     )
     has_active_model = bool(result[0])

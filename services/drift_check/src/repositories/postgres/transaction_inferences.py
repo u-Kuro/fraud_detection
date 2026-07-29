@@ -6,7 +6,8 @@ from sqlalchemy import text
 
 from services.drift_check.src.repositories.postgres import engine
 from services.shared.modules.configs.dataset import DatasetConfig
-from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
+from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 
 def load_current_dataset(
     current_dataset_cutoff: datetime,
@@ -15,30 +16,32 @@ def load_current_dataset(
         df_current = pd.read_sql(
             text(f"""
                 WITH current_dataset AS (
-                    SELECT DISTINCT ON (transaction_id)
-                        {",".join(FraudClassificationFeatures.model_field_keys())},
-                        {FraudClassificationLabel.model_field_key()}::INTEGER AS {FraudClassificationLabel.model_field_key()},
-                        {FraudClassificationPrediction.model_field_key()}::INTEGER AS {FraudClassificationPrediction.model_field_key()},
-                        {FraudClassificationProbability.model_field_key()}
-                    FROM transaction_inferences
-                    WHERE transaction_timestamp > :current_dataset_cutoff
+                    SELECT DISTINCT ON ({TransactionInferencesColumnKeys.transaction_id})
+                    {",".join(
+                        set(TransactionInferencesColumnKeys) |
+                        {f"{TransactionInferencesColumnKeys.is_fraud}::INTEGER AS {TransactionInferencesColumnKeys.is_fraud}"} |
+                        {f"{TransactionInferencesColumnKeys.is_fraud_prediction}::INTEGER AS {TransactionInferencesColumnKeys.is_fraud_prediction}"} |
+                        {TransactionInferencesColumnKeys.is_fraud_probability}
+                    )}
+                    FROM {PostgresTableKeys.transaction_inferences}
+                    WHERE {TransactionInferencesColumnKeys.transaction_timestamp} > :current_dataset_cutoff
                     ORDER BY 
-                        transaction_id DESC,
-                        transaction_timestamp DESC,
-                        inference_timestamp DESC 
+                        {TransactionInferencesColumnKeys.transaction_id} DESC,
+                        {TransactionInferencesColumnKeys.transaction_timestamp} DESC,
+                        {TransactionInferencesColumnKeys.created_at} DESC 
                 )
                 SELECT * FROM current_dataset
                 ORDER BY random()
-                LIMIT :MAXIMUM_DATASET_ROWS
+                LIMIT :maximum_dataset_rows
            """),
            connection,
            params={
                 "current_dataset_cutoff": current_dataset_cutoff,
-                "MAXIMUM_DATASET_ROWS": DatasetConfig.MAXIMUM_DATASET_ROWS
+                "maximum_dataset_rows": DatasetConfig.maximum_dataset_rows
            }
        )
 
-        if len(df_current) < DatasetConfig.MINIMUM_ROWS:
-            raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.MINIMUM_ROWS}.")
+        if len(df_current) < DatasetConfig.minimum_rows:
+            raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
         return df_current

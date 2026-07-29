@@ -8,7 +8,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from services.fraud_detection.src.modules.schemas.slack import TrainingValue, PromotionValue
 from services.fraud_detection.src.services.airflow import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
-from services.fraud_detection.src.services.slack import update_message, common_callback_configurations
+from services.fraud_detection.src.services.slack import update_message
 from services.shared.modules.environment import slack_environment
 
 slack_app = App(

@@ -1,20 +1,25 @@
 from sqlalchemy import text
 
-from services.fraud_detection.src.modules.schemas import DeployedModel
+from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 from services.fraud_detection.src.repositories.postgres import engine
 from services.shared.modules.configs import PostgresConfig
+from services.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
+from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
+
 
 def get_active_model_deployment() -> DeployedModel:
     with engine.connect() as connection:
-        row = connection.execute(text("""
-            SELECT name, version
-            FROM model_deployments
+        row = connection.execute(text(f"""
+            SELECT
+                {ModelDeploymentsColumnKeys.name},
+                {ModelDeploymentsColumnKeys.version}
+            FROM {PostgresTableKeys.model_deployments}
             WHERE
-                project_id = :project_id
-            AND active
+                {ModelDeploymentsColumnKeys.project_id} = :{ModelDeploymentsColumnKeys.project_id}
+            AND {ModelDeploymentsColumnKeys.active}
             LIMIT 1
             """), {
-                "project_id": PostgresConfig.PROJECT_ID()
+                ModelDeploymentsColumnKeys.project_id: PostgresConfig.PROJECT_ID()
             }
         ).fetchone()
 

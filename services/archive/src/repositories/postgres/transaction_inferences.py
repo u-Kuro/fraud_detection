@@ -2,12 +2,17 @@ from sqlalchemy import Connection, text
 
 from services.archive.src.modules.configs.archive import ArchiveConfig
 from services.archive.src.modules.environment.archive import archive_environment
+from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
+
 
 def get_transaction_inferences_batch(connection: Connection) -> list[dict]:
-    transaction_inferences = connection.execute(text("""
-        SELECT * FROM transaction_inferences
-        WHERE transaction_timestamp <= :cutoff
-        ORDER BY transaction_timestamp, id
+    transaction_inferences = connection.execute(text(f"""
+        SELECT * FROM {PostgresTableKeys.transaction_inferences}
+        WHERE {TransactionInferencesColumnKeys.transaction_timestamp} <= :cutoff
+        ORDER BY
+            {TransactionInferencesColumnKeys.transaction_timestamp},
+            {TransactionInferencesColumnKeys.id}
         LIMIT :batch_size
     """), {
         "cutoff": archive_environment.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
@@ -23,11 +28,11 @@ def delete_transaction_inferences_batch(
     connection: Connection,
     transaction_inferences: list[dict]
 ):
-    connection.execute(text("""
-        DELETE FROM transaction_inferences
-        WHERE id = ANY(:ids::uuid[])
+    connection.execute(text(f"""
+        DELETE FROM {PostgresTableKeys.transaction_inferences}
+        WHERE {TransactionInferencesColumnKeys.id} = ANY(:{TransactionInferencesColumnKeys.id}::uuid[])
     """), {
-        "ids": [
+        TransactionInferencesColumnKeys.id: [
             str(item["id"])
             for item in transaction_inferences
         ]

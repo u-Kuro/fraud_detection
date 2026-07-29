@@ -9,7 +9,9 @@ from services.drift_check.src.modules.configs import evidently_config
 from services.drift_check.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
-from services.shared.modules.schemas import FraudClassificationFeatures, FraudClassificationLabel, FraudClassificationPrediction, FraudClassificationProbability
+from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationLabelKeys
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
+
 
 def run_drift_report(
     df_reference: DataFrame,
@@ -17,12 +19,12 @@ def run_drift_report(
 ) -> tuple[dict[str, dict], bytes]:
     data_definition = DataDefinition(
         classification=[BinaryClassification(
-            target=FraudClassificationLabel.model_field_key(),
-            prediction_labels=FraudClassificationPrediction.model_field_key(),
-            prediction_probas=FraudClassificationProbability.model_field_key(),
+            target=TransactionInferencesColumnKeys.is_fraud,
+            prediction_labels=TransactionInferencesColumnKeys.is_fraud_prediction,
+            prediction_probas=TransactionInferencesColumnKeys.is_fraud_probability,
             labels={0: "Legitimate", 1: "Fraud"},
         )],
-        numerical_columns=FraudClassificationFeatures.model_field_keys(),
+        numerical_columns=list(FraudClassificationLabelKeys),
     )
     reference_dataset = Dataset.from_pandas(
         data=df_reference,
@@ -45,8 +47,8 @@ def run_drift_report(
     buffer = io.StringIO()
     result.save_html(buffer)
     summary = extract_drift_summary(
-        result.dict(),
-        set(FraudClassificationFeatures.model_field_keys())
+        results=result.dict(),
+        feature_names=set(FraudClassificationLabelKeys)
     )
     return summary, buffer.getvalue().encode("utf-8")
 

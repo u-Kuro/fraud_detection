@@ -2,14 +2,13 @@ from imblearn.over_sampling import SMOTE
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
-from services.shared.modules.schemas import FraudClassificationLabel
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 from services.train_model.src.modules.configs import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs
 
 def preprocess(dataset: DataFrame) -> PreprocessOutputs:
-    label_key = FraudClassificationLabel.model_field_key()
-    x = dataset.drop(label_key, axis=1).values
-    y = dataset[label_key].values
+    x = dataset.drop(TransactionInferencesColumnKeys.is_fraud, axis=1).values
+    y = dataset[TransactionInferencesColumnKeys.is_fraud].values
 
     X_train, X_test, y_train, y_test = train_test_split(
         x, y,
@@ -24,7 +23,7 @@ def preprocess(dataset: DataFrame) -> PreprocessOutputs:
     X_train, y_train = smote.fit_resample(X_train, y_train)
 
     cross_validation = StratifiedKFold(
-        n_splits=int(1 / TrainingConfig.CV_VAL_SIZE),
+        n_splits=int(1 / TrainingConfig.CV_VAL_SIZE()),
         shuffle=True,
         random_state=TrainingConfig.RANDOM_STATE
     )

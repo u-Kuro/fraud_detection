@@ -20,44 +20,44 @@ def promote_model_deployment() -> None:
         with connection.cursor() as cursor:
             cursor.execute(f"""
                 UPDATE {PostgresTableKeys.model_deployments}
-                SET {ModelDeploymentsColumnKeys.active} = %(active)s
+                SET {ModelDeploymentsColumnKeys.active} = %({ModelDeploymentsColumnKeys.active})s
                 WHERE
                     {ModelDeploymentsColumnKeys.project_id} = (
                         SELECT {ModelDeploymentWorkflowsColumnKeys.project_id}
                         FROM {PostgresTableKeys.model_deployment_workflows}
-                        WHERE id = %(workflow_id)s
+                        WHERE {ModelDeploymentWorkflowsColumnKeys.id} = %({ModelDeploymentWorkflowsColumnKeys.id})s
                     )
                 AND {ModelDeploymentsColumnKeys.active}
                 """, {
-                    "workflow_id": promotion_decision_callback_configurations.workflow_id,
-                    "active": False
+                    ModelDeploymentWorkflowsColumnKeys.id: promotion_decision_callback_configurations.workflow_id,
+                    ModelDeploymentsColumnKeys.active: False
                 }
             )
 
             cursor.execute(f"""
                 INSERT INTO {PostgresTableKeys.model_deployments} (
-                    project_id,
-                    name,
-                    version,
-                    mlflow_run_id,
-                    dataset_min_timestamp,
-                    dataset_max_timestamp,
-                    active
+                    {ModelDeploymentsColumnKeys.project_id},
+                    {ModelDeploymentsColumnKeys.name},
+                    {ModelDeploymentsColumnKeys.version},
+                    {ModelDeploymentsColumnKeys.mlflow_run_id},
+                    {ModelDeploymentsColumnKeys.dataset_min_timestamp},
+                    {ModelDeploymentsColumnKeys.dataset_max_timestamp},
+                    {ModelDeploymentsColumnKeys.active}
                 )
                 SELECT
-                    project_id,
-                    registered_model_name,
-                    registered_model_version,
-                    mlflow_run_id,
-                    model_dataset_min_timestamp,
-                    model_dataset_max_timestamp,
-                    %(active)s
+                    {ModelDeploymentWorkflowsColumnKeys.project_id},
+                    {ModelDeploymentWorkflowsColumnKeys.registered_model_name},
+                    {ModelDeploymentWorkflowsColumnKeys.registered_model_version},
+                    {ModelDeploymentWorkflowsColumnKeys.mlflow_run_id},
+                    {ModelDeploymentWorkflowsColumnKeys.model_dataset_min_timestamp},
+                    {ModelDeploymentWorkflowsColumnKeys.model_dataset_max_timestamp},
+                    %({ModelDeploymentsColumnKeys.active})s
                 FROM {PostgresTableKeys.model_deployment_workflows}
-                WHERE id = %(workflow_id)s
-                RETURNING dataset_max_timestamp
+                WHERE {ModelDeploymentWorkflowsColumnKeys.id} = %({ModelDeploymentWorkflowsColumnKeys.id})s
+                RETURNING {ModelDeploymentsColumnKeys.dataset_max_timestamp}
             """, {
-                "workflow_id": promotion_decision_callback_configurations.workflow_id,
-                "active": True
+                ModelDeploymentWorkflowsColumnKeys.id: promotion_decision_callback_configurations.workflow_id,
+                ModelDeploymentsColumnKeys.active: True
             })
 
             dataset_max_timestamp: datetime = cursor.fetchone()[0]

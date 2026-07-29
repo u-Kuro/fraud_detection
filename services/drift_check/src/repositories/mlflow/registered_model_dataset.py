@@ -5,7 +5,8 @@ from pandas import DataFrame
 from pyarrow import parquet
 
 from services.drift_check.src.modules.configs.mlflow import MLFlowConfig
-from services.shared.modules.schemas import FraudClassificationTransactionTimestamp
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
+
 
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
     reference_dataset_parquet = mlflow.artifacts.download_artifacts(
@@ -17,7 +18,7 @@ def load_reference_dataset() -> tuple[DataFrame, datetime]:
         raise RuntimeError(f"No reference dataset was found in {MLFlowConfig.REFERENCE_DATASET_URI()}.")
 
     dataset_max_timestamp = datetime.fromtimestamp(
-        df_reference[FraudClassificationTransactionTimestamp.model_field_key()].max(),
+        df_reference[TransactionInferencesColumnKeys.transaction_timestamp].max(),
         timezone.utc
     )
     chosen_current_dataset_cutoff = datetime.now(timezone.utc) - timedelta(days=7)

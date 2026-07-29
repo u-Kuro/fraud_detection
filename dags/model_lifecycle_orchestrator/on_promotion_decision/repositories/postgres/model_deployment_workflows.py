@@ -14,14 +14,14 @@ def update_approved_promotion_workflow() -> None:
 
     postgres_hook.run(f"""
         UPDATE {PostgresTableKeys.model_deployment_workflows}
-        SET {ModelDeploymentWorkflowsColumnKeys.promotion_approved} = %(promotion_approved)s
+        SET {ModelDeploymentWorkflowsColumnKeys.promotion_approved} = %({ModelDeploymentWorkflowsColumnKeys.promotion_approved})s
         WHERE 
-            {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
-        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+            {ModelDeploymentWorkflowsColumnKeys.id} = %({ModelDeploymentWorkflowsColumnKeys.id})s
+        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %({ModelDeploymentWorkflowsColumnKeys.project_id})s
         """, parameters={
-            "id": promotion_decision_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID(),
-            "promotion_approved": True
+            ModelDeploymentWorkflowsColumnKeys.id: promotion_decision_callback_configurations.workflow_id,
+            ModelDeploymentWorkflowsColumnKeys.project_id: PostgresConfig.PROJECT_ID(),
+            ModelDeploymentWorkflowsColumnKeys.promotion_approved: True
         }
     )
 
@@ -34,10 +34,10 @@ def delete_rejected_promotion_workflow() -> None:
     postgres_hook.run(f"""
         DELETE FROM {PostgresTableKeys.model_deployment_workflows}
         WHERE 
-            {ModelDeploymentWorkflowsColumnKeys.id} = %(id)s
-        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %(project_id)s
+            {ModelDeploymentWorkflowsColumnKeys.id} = %({ModelDeploymentWorkflowsColumnKeys.id})s
+        AND {ModelDeploymentWorkflowsColumnKeys.project_id} = %({ModelDeploymentWorkflowsColumnKeys.project_id})s
         """, parameters={
-            "id": promotion_decision_callback_configurations.workflow_id,
-            "project_id": PostgresConfig.PROJECT_ID()
+            ModelDeploymentWorkflowsColumnKeys.id: promotion_decision_callback_configurations.workflow_id,
+            ModelDeploymentWorkflowsColumnKeys.project_id: PostgresConfig.PROJECT_ID()
         }
     )
