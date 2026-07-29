@@ -1,7 +1,7 @@
 import httpx
 
-from services.shared.modules.configs import AirflowConfig
-from services.shared.modules.environment import airflow_environment
+from services.shared.modules.configs.airflow import AirflowConfig
+from services.shared.modules.environment.airflow import airflow_environment
 
 def trigger_airflow_dag(dag_id: str, configurations: dict) -> None:
     httpx.post(

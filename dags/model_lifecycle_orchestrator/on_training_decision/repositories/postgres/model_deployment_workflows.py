@@ -7,7 +7,7 @@ from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airf
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
-from dags.shared.repositories.postgres import postgres_hook
+from dags.shared.repositories.postgres.postgres import postgres_hook
 
 @task.branch(task_id="update_approved_training_workflow")
 def update_approved_training_workflow() -> None:

@@ -4,7 +4,7 @@ import pandas as pd
 from pandas import DataFrame
 from sqlalchemy import text
 
-from services.drift_check.src.repositories.postgres import engine
+from services.drift_check.src.repositories.postgres.postgres import engine
 from services.shared.modules.configs.dataset import DatasetConfig
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys

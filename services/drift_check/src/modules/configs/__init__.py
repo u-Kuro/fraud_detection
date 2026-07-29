@@ -1,1 +1,0 @@
-from services.drift_check.src.modules.configs.evidently import evidently_config

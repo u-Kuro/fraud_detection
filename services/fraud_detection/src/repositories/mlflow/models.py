@@ -2,7 +2,7 @@ from typing import Any
 
 import mlflow
 
-from services.fraud_detection.src.modules.schemas import DeployedModel
+from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 
 class MlflowModel:
     def __init__(self, deployed_model: DeployedModel):

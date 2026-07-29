@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from pandas import DataFrame
 from pydantic import validate_call
 
-from services.shared.modules.configs import MLFlowConfig
+from services.shared.modules.configs.mlflow import MLFlowConfig
 from services.train_model.src.modules.configs.mlflow import MLFlowArtifactsConfig
 from services.train_model.src.repositories.mlflow.mlflow import mlflow_client
 

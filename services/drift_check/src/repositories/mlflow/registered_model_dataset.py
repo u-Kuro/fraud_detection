@@ -7,7 +7,6 @@ from pyarrow import parquet
 from services.drift_check.src.modules.configs.mlflow import MLFlowConfig
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 
-
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
     reference_dataset_parquet = mlflow.artifacts.download_artifacts(
         artifact_uri=MLFlowConfig.REFERENCE_DATASET_URI()

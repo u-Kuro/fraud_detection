@@ -2,12 +2,9 @@ from datetime import datetime, timedelta
 
 from airflow.sdk import dag
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import \
-    update_approved_promotion_workflow, delete_rejected_promotion_workflow
-from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import \
-    promote_model_deployment
-from dags.model_lifecycle_orchestrator.on_promotion_decision.services.tasks import promotion_decision_callback, \
-    apply_model_deployment, archive_used_transaction_inferences
+from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
+from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import promote_model_deployment
+from dags.model_lifecycle_orchestrator.on_promotion_decision.services.tasks import promotion_decision_callback, apply_model_deployment, archive_used_transaction_inferences
 from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
 
 @dag(

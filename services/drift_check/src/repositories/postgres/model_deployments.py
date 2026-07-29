@@ -1,10 +1,9 @@
 from sqlalchemy import text
 
-from services.drift_check.src.repositories.postgres import engine
-from services.shared.modules.configs import PostgresConfig
+from services.drift_check.src.repositories.postgres.postgres import engine
+from services.shared.modules.configs.postgres import PostgresConfig
 from services.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
-
 
 def get_active_model_deployment_mlflow_run_id() -> str:
     with engine.connect() as connection:

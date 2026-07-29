@@ -1,1 +1,0 @@
-from services.train_model.src.repositories.postgres.postgres import engine

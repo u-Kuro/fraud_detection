@@ -7,7 +7,7 @@ from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
-from dags.shared.repositories.postgres import postgres_hook
+from dags.shared.repositories.postgres.postgres import postgres_hook
 
 @task.branch(
     task_id="has_any_active_model",

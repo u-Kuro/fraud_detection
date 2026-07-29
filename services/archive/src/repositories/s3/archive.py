@@ -5,8 +5,8 @@ from datetime import date
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from services.shared.modules.configs import S3Config
-from services.shared.repositories.s3 import s3_client
+from services.shared.modules.configs.s3 import S3Config
+from services.shared.repositories.s3.s3 import s3_client
 
 def upload_transaction_inference_batch(
     transaction_inferences_by_date: defaultdict[date, list[dict]],

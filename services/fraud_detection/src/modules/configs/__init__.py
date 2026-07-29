@@ -1,1 +1,0 @@
-from services.fraud_detection.src.modules.configs.fraud_classifier import FraudClassifierConfig

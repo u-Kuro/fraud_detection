@@ -4,7 +4,7 @@ from pydantic import validate_call
 
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from dags.shared.modules.schemas.postgres.projects import ProjectsColumnKeys
-from dags.shared.repositories.postgres import postgres_hook
+from dags.shared.repositories.postgres.postgres import postgres_hook
 
 @validate_call(validate_return=True)
 def get_project_id(project_name: str) -> UUID:

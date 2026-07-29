@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from services.fraud_detection.src.modules.schemas.health import HealthResponse
-from services.fraud_detection.src.repositories.postgres import engine
+from services.fraud_detection.src.repositories.postgres.postgres import engine
 from services.fraud_detection.src.services import model_states
 
 router = APIRouter(prefix="/health", tags=["ops"])

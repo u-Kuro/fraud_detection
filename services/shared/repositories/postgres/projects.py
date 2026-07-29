@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from services.shared.modules.schemas.postgres.projects import ProjectsColumnKeys
-from services.shared.repositories.postgres import engine
+from services.shared.repositories.postgres.postgres import engine
 
 def get_project_id(project_name: str) -> UUID:
     with engine.connect() as connection:

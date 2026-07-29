@@ -1,8 +1,8 @@
 from sqlalchemy import text
 
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationOutput
-from services.fraud_detection.src.repositories.postgres import engine
-from services.shared.modules.configs import PostgresConfig
+from services.fraud_detection.src.repositories.postgres.postgres import engine
+from services.shared.modules.configs.postgres import PostgresConfig
 from services.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys

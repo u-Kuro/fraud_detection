@@ -1,1 +1,0 @@
-from dags.shared.repositories.postgres.postgres import postgres_hook

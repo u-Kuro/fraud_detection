@@ -3,14 +3,14 @@ from datetime import datetime, timezone
 import pandas as pd
 from sqlalchemy import text
 
-from services.shared.modules.configs import PostgresConfig
 from services.shared.modules.configs.dataset import DatasetConfig
+from services.shared.modules.configs.postgres import PostgresConfig
 from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
-from services.shared.repositories.postgres import engine
 from services.train_model.src.modules.schemas.postgres.transaction_inferences import TransactionInferencesDatasetNow
+from services.train_model.src.repositories.postgres.postgres import engine
 
 def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
     with engine.connect() as connection:

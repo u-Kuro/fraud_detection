@@ -5,13 +5,11 @@ from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
-from services.drift_check.src.modules.configs import evidently_config
 from services.drift_check.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
-from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationLabelKeys
+from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
-
 
 def run_drift_report(
     df_reference: DataFrame,
@@ -24,7 +22,7 @@ def run_drift_report(
             prediction_probas=TransactionInferencesColumnKeys.is_fraud_probability,
             labels={0: "Legitimate", 1: "Fraud"},
         )],
-        numerical_columns=list(FraudClassificationLabelKeys),
+        numerical_columns=list(FraudClassificationFeaturesKeys),
     )
     reference_dataset = Dataset.from_pandas(
         data=df_reference,
@@ -48,7 +46,7 @@ def run_drift_report(
     result.save_html(buffer)
     summary = extract_drift_summary(
         results=result.dict(),
-        feature_names=set(FraudClassificationLabelKeys)
+        feature_names=set(FraudClassificationFeaturesKeys)
     )
     return summary, buffer.getvalue().encode("utf-8")
 

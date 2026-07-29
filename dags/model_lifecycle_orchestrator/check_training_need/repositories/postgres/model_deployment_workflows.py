@@ -2,7 +2,7 @@ from uuid import UUID
 
 from airflow.sdk import task, get_current_context
 
-from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval
+from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval, invalidate_expired_promotion_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches
@@ -15,7 +15,7 @@ from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState, ModelDeploymentWorkflowsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
-from dags.shared.repositories.postgres import postgres_hook
+from dags.shared.repositories.postgres.postgres import postgres_hook
 
 @task.branch(task_id="has_expired_promote_pending_workflow_with_replacement")
 def has_expired_promote_pending_workflow_with_replacement() -> str:
@@ -124,7 +124,7 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
 
         return build_task_id((
             invalidate_expired_challenger_model.__name__,
-            invalidate_slack_promotion_approval.__name__
+            invalidate_expired_promotion_approval.__name__
         ))
 
 @task(task_id="delete_expired_promote_pending_workflow")

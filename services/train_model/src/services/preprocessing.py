@@ -3,7 +3,7 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
-from services.train_model.src.modules.configs import TrainingConfig
+from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs
 
 def preprocess(dataset: DataFrame) -> PreprocessOutputs:

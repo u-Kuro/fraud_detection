@@ -8,7 +8,7 @@ from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowsColumnKeys
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeploymentsColumnKeys
 from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
-from dags.shared.repositories.postgres import postgres_hook
+from dags.shared.repositories.postgres.postgres import postgres_hook
 
 @task.branch(task_id="promote_model_deployment")
 def promote_model_deployment() -> None:

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from services.fraud_detection.src.controllers.routers.slack import start_socket_mode
-from services.fraud_detection.src.modules.configs import FraudClassifierConfig
+from services.fraud_detection.src.modules.configs.fraud_classifier import FraudClassifierConfig
 from services.fraud_detection.src.services import model_states
 from services.fraud_detection.src.services.fraud_classifier import FraudClassifier
 from services.fraud_detection.src.controllers.routers import health, inference, slack

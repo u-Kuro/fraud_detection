@@ -5,7 +5,6 @@ from services.archive.src.modules.environment.archive import archive_environment
 from services.shared.modules.schemas.postgres.postgres import PostgresTableKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 
-
 def get_transaction_inferences_batch(connection: Connection) -> list[dict]:
     transaction_inferences = connection.execute(text(f"""
         SELECT * FROM {PostgresTableKeys.transaction_inferences}

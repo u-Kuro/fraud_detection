@@ -7,14 +7,12 @@ from kubernetes import client as k8s
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.xcom import \
-    ArchiveUsedTransactionInferencesXCom
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.xcom import ArchiveUsedTransactionInferencesXCom
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
 from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKeys
 from dags.shared.modules.configs.github import GitHubConfig
 from dags.shared.modules.configs.kubernetes import K8sConfig, K8sSecretKeys, K8sConfigMapKeys
-
 
 @task.branch(task_id="promotion_decision_callback")
 def promotion_decision_callback() -> str:

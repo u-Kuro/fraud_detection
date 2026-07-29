@@ -1,6 +1,6 @@
 import pandas as pd
 
-from services.fraud_detection.src.modules.configs import FraudClassifierConfig
+from services.fraud_detection.src.modules.configs.fraud_classifier import FraudClassifierConfig
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationOutput
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
 from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys

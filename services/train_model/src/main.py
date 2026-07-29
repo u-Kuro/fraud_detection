@@ -2,11 +2,10 @@ from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
 from services.shared.controllers.airflow.xcom import xcom_push
-from services.shared.modules.configs import MLFlowConfig
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
-from services.train_model.src.modules.configs import TrainingConfig
+from services.shared.modules.configs.mlflow import MLFlowConfig
 from services.train_model.src.modules.configs.airflow.data_keys import TrainingPipelineKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
+from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.repositories.mlflow.registered_model import save_and_register_model
 from services.train_model.src.repositories.mlflow.run import transactional_mlflow_run, save_model_reference_dataset, save_model_hyperparameters, save_model_metrics
 from services.train_model.src.repositories.postgres.transaction_inferences import get_timed_latest_unused_dataset
