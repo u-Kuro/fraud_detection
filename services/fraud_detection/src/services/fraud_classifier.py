@@ -3,7 +3,7 @@ import pandas as pd
 from services.fraud_detection.src.modules.configs import FraudClassifierConfig
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationOutput
 from services.fraud_detection.src.repositories.mlflow.models import MlflowModel
-from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationLabelKeys
+from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferencesColumnKeys
 
 class FraudClassifier(MlflowModel):
@@ -15,7 +15,7 @@ class FraudClassifier(MlflowModel):
         transaction_details: FraudClassificationRequest
     ) -> FraudClassificationOutput:
         features = transaction_details.model_dump(
-            include=set(FraudClassificationLabelKeys)
+            include=set(FraudClassificationFeaturesKeys)
         )
 
         features_df = pd.DataFrame([features])
