@@ -12,5 +12,3 @@ sql_session: sessionmaker = sessionmaker(
         }
     )
 )
-
-# TODO - 29/07/2026 - Continue here... Apply sqlalchemy ORM in dags...

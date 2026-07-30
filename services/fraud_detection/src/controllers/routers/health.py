@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import text, select
+from sqlalchemy import select
 
 from services.fraud_detection.src.modules.schemas.health import HealthResponse
 from services.fraud_detection.src.repositories.postgres.postgres import sql_session
