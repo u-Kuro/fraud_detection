@@ -1,11 +1,11 @@
 from airflow.sdk import task, get_current_context
-from sqlalchemy import update, select, insert, literal
+from sqlalchemy import update, select, insert, true
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
-from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflow
-from dags.shared.modules.schemas.postgres.model_deployments import ModelDeployment
+from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflows
+from dags.shared.modules.schemas.postgres.model_deployments import ModelDeployments
 from dags.shared.repositories.postgres.postgres import sql_session
 
 @task.branch(task_id="promote_model_deployment")
@@ -16,49 +16,49 @@ def promote_model_deployment() -> None:
 
     with sql_session.begin() as session:
         project_id_subquery = (
-            select(ModelDeploymentWorkflow.project_id)
-            .where(ModelDeploymentWorkflow.id == promotion_decision_callback_configurations.workflow_id)
+            select(ModelDeploymentWorkflows.project_id)
+            .where(ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id)
             .limit(1)
             .scalar_subquery()
         )
         session.execute(
-            update(ModelDeployment)
+            update(ModelDeployments)
             .where(
-                ModelDeployment.project_id == project_id_subquery,
-                ModelDeployment.active.is_(True)
+                ModelDeployments.project_id == project_id_subquery,
+                ModelDeployments.active.is_(True)
             )
             .values({
-                ModelDeployment.active.key: False
+                ModelDeployments.active.key: False
             })
         )
 
         (dataset_max_timestamp,) = session.execute(
-            insert(ModelDeployment)
+            insert(ModelDeployments)
             .from_select(
                 (
-                    ModelDeployment.project_id,
-                    ModelDeployment.name,
-                    ModelDeployment.version,
-                    ModelDeployment.mlflow_run_id,
-                    ModelDeployment.dataset_min_timestamp,
-                    ModelDeployment.dataset_max_timestamp,
-                    ModelDeployment.active
+                    ModelDeployments.project_id,
+                    ModelDeployments.name,
+                    ModelDeployments.version,
+                    ModelDeployments.mlflow_run_id,
+                    ModelDeployments.dataset_min_timestamp,
+                    ModelDeployments.dataset_max_timestamp,
+                    ModelDeployments.active
                 ),
                 select(
-                    ModelDeploymentWorkflow.project_id,
-                    ModelDeploymentWorkflow.registered_model_name,
-                    ModelDeploymentWorkflow.registered_model_version,
-                    ModelDeploymentWorkflow.mlflow_run_id,
-                    ModelDeploymentWorkflow.model_dataset_min_timestamp,
-                    ModelDeploymentWorkflow.model_dataset_max_timestamp,
-                    literal(True)
+                    ModelDeploymentWorkflows.project_id,
+                    ModelDeploymentWorkflows.registered_model_name,
+                    ModelDeploymentWorkflows.registered_model_version,
+                    ModelDeploymentWorkflows.mlflow_run_id,
+                    ModelDeploymentWorkflows.model_dataset_min_timestamp,
+                    ModelDeploymentWorkflows.model_dataset_max_timestamp,
+                    true()
                 )
                 .where(
-                    ModelDeploymentWorkflow.id == promotion_decision_callback_configurations.workflow_id
+                    ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id
                 )
             )
             .returning(
-                ModelDeployment.dataset_max_timestamp
+                ModelDeployments.dataset_max_timestamp
             )
         ).one().t
 

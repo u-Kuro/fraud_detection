@@ -5,11 +5,12 @@ from evidently import DataDefinition, BinaryClassification, Dataset, Report
 from evidently.presets import DataDriftPreset, ClassificationPreset
 from pandas import DataFrame
 
+from services.drift_check.src.modules.configs.evidently import evidently_config
 from services.drift_check.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
 from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInference
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def run_drift_report(
     df_reference: DataFrame,
@@ -17,9 +18,9 @@ def run_drift_report(
 ) -> tuple[dict[str, dict], bytes]:
     data_definition = DataDefinition(
         classification=[BinaryClassification(
-            target=TransactionInference.is_fraud.key,
-            prediction_labels=TransactionInference.is_fraud_prediction.key,
-            prediction_probas=TransactionInference.is_fraud_probability.key,
+            target=TransactionInferences.is_fraud.key,
+            prediction_labels=TransactionInferences.is_fraud_prediction.key,
+            prediction_probas=TransactionInferences.is_fraud_probability.key,
             labels={0: "Legitimate", 1: "Fraud"},
         )],
         numerical_columns=list(FraudClassificationFeaturesKeys),

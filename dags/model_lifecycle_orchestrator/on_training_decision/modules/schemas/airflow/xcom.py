@@ -2,7 +2,7 @@ from airflow.sdk.types import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
 from dags.model_lifecycle_orchestrator.on_training_decision.controllers.slack import initialize_promotion_approval
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.data_keys import TrainingPipelineKeys
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.data_keys import TrainModelKeys
 from dags.model_lifecycle_orchestrator.on_training_decision.services.tasks import train_model
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
@@ -23,27 +23,27 @@ class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
         return cls(
             model_trained_at_iso_datetime=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_TRAINED_AT_ISO_DATETIME,
+                key=TrainModelKeys.MODEL_TRAINED_AT_ISO_DATETIME,
             ),
             mlflow_run_id=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MLFLOW_RUN_ID,
+                key=TrainModelKeys.MLFLOW_RUN_ID,
             ),
             model_name=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_NAME,
+                key=TrainModelKeys.MODEL_NAME,
             ),
             model_version=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_VERSION,
+                key=TrainModelKeys.MODEL_VERSION,
             ),
             model_dataset_min_iso_datetime=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_DATASET_MIN_ISO_DATETIME,
+                key=TrainModelKeys.MODEL_DATASET_MIN_ISO_DATETIME,
             ),
             model_dataset_max_iso_datetime=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_DATASET_MAX_ISO_DATETIME,
+                key=TrainModelKeys.MODEL_DATASET_MAX_ISO_DATETIME,
             )
         )
 
@@ -63,27 +63,27 @@ class InitializePromotionApprovalXCom(BaseModel):
         return cls(
             model_name=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_NAME,
+                key=TrainModelKeys.MODEL_NAME,
             ),
             model_version=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_VERSION,
+                key=TrainModelKeys.MODEL_VERSION,
             ),
             f1_score=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_F1_SCORE,
+                key=TrainModelKeys.MODEL_F1_SCORE,
             ),
             pr_auc=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_PR_AUC,
+                key=TrainModelKeys.MODEL_PR_AUC,
             ),
             recall=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_RECALL,
+                key=TrainModelKeys.MODEL_RECALL,
             ),
             precision=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_PRECISION,
+                key=TrainModelKeys.MODEL_PRECISION,
             ),
         )
 
@@ -123,26 +123,26 @@ class UpdatePromotionApproval(BaseModel):
             ),
             model_name=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_NAME,
+                key=TrainModelKeys.MODEL_NAME,
             ),
             model_version=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_VERSION,
+                key=TrainModelKeys.MODEL_VERSION,
             ),
             f1_score=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_F1_SCORE,
+                key=TrainModelKeys.MODEL_F1_SCORE,
             ),
             pr_auc=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_PR_AUC,
+                key=TrainModelKeys.MODEL_PR_AUC,
             ),
             recall=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_RECALL,
+                key=TrainModelKeys.MODEL_RECALL,
             ),
             precision=ti.xcom_pull(
                 task_ids=train_model.__name__,
-                key=TrainingPipelineKeys.MODEL_PRECISION,
+                key=TrainModelKeys.MODEL_PRECISION,
             ),
         )

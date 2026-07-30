@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
 
-class Project(PostgresTableBase):
+class Projects(PostgresTableBase):
     __tablename__ = "projects"
 
     id: Mapped[uuid.UUID] = mapped_column(

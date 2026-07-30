@@ -5,9 +5,9 @@ from sqlalchemy import UUID, func, ForeignKey, Text, Integer, Boolean, false, Da
 from sqlalchemy.orm import Mapped, mapped_column
 
 from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
-from services.shared.modules.schemas.postgres.projects import Project
+from services.shared.modules.schemas.postgres.projects import Projects
 
-class ModelDeployment(PostgresTableBase):
+class ModelDeployments(PostgresTableBase):
     __tablename__ = "model_deployments"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -22,7 +22,7 @@ class ModelDeployment(PostgresTableBase):
     )
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey(Project.id),
+        ForeignKey(Projects.id),
         nullable=False
     )
     name: Mapped[str] = mapped_column(

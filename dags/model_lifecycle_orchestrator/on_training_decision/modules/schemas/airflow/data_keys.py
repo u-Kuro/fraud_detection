@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class TrainingPipelineKeys:
+class TrainModelKeys:
     MODEL_TRAINED_AT_ISO_DATETIME: str = "MODEL_TRAINED_AT_ISO_DATETIME"
     MLFLOW_RUN_ID: str = "MLFLOW_RUN_ID"
     MODEL_NAME: str = "MODEL_NAME"

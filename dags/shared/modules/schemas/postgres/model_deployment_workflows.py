@@ -7,7 +7,7 @@ from sqlalchemy import UUID, func, ForeignKey, Text, Boolean, Integer, false, En
 from sqlalchemy.orm import Mapped, mapped_column
 
 from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
-from services.shared.modules.schemas.postgres.projects import Project
+from services.shared.modules.schemas.postgres.projects import Projects
 
 @dataclass(frozen=True)
 class ModelDeploymentWorkflowState(StrEnum):
@@ -15,7 +15,7 @@ class ModelDeploymentWorkflowState(StrEnum):
     promote_pending = "promote_pending"
     promote_pending_replacement = "promote_pending_replacement"
 
-class ModelDeploymentWorkflow(PostgresTableBase):
+class ModelDeploymentWorkflows(PostgresTableBase):
     __tablename__ = "model_deployment_workflows"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -30,7 +30,7 @@ class ModelDeploymentWorkflow(PostgresTableBase):
     )
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey(Project.id),
+        ForeignKey(Projects.id),
         nullable=False
     )
     state: Mapped[ModelDeploymentWorkflowState] = mapped_column(

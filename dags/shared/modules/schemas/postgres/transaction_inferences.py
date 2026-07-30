@@ -4,10 +4,10 @@ from datetime import datetime
 from sqlalchemy import UUID, func, Double, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
-from services.shared.modules.schemas.postgres.model_deployments import ModelDeployment
+from services.shared.modules.schemas.postgres.model_deployments import ModelDeployments
 from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
 
-class TransactionInference(PostgresTableBase):
+class TransactionInferences(PostgresTableBase):
     __tablename__ = "transaction_inferences"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -46,7 +46,7 @@ class TransactionInference(PostgresTableBase):
     )
     model_deployment_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey(ModelDeployment.id),
+        ForeignKey(ModelDeployments.id),
         nullable=True
     )
     v1: Mapped[float] = mapped_column(Double, nullable=False)

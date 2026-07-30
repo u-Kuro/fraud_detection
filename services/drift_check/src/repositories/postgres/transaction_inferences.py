@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 
 from services.drift_check.src.repositories.postgres.postgres import sql_session
 from services.shared.modules.configs.dataset import DatasetConfig
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInference
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def load_current_dataset(
     current_dataset_cutoff: datetime,
@@ -14,34 +14,34 @@ def load_current_dataset(
     with sql_session.begin() as session:
         current_dataset_subquery = (
             select(
-                TransactionInference.is_fraud,
-                TransactionInference.is_fraud_prediction,
-                TransactionInference.is_fraud_probability,
-                TransactionInference.amount,
-                TransactionInference.transaction_timestamp,
-                TransactionInference.v1, TransactionInference.v2,
-                TransactionInference.v3, TransactionInference.v4,
-                TransactionInference.v5, TransactionInference.v6,
-                TransactionInference.v7, TransactionInference.v8,
-                TransactionInference.v9, TransactionInference.v10,
-                TransactionInference.v11, TransactionInference.v12,
-                TransactionInference.v13, TransactionInference.v14,
-                TransactionInference.v15, TransactionInference.v16,
-                TransactionInference.v17, TransactionInference.v18,
-                TransactionInference.v19, TransactionInference.v20,
-                TransactionInference.v21, TransactionInference.v22,
-                TransactionInference.v23, TransactionInference.v24,
-                TransactionInference.v25, TransactionInference.v26,
-                TransactionInference.v27, TransactionInference.v28,
+                TransactionInferences.is_fraud,
+                TransactionInferences.is_fraud_prediction,
+                TransactionInferences.is_fraud_probability,
+                TransactionInferences.amount,
+                TransactionInferences.transaction_timestamp,
+                TransactionInferences.v1, TransactionInferences.v2,
+                TransactionInferences.v3, TransactionInferences.v4,
+                TransactionInferences.v5, TransactionInferences.v6,
+                TransactionInferences.v7, TransactionInferences.v8,
+                TransactionInferences.v9, TransactionInferences.v10,
+                TransactionInferences.v11, TransactionInferences.v12,
+                TransactionInferences.v13, TransactionInferences.v14,
+                TransactionInferences.v15, TransactionInferences.v16,
+                TransactionInferences.v17, TransactionInferences.v18,
+                TransactionInferences.v19, TransactionInferences.v20,
+                TransactionInferences.v21, TransactionInferences.v22,
+                TransactionInferences.v23, TransactionInferences.v24,
+                TransactionInferences.v25, TransactionInferences.v26,
+                TransactionInferences.v27, TransactionInferences.v28,
             )
-            .distinct(TransactionInference.transaction_id)
+            .distinct(TransactionInferences.transaction_id)
             .where(
-                TransactionInference.transaction_timestamp > current_dataset_cutoff
+                TransactionInferences.transaction_timestamp > current_dataset_cutoff
             )
             .order_by(
-                TransactionInference.transaction_id.desc(),
-                TransactionInference.transaction_timestamp.desc(),
-                TransactionInference.created_at.desc(),
+                TransactionInferences.transaction_id.desc(),
+                TransactionInferences.transaction_timestamp.desc(),
+                TransactionInferences.created_at.desc(),
             )
             .subquery()
         )
@@ -55,11 +55,11 @@ def load_current_dataset(
         if len(df_current) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
-        df_current[TransactionInference.is_fraud.key] = df_current[TransactionInference.is_fraud.key].astype(int)
-        df_current[TransactionInference.is_fraud_prediction.key] = df_current[TransactionInference.is_fraud_prediction.key].astype(int)
-        df_current[TransactionInference.transaction_timestamp.key] = (
+        df_current[TransactionInferences.is_fraud.key] = df_current[TransactionInferences.is_fraud.key].astype(int)
+        df_current[TransactionInferences.is_fraud_prediction.key] = df_current[TransactionInferences.is_fraud_prediction.key].astype(int)
+        df_current[TransactionInferences.transaction_timestamp.key] = (
             pd.to_datetime(
-                df_current[TransactionInference.transaction_timestamp.key],
+                df_current[TransactionInferences.transaction_timestamp.key],
                 utc=True
             )
             .astype("int64") // 10 ** 9
