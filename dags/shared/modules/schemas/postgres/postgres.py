@@ -1,7 +1,4 @@
-from dataclasses import dataclass
+from sqlalchemy.orm import DeclarativeBase
 
-@dataclass(frozen=True)
-class PostgresTableKeys:
-    projects: str = "projects"
-    model_deployment_workflows: str = "model_deployment_workflows"
-    model_deployments: str = "model_deployments"
+class PostgresTableBase(DeclarativeBase):
+    pass
