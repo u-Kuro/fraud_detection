@@ -1,25 +1,74 @@
+from datetime import timedelta
 from uuid import UUID
 
 from airflow.sdk import task, get_current_context
+from sqlalchemy import select, inspect, and_, func
+from sqlalchemy.orm import aliased
+from sqlalchemy.orm.util import AliasedClass
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval, invalidate_expired_promotion_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom, ReinitializeTrainPendingWorkflow, UpdateTrainPendingWorkflow
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
+# from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
 from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, no_action
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
-from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflowState, ModelDeploymentWorkflowsColumnKeys
-from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
+from dags.shared.modules.schemas.delete_postgres.model_deployment_workflows import ModelDeploymentWorkflowState, ModelDeploymentWorkflowsColumnKeys
+from dags.shared.modules.schemas.delete_postgres.postgres import PostgresTableKeys
+from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflow
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
-from dags.shared.repositories.postgres.postgres import postgres_hook
+from dags.shared.modules.utilities.postgres.sqlalchemy import field
+from dags.shared.repositories.postgres.postgres import sql_session
 
 @task.branch(task_id="has_expired_promote_pending_workflow_with_replacement")
 def has_expired_promote_pending_workflow_with_replacement() -> str:
     context = get_current_context()
+
+    with sql_session.begin() as session:
+        expired_model_deployment_workflow = aliased(ModelDeploymentWorkflow, name="expired_model_deployment_workflow")
+        replacement_model_deployment_workflow = aliased(ModelDeploymentWorkflow, name="replacement_model_deployment_workflow")
+
+        results = session.execute(
+            select(
+                field(expired_model_deployment_workflow.promotion_approval_slack_ts)
+                    .label(ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS),
+
+                field(replacement_model_deployment_workflow.registered_model_name)
+                    .label(ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME),
+                field(replacement_model_deployment_workflow.registered_model_version)
+                    .label(ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION),
+
+                field(expired_model_deployment_workflow.registered_model_name)
+                    .label(ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME),
+                field(expired_model_deployment_workflow.registered_model_version)
+                    .label(ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION),
+
+                field(expired_model_deployment_workflow.mlflow_run_id)
+                    .label(ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID),
+
+                field(expired_model_deployment_workflow.id)
+                    .label(ModelDeploymentSuccessionKeys.EXPIRED_ID)
+            )
+            .join_from(
+                isouter=False, full=False,
+                from_=expired_model_deployment_workflow,
+                target=replacement_model_deployment_workflow,
+                onclause=and_(
+                    replacement_model_deployment_workflow.project_id == PostgresConfig.PROJECT_ID(),
+                    replacement_model_deployment_workflow.state == ModelDeploymentWorkflowState.promote_pending_replacement
+                )
+            )
+            .where(
+                expired_model_deployment_workflow.project_id == PostgresConfig.PROJECT_ID(),
+                expired_model_deployment_workflow.state == ModelDeploymentWorkflowState.promote_pending,
+                expired_model_deployment_workflow.model_trained_at < func.now() - timedelta(days=ModelDeploymentWorkflowsConfig.challenger_model_expiration_days)
+            )
+            .limit(1)
+        ).one_or_none()
+
 
     results = postgres_hook.get_pandas_df(f"""
         SELECT
@@ -126,6 +175,78 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
             invalidate_expired_challenger_model.__name__,
             invalidate_expired_promotion_approval.__name__
         ))
+# from sqlalchemy import select, and_, func
+# from sqlalchemy.orm import aliased
+# from datetime import timedelta
+#
+# # Two aliases of the same model — mirrors SQL's "expired" and "replacement"
+# expired     = aliased(ModelDeploymentWorkflow, name="expired")
+# replacement = aliased(ModelDeploymentWorkflow, name="replacement")
+#
+# stmt = (
+#     select(
+#         expired.promotion_approval_slack_ts.label(
+#             ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS
+#         ),
+#         replacement.registered_model_name.label(
+#             ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME
+#         ),
+#         replacement.registered_model_version.label(
+#             ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION
+#         ),
+#         expired.registered_model_name.label(
+#             ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME
+#         ),
+#         expired.registered_model_version.label(
+#             ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION
+#         ),
+#         expired.mlflow_run_id.label(
+#             ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID
+#         ),
+#         expired.id.label(
+#             ModelDeploymentSuccessionKeys.EXPIRED_ID
+#         ),
+#     )
+#     .select_from(expired)                         # anchor the FROM clause to "expired"
+#     .join(
+#         replacement,
+#         and_(                                     # ON clause mirrors the original SQL
+#             replacement.project_id == PostgresConfig.PROJECT_ID(),
+#             replacement.state == ModelDeploymentWorkflowState.promote_pending_replacement,
+#         ),
+#         isouter=False,                            # INNER JOIN (default, explicit for clarity)
+#     )
+#     .where(
+#         expired.project_id == PostgresConfig.PROJECT_ID(),
+#         expired.state      == ModelDeploymentWorkflowState.promote_pending,
+#         expired.model_trained_at < func.now() - timedelta(
+#             days=ModelDeploymentWorkflowsConfig.challenger_model_expiration_days
+#         ),
+#     )
+#     .limit(1)
+# )
+#
+# with Session.begin() as session:
+#     row = session.execute(stmt).first()
+#
+# if row is None:
+#     return build_task_id((
+#         invalidate_expired_challenger_model.__name__,
+#         no_action.__name__,
+#         NoActionBranches.no_expired_promote_pending_workflow_with_replacement,
+#     ))
+#
+# # Unpack by label name (Row supports attribute access)
+# expired_promotion_approval_slack_ts = row._mapping[ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS]
+# replacement_model_name              = row._mapping[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME]
+# replacement_model_version           = row._mapping[ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_VERSION]
+# expired_model_name                  = row._mapping[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_NAME]
+# expired_model_version               = row._mapping[ModelDeploymentSuccessionKeys.EXPIRED_MODEL_VERSION]
+# expired_mlflow_run_id               = row._mapping[ModelDeploymentSuccessionKeys.EXPIRED_MLFLOW_RUN_ID]
+# expired_id                          = row._mapping[ModelDeploymentSuccessionKeys.EXPIRED_ID]
+#
+# # ... rest of your asserts + xcom_push calls unchanged
+
 
 @task(task_id="delete_expired_promote_pending_workflow")
 def delete_expired_promote_pending_workflow() -> None:

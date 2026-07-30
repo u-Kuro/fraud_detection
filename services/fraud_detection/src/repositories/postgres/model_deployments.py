@@ -1,4 +1,4 @@
-from sqlalchemy import text, select
+from sqlalchemy import select
 
 from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 from services.fraud_detection.src.repositories.postgres.postgres import sql_session

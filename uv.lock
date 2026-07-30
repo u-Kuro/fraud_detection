@@ -1254,7 +1254,7 @@ version = "0.1.0"
 source = { virtual = "." }
 
 [package.dev-dependencies]
-archiving = [
+archive = [
     { name = "boto3" },
     { name = "psycopg2-binary" },
     { name = "pyarrow" },
@@ -1274,7 +1274,6 @@ dev = [
     { name = "ipywidgets" },
     { name = "jupyter" },
     { name = "kaleido" },
-    { name = "kubernetes" },
     { name = "matplotlib" },
     { name = "moto", extra = ["s3"] },
     { name = "mypy" },
@@ -1341,7 +1340,7 @@ train-model = [
 [package.metadata]
 
 [package.metadata.requires-dev]
-archiving = [
+archive = [
     { name = "boto3", specifier = ">=1.43.14" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
     { name = "pyarrow", specifier = ">=23.0.1" },
@@ -1361,7 +1360,6 @@ dev = [
     { name = "ipywidgets", specifier = ">=8.1.8" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "kaleido", specifier = ">=0.2.1" },
-    { name = "kubernetes", specifier = ">=36.0.2" },
     { name = "matplotlib", specifier = ">=3.10.9" },
     { name = "moto", extras = ["s3"], specifier = ">=5.2.1" },
     { name = "mypy", specifier = ">=2.1.0" },

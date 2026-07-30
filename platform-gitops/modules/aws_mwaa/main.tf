@@ -15,7 +15,6 @@ resource "aws_s3_object" "requirements" {
     apache-airflow-providers-http==6.0.4
     apache-airflow-providers-postgres==6.8.0
     apache-airflow-providers-slack==9.10.2
-    kubernetes==36.0.2
     pydantic==2.13.4
   REQ
 }

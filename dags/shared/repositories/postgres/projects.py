@@ -1,23 +1,17 @@
 from uuid import UUID
 
 from pydantic import validate_call
+from sqlalchemy import select
 
-from dags.shared.modules.schemas.postgres.postgres import PostgresTableKeys
-from dags.shared.modules.schemas.postgres.projects import ProjectsColumnKeys
-from dags.shared.repositories.postgres.postgres import postgres_hook
+from dags.shared.modules.schemas.postgres.projects import Project
+from dags.shared.repositories.postgres.postgres import sql_session
 
 @validate_call(validate_return=True)
 def get_project_id(project_name: str) -> UUID:
-    project_id_row = postgres_hook.get_first(f"""
-        SELECT {ProjectsColumnKeys.id}
-        FROM {PostgresTableKeys.projects}
-        WHERE {ProjectsColumnKeys.name} = %({ProjectsColumnKeys.name})s
-        """, {
-            ProjectsColumnKeys.name: project_name
-        }
-    )
+    with sql_session.begin() as session:
+        (project_id,) = session.execute(
+            select(Project.id)
+            .where(Project.name == project_name)
+        ).one().t
 
-    if project_id_row is None:
-        raise ValueError(f"Project {project_name!r} not found.")
-
-    return project_id_row[0]
+    return project_id

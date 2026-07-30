@@ -1,10 +1,16 @@
-import psycopg2.extras
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from sqlalchemy import NullPool
+from sqlalchemy.orm import sessionmaker
 
 from dags.shared.modules.configs.postgres import PostgresConfig
 
-psycopg2.extras.register_uuid()
-
-postgres_hook: PostgresHook = PostgresHook(postgres_conn_id=PostgresConfig.POSTGRES_CONNECTION_ID)
+sql_session: sessionmaker = sessionmaker(
+    PostgresHook(postgres_conn_id=PostgresConfig.POSTGRES_CONNECTION_ID)
+    .get_sqlalchemy_engine(
+        engine_kwargs={
+            "poolclass": NullPool
+        }
+    )
+)
 
 # TODO - 29/07/2026 - Continue here... Apply sqlalchemy ORM in dags...
