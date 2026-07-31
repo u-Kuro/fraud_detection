@@ -1,10 +1,11 @@
 locals {
-  mle_schema_name = "mle"
+  mlflow_schema_name  = "mlflow"
+  mle_schema_name     = "mle"
 }
 
 # MLFLOW
 resource "postgresql_schema" "mlflow" {
-  name  = "mlflow"
+  name  = local.mlflow_schema_name
   owner = var.db_owner_username
 }
 resource "postgresql_role" "mlflow" {
@@ -13,6 +14,7 @@ resource "postgresql_role" "mlflow" {
   login               = true
   connection_limit    = 20
   skip_reassign_owned = true
+  search_path         = [local.mlflow_schema_name]
 }
 resource "postgresql_grant" "mlflow_database" {
   database    = var.db_name
@@ -45,7 +47,7 @@ resource "postgresql_grant" "mlflow_sequence" {
   depends_on  = [postgresql_schema.mlflow]
 }
 
-# MLE Applications
+# MLE (/dags and /services)
 resource "postgresql_schema" "mle" {
   name  = local.mle_schema_name
   owner = var.db_owner_username
@@ -56,7 +58,7 @@ resource "postgresql_role" "mle" {
   login               = true
   connection_limit    = 50
   skip_reassign_owned = true
-  search_path = [local.mle_schema_name]
+  search_path         = [local.mle_schema_name]
 }
 resource "postgresql_grant" "mle_database" {
   database    = var.db_name
@@ -88,14 +90,14 @@ resource "postgresql_grant" "mle_sequence" {
   privileges  = ["USAGE", "SELECT"]
   depends_on  = [postgresql_schema.mle]
 }
-# MLE Migrations
+# MLE Migrations (/database)
 resource "postgresql_role" "mle_migration" {
   name                = var.mle_migrations_db_username
   password            = var.mle_migrations_db_password
   login               = true
   connection_limit    = 20
   skip_reassign_owned = true
-  search_path = [local.mle_schema_name]
+  search_path         = [local.mle_schema_name]
 }
 resource "postgresql_grant" "mle_migration_database" {
   database    = var.db_name
@@ -135,7 +137,7 @@ resource "postgresql_default_privileges" "mle_future_tables" {
   role        = postgresql_role.mle.name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-  depends_on = [
+  depends_on  = [
     postgresql_schema.mle,
     postgresql_role.mle,
     postgresql_role.mle_migration
@@ -148,7 +150,7 @@ resource "postgresql_default_privileges" "mle_future_sequences" {
   role        = postgresql_role.mle.name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
-  depends_on = [
+  depends_on  = [
     postgresql_schema.mle,
     postgresql_role.mle,
     postgresql_role.mle_migration,

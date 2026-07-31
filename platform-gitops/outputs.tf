@@ -26,10 +26,3 @@ output "aws_s3_mle_bucket_name" {
 output "aws_mwaa_environment_webserver_url" {
   value = module.aws_mwaa_environment.webserver_url
 }
-
-output "secrets_manager_mle_pipeline_arn" {
-  value = module.secrets_manager.mle_pipeline_secret_arn
-}
-output "secrets_manager_mle_fraud_detection_arn" {
-  value = module.secrets_manager.mle_fraud_detection_secret_arn
-}

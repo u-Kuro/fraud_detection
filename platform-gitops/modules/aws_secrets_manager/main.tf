@@ -1,8 +1,6 @@
-# IAM policy — grants the MLE team (only) read/write access to their secrets.
-# Platform team cannot read these secrets; they have no need to.
 resource "aws_iam_policy" "mle_secrets_access" {
   name        = "mle_secrets_access"
-  description = "MLE team full self-service access under /mle/* namespace."
+  description = "MLE team access under /mle/*"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -25,7 +23,7 @@ resource "aws_iam_policy" "mle_secrets_access" {
         Sid      = "mle_secret_list_access"
         Effect   = "Allow"
         Action   = ["secretsmanager:ListSecrets"]
-        Resource = "*"   # ListSecrets can't be scoped to a prefix
+        Resource = "*" # ListSecrets can't be scoped to a prefix
       }
     ]
   })
@@ -37,6 +35,6 @@ resource "aws_iam_policy_attachment" "mle_secrets_access" {
   users      = []
   roles      = []
   groups     = []
-  # In a real deployment, specify the MLE IAM group/role here.
+  # Need to specify MLE IAM group/role here when using actual AWS.
   # Ministack: the policy attachment exists but enforcement is simulated.
 }

@@ -34,7 +34,7 @@ variable "ecr_registry_mirror_endpoint_url" {
 }
 variable "ecr_registry_secret_name" {
   type      = string
-  default   = "ecr-secret"
+  default   = "ecr_secret"
 }
 
 variable "s3_internal_endpoint_url" {

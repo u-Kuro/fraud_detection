@@ -6,9 +6,9 @@ image:
   tag: latest
   pullPolicy: Always
 
-# ecr-secret is created by initialize-ministack-k3s.ps1 during Terraform EKS init.
+# ecr_secret is created by initialize-ministack-k3s.ps1 during Terraform EKS init.
 imagePullSecrets:
-  - name: ecr-secret
+  - name: ecr_secret
 
 service:
   type: NodePort

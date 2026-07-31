@@ -21,7 +21,6 @@ module "postgresql" {
   mle_migrations_db_username = var.mle_migrations_db_username
   mle_migrations_db_password = var.mle_migrations_db_password
   depends_on  = [module.rds_db]
-  providers   = { postgresql = postgresql }
 }
 
 module "s3" {
@@ -34,7 +33,10 @@ module "secrets_manager" {
   aws_account_id = var.aws_account_id
 }
 
-# EKS: creates k3s cluster + runs extract-kubeconfig.ps1 automatically.
+# Creates local EKS container from local AWS emulator (MiniStack)
+# then Copies its k3s.yaml (kubeconfig)
+# into Other local emulated services (e.g. MWAA)
+# to Allow access to manage cluster resources
 module "eks_cluster" {
   source                            = "./modules/aws_eks"
   aws_access_key                    = var.aws_access_key
@@ -50,7 +52,10 @@ module "eks_cluster" {
   kubeconfig_host_file_name         = var.kubeconfig_host_file_name
 }
 
-# MWAA depends on S3 (requirements.txt) and EKS (internal kubeconfig upload).
+# Creates local MWAA container from local AWS emulator (MiniStack)
+# then Copies kubeconfig (k3s.yaml from local EKS container)
+# into its local container
+# to Allow access to manage cluster resources
 module "aws_mwaa_environment" {
   source                              = "./modules/aws_mwaa"
   aws_access_key                      = var.aws_access_key
@@ -69,7 +74,6 @@ module "aws_mwaa_environment" {
   ]
 }
 
-# Helm apps depend on EKS (kubeconfig must exist before Helm provider connects).
 module "helm_apps" {
   source                      = "./modules/helm_apps"
   aws_access_key              = var.aws_access_key

@@ -1,9 +1,9 @@
-# All AWS calls redirected to the local MiniStack container.
 provider "aws" {
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
   region     = var.aws_region
 
+  # Routes requests to local aws emulator (MiniStack container)
   endpoints {
     eks             = var.eks_service_endpoint_url
     s3              = var.s3_service_endpoint_url
@@ -14,11 +14,14 @@ provider "aws" {
     iam             = "http://localhost:4566"
   }
 
-  # MiniStack S3 requires path-style — virtual-hosted style
-  # (bucket.localhost) does not resolve.
+  # Forces S3 URLs to use "http://localhost:4566/bucket-name" (path-style)
+  # instead of "http://bucket-name.localhost:4566" which fails local DNS resolution
   s3_use_path_style           = true
+  # Prevents Terraform from validating dummy credentials against real AWS STS servers
   skip_credentials_validation = true
+  # Prevents Terraform from querying the EC2 metadata IP (169.254.169.254) to avoid local timeouts
   skip_metadata_api_check     = true
+  # Prevents Terraform from calling STS GetCallerIdentity to lookup a real 12-digit AWS Account ID
   skip_requesting_account_id  = true
 }
 
@@ -28,9 +31,7 @@ provider "postgresql" {
   database          = module.rds_db.name
   username          = module.rds_db.username
   password          = module.rds_db.password
-  sslmode           = "disable"
-  connect_timeout   = 15
-  superuser         = false
+  sslmode           = "require"
   expected_version  = "15"
 }
 

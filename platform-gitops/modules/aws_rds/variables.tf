@@ -1,6 +1,6 @@
 variable "db_identifier" {
   type    = string
-  default = "fraud-detection-rds"
+  default = "rds"
 }
 variable "db_username" {
   type = string

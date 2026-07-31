@@ -1,19 +1,30 @@
-# Static MLflow values. Dynamic values (host, db, bucket, password)
-# are injected via Terraform set{} / set_sensitive{} blocks.
 backendStore:
-  databaseMigration: true   # runs schema migrations on startup
+  databaseMigration: true
   postgres:
     enabled: true
+#   host: [dynamic]
+#   port: [dynamic]
+#   database: [dynamic]
+#   user: [dynamic]
+#   password: [dynamic]
 
 artifactRoot:
-  proxiedArtifactStorage: true
   s3:
     enabled: true
+    path: "artifacts"
+#   awsAccessKeyId: [dynamic]
+#   awsSecretAccessKey: [dynamic]
+  proxiedArtifactStorage: true # Changes destination host from s3 to mlflow
 
-# serveArtifacts → --serve-artifacts flag: proxies artifact uploads/downloads
-# through the MLflow server instead of redirecting clients to S3 directly.
 extraFlags:
-  - serveArtifacts
+  - serveArtifacts # Enables mlflow to proxy artifact connection from s3 (uploads/downloads)
+
+# extraEnvVars:
+#   MLFLOW_S3_ENDPOINT_URL: [dynamic]
+#   WS_DEFAULT_REGION: [dynamic]
 
 service:
-  type: ClusterIP
+  type: ClusterIP # Internal access only
+# port: [dynamic]
+
+# fullnameOverride: [dynamic] # Sets hostname
