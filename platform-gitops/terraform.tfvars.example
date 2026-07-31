@@ -12,5 +12,5 @@ mlflow_db_password          = "mlflow"
 mle_db_username             = "mle"
 mle_db_password             = "mle"
 
-mle_migrations_db_username  = "mle_migrations"
-mle_migrations_db_password  = "mle_migrations"
+mle_migrations_db_username  = "mle-migrations"
+mle_migrations_db_password  = "mle-migrations"

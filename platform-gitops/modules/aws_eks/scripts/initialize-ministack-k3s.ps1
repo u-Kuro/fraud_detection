@@ -2,14 +2,18 @@ param(
     [Parameter(Mandatory)][string]$aws_access_key,
     [Parameter(Mandatory)][string]$aws_secret_key,
     [Parameter(Mandatory)][string]$aws_region,
-    [Parameter(Mandatory)][string]$cluster_name,
+
     [Parameter(Mandatory)][string]$eks_service_endpoint_url,
-    [Parameter(Mandatory)][string]$ecr_registry_endpoint,
-    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
-    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
-    [Parameter(Mandatory)][string]$ecr_registry_secret_name,
+    [Parameter(Mandatory)][string]$eks_cluster_name,
+
     [Parameter(Mandatory)][string]$kubeconfig_host_directory_path,
-    [Parameter(Mandatory)][string]$kubeconfig_host_file_name
+    [Parameter(Mandatory)][string]$kubeconfig_host_file_name,
+
+    [Parameter(Mandatory)][string]$ecr_registry_endpoint,
+    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
+    [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
+
+    [Parameter(Mandatory)][string]$ecr_registry_secret_name
 )
 
 Set-StrictMode -Version Latest
@@ -21,12 +25,12 @@ aws configure set aws_secret_access_key "${aws_secret_key}"
 aws configure set region "${aws_region}"
 
 # Wait for cluster to be active
-Write-Host "`n[EKS] Waiting for cluster '${cluster_name}' to become ACTIVE..."
+Write-Host "`n[EKS] Waiting for cluster '${eks_cluster_name}' to become ACTIVE..."
 $max_wait = 120; $waited = 0
 do {
     Start-Sleep -Seconds 5; $waited += 5
     $status = aws --endpoint-url "${eks_service_endpoint_url}" eks describe-cluster `
-                --name "${cluster_name}" `
+                --name "${eks_cluster_name}" `
                 --query "cluster.status" `
                 --output text 2>$null
     Write-Host "[EKS] Status: $status (${waited}s elapsed)"

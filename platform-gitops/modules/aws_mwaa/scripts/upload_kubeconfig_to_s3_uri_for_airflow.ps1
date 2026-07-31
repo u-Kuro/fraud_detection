@@ -2,11 +2,13 @@ param(
     [Parameter(Mandatory)][string]$aws_access_key,
     [Parameter(Mandatory)][string]$aws_secret_key,
     [Parameter(Mandatory)][string]$aws_region,
-    [Parameter(Mandatory)][string]$cluster_name,
+
     [Parameter(Mandatory)][string]$eks_service_endpoint_url,
-    [Parameter(Mandatory)][string]$s3_service_endpoint_url,
+    [Parameter(Mandatory)][string]$eks_cluster_name,
     [Parameter(Mandatory)][string]$temporary_kubeconfig_file_path,
-    [Parameter(Mandatory)][string]$airflow_kubeconfig_s3_uri
+
+    [Parameter(Mandatory)][string]$s3_service_endpoint_url,
+    [Parameter(Mandatory)][string]$s3_dag_kubeconfig_uri
 )
 
 Set-StrictMode -Version Latest
@@ -19,11 +21,11 @@ aws configure set region "${aws_region}"
 
 # Upload airflow kubeconfig
 aws --endpoint-url "${eks_service_endpoint_url}" eks update-kubeconfig `
-    --name "${cluster_name}" `
+    --name "${eks_cluster_name}" `
     --kubeconfig ${temporary_kubeconfig_file_path} | Out-Null
 
 aws --endpoint-url "${s3_service_endpoint_url}" s3 cp `
     "${temporary_kubeconfig_file_path}" `
-    "${airflow_kubeconfig_s3_uri}"
+    "${s3_dag_kubeconfig_uri}"
 
-Write-Host "[MWAA] Internal kubeconfig uploaded to ${airflow_kubeconfig_s3_uri}"
+Write-Host "[MWAA] Internal kubeconfig uploaded to ${s3_dag_kubeconfig_uri}"

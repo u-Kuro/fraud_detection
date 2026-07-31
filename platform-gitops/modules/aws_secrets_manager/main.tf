@@ -18,12 +18,6 @@ resource "aws_iam_policy" "mle_secrets_access" {
           "secretsmanager:ListSecretVersionIds",
         ]
         Resource = "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:/mle/*"
-      },
-      {
-        Sid      = "mle_secret_list_access"
-        Effect   = "Allow"
-        Action   = ["secretsmanager:ListSecrets"]
-        Resource = "*" # ListSecrets can't be scoped to a prefix
       }
     ]
   })
@@ -37,4 +31,5 @@ resource "aws_iam_policy_attachment" "mle_secrets_access" {
   groups     = []
   # Need to specify MLE IAM group/role here when using actual AWS.
   # Ministack: the policy attachment exists but enforcement is simulated.
+  depends_on = [aws_iam_policy.mle_secrets_access]
 }

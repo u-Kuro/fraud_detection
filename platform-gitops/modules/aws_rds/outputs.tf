@@ -12,9 +12,10 @@ output "name" {
 }
 
 output "username" {
-  value = aws_db_instance.main.username
+  value     = aws_db_instance.main.username
+  sensitive = true
 }
 output "password" {
-  value = aws_db_instance.main.password
+  value     = aws_db_instance.main.password
   sensitive = true
 }

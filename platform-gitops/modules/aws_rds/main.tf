@@ -1,5 +1,5 @@
 resource "aws_db_instance" "main" {
-  identifier          = var.db_identifier
+  identifier          = "rds"
   engine              = "postgres"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
@@ -7,5 +7,4 @@ resource "aws_db_instance" "main" {
   password            = var.db_password
   db_name             = "main"
   skip_final_snapshot = true
-  apply_immediately   = true
 }

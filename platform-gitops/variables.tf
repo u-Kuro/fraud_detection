@@ -34,7 +34,7 @@ variable "ecr_registry_mirror_endpoint_url" {
 }
 variable "ecr_registry_secret_name" {
   type      = string
-  default   = "ecr_secret"
+  default   = "ecr-secret"
 }
 
 variable "s3_internal_endpoint_url" {
@@ -62,27 +62,27 @@ variable "rds_db_password" {
   sensitive = true
 }
 
-variable "mlflow_db_username" {
+variable "mlflow_postgresql_username" {
   type      = string
   sensitive = true
 }
-variable "mlflow_db_password" {
+variable "mlflow_postgresql_password" {
   type      = string
   sensitive = true
 }
-variable "mle_db_username" {
+variable "mle_postgresql_username" {
   type      = string
   sensitive = true
 }
-variable "mle_db_password" {
+variable "mle_postgresql_password" {
   type      = string
   sensitive = true
 }
-variable "mle_migrations_db_username" {
+variable "mle_migrations_postgresql_username" {
   type      = string
   sensitive = true
 }
-variable "mle_migrations_db_password" {
+variable "mle_migrations_postgresql_password" {
   type      = string
   sensitive = true
 }

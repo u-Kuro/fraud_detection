@@ -7,29 +7,29 @@ variable "db_name" {
   sensitive = true
 }
 
-variable "mlflow_db_username" {
+variable "mlflow_postgresql_username" {
   type      = string
   sensitive = true
 }
-variable "mlflow_db_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "mle_db_username" {
-  type      = string
-  sensitive = true
-}
-variable "mle_password" {
+variable "mlflow_postgresql_password" {
   type      = string
   sensitive = true
 }
 
-variable "mle_migrations_db_username" {
+variable "mle_postgresql_username" {
   type      = string
   sensitive = true
 }
-variable "mle_migrations_db_password" {
+variable "mle_postgresql_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "mle_migrations_postgresql_username" {
+  type      = string
+  sensitive = true
+}
+variable "mle_migrations_postgresql_password" {
   type      = string
   sensitive = true
 }

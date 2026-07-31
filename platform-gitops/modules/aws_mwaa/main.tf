@@ -1,29 +1,8 @@
 locals {
-  dag_s3_path                     = "dags"
-  requirements_file_name          = "requirements.txt"
-  temporary_kubeconfig_file_path  = "$env:TEMP\\airflow_kubeconfig.yaml"
-  airflow_kubeconfig_s3_uri       = "s3://${var.s3_mle_bucket}/${local.dag_s3_path}/kubeconfig.yaml"
+  s3_mwaa_path  = "mwaa"
+  dag_s3_path   = "${local.s3_mwaa_path}/dags"
 }
-
-# Airflow needs this provider installed to run KubernetesPodOperator.
-resource "aws_s3_object" "requirements" {
-  bucket  = var.s3_mle_bucket
-  key     = local.requirements_file_name
-  content = <<-REQ
-    apache-airflow-providers-amazon==9.31.0
-    apache-airflow-providers-cncf-kubernetes==10.18.0
-    apache-airflow-providers-http==6.0.4
-    apache-airflow-providers-postgres==6.8.0
-    apache-airflow-providers-slack==9.10.2
-    pydantic==2.13.4
-  REQ
-}
-
-# Upload the Docker-internal kubeconfig to S3 so Airflow can mount it.
-# This kubeconfig uses the k3s container DNS name as the server URL —
-# correct from inside ministack_network where Airflow runs, but NOT
-# from the Windows host (that version lives in /kubeconfig/k3s.yaml).
-resource "terraform_data" "upload_airflow_kubeconfig" {
+resource "terraform_data" "upload_kubeconfig_to_s3_uri_for_airflow" {
   triggers_replace = {
     eks_cluster_name = var.eks_cluster_name
   }
@@ -31,19 +10,26 @@ resource "terraform_data" "upload_airflow_kubeconfig" {
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command     = join(" ", [
-      "& '${path.module}/scripts/upload-airflow-kubeconfig.ps1'",
+      "& '${path.module}/scripts/upload_kubeconfig_to_s3_uri_for_airflow.ps1'",
+
       "-aws_access_key '${var.aws_access_key}'",
       "-aws_secret_key '${var.aws_secret_key}'",
       "-aws_region '${var.aws_region}'",
-      "-cluster_name '${var.eks_cluster_name}'",
+
       "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
+      "-eks_cluster_name '${var.eks_cluster_name}'",
+      "-temporary_kubeconfig_file_path '$env:TEMP\\kubeconfig.yaml'",
+
       "-s3_service_endpoint_url '${var.s3_service_endpoint_url}'",
-      "-temporary_kubeconfig_file_path '${local.temporary_kubeconfig_file_path}'",
-      "-airflow_kubeconfig_s3_uri '${local.airflow_kubeconfig_s3_uri}'"
+      "-s3_dag_kubeconfig_uri 's3://${var.s3_mle_bucket}/${local.dag_s3_path}/kubeconfig.yaml'"
     ])
   }
 }
 
+locals {
+  airflow_secrets_connections_prefix  = "airflow/connections"
+  airflow_secrets_variables_prefix    = "airflow/variables"
+}
 resource "aws_iam_role_policy" "mwaa_secrets_access" {
   name = "mwaa_secrets_access"
   role = "mwaa_role"
@@ -60,42 +46,56 @@ resource "aws_iam_role_policy" "mwaa_secrets_access" {
           "secretsmanager:ListSecretVersionIds",
         ]
         Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:airflow/connections/*",
-          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:airflow/variables/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/*",
         ]
       }
     ]
   })
 }
 
+resource "aws_s3_object" "requirements" {
+  bucket  = var.s3_mle_bucket
+  key     = "${local.s3_mwaa_path}/requirements.txt"
+  content = <<-REQ
+    apache-airflow-providers-amazon==9.31.0
+    apache-airflow-providers-cncf-kubernetes==10.18.0
+    apache-airflow-providers-http==6.0.4
+    apache-airflow-providers-postgres==6.8.0
+    apache-airflow-providers-slack==9.10.2
+    pydantic==2.13.4
+  REQ
+}
+
 resource "aws_mwaa_environment" "main" {
-  name                  = var.environment_name
+  name                  = "mwaa"
   airflow_version       = "2.10.3"
   source_bucket_arn     = "arn:aws:s3:::${var.s3_mle_bucket}"
-  execution_role_arn    = "arn:aws:iam::${var.aws_account_id}:role/mwaa-role"
+  execution_role_arn    = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role_policy.mwaa_secrets_access.role}"
 
-  dag_s3_path           = "${local.dag_s3_path}/"
-  requirements_s3_path  = local.requirements_file_name
+  dag_s3_path = local.dag_s3_path
+
+  requirements_s3_path            = aws_s3_object.requirements.key
+  requirements_s3_object_version  = aws_s3_object.requirements.version_id
 
   airflow_configuration_options = {
-    "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
-    "secrets.backend_kwargs" = jsonencode({
-      # TODO - adding postgres and github and s3?
-      connections_prefix = "airflow/connections"
-      variables_prefix   = "airflow/variables"
+    "secrets.backend"         = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
+    "secrets.backend_kwargs"  = jsonencode({
+      connections_prefix = local.airflow_secrets_connections_prefix
+      variables_prefix   = local.airflow_secrets_variables_prefix
       sep                = "/"
-      endpoint_url       = var.secretsmanager_service_endpoint_url  # ministack LocalStack endpoint
+      endpoint_url       = var.secretsmanager_service_endpoint_url
     })
   }
 
   network_configuration {
-    security_group_ids = ["sg-00000000000000001"]
-    subnet_ids         = ["subnet-00000000000000001", "subnet-00000000000000002"]
+    security_group_ids  = ["sg-00000000000000001"]
+    subnet_ids          = ["subnet-00000000000000001", "subnet-00000000000000002"]
   }
 
   depends_on = [
     aws_s3_object.requirements,
-    terraform_data.upload_airflow_kubeconfig,
+    terraform_data.upload_kubeconfig_to_s3_uri_for_airflow,
     aws_iam_role_policy.mwaa_secrets_access,
   ]
 }
