@@ -1,11 +1,11 @@
-variable "teams" {
-  description = "Team definitions — only ecr_repos and the matching role ARN are used here"
-  type = map(object({
-    ecr_repos = optional(list(string), [])
-  }))
+variable "aws_account_id" { type = string }
+
+# From aws_iam module output: map of team_key => IAM Role ARN
+variable "team_role_arns" {
+  type = map(string)
 }
 
-variable "team_role_arns" {
-  description = "Map of team name → IRSA role ARN (from aws_iam_oidc module)"
-  type        = map(string)
+# From aws_iam module output: map of team_key => IAM Role name (for policy attachment)
+variable "team_role_names" {
+  type = map(string)
 }

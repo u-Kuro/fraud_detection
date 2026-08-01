@@ -1,16 +1,91 @@
-aws_access_key              = "test"
-aws_secret_key              = "test"
-aws_region                  = "us-east-1"
-aws_account_id              = "000000000000"
+Create Markdown file for changes in my current codebase for ff...
 
-rds_db_username             = "test"
-rds_db_password             = "test"
+Note - Assume we have different teams e.g. mle (btw mlflow is not a team). Code in a way that is manageable when team grows but add MLE in there for now.
+Note - I am using MiniStack (not LocalStack) and nektos/act. So be mindful not include stuff that is not possible with this setup (You can still include them if they are golden standard and does not harm the code when ran).
 
-mlflow_db_username          = "mlflow"
-mlflow_db_password          = "mlflow"
+First... Create account for each team. e.g. aws_iam_user and aws_iam_access_key and Role-Based Access Control (RBAC) via STS AssumeRole.
 
-mle_db_username             = "mle"
-mle_db_password             = "mle"
+Then... I want to make proper separation between teams in a company along with their created credentials and roles for the stuff they can use.
 
-mle_migrations_db_username  = "mle-migrations"
-mle_migrations_db_password  = "mle-migrations"
+1) ECR (Only Selected Teams can access ECR, these team are separated allowing them to only push and replace/upgrade only their own images)
+2) EKS (Only Selected Teams can access EKS, these team can run/rollout their own pods using their own images in ECR, they can access their own Kubernetes Secrets and ConfigMaps, only in their own namespace pods. Although there's one ConfigMap that can be accessed by only selected Teams)
+3) MLFlow running in EKS (Only Selected Teams can access MLFlow, but each of these team has their own workspace for access separation)
+4) MWAA/Airflow (Only Selected Teams can access MWAA, but each of these team are separated based on S3 dag access e.g. s3:::dags/team_a/*)
+5) POSTGRESQL (Only Selected Teams can access POSTGRESQL, these team have their own schema connected to their login credentials)
+6) S3 (Only Selected Teams can access S3, each team can only access their own bucket. Although theres one bucket that only selected teams can access but are still only able to access specific path in that bucket is team based e.g. airflow/connections/team_a and airflow/variables/team_a)
+
+```
+Here is the single most common, industry-standard approach for establishing multi-tenancy and team isolation for each of your requirements.
+
+## 1) ECR (Elastic Container Registry)
+
+**The Standard:** AWS IAM Resource-Based Policies (ECR Repository Policies)
+**How it works:** You create separate ECR repositories using a namespace prefix convention (e.g., `team-a/app-1`). You then attach a **Repository Policy** directly to the repository that strictly grants `ecr:PutImage`, `ecr:InitiateLayerUpload`, and `ecr:CompleteLayerUpload` only to `Team A`'s IAM Role. This guarantees that a team can only push, replace, or upgrade images within their designated repositories, preventing any accidental overwriting of other teams' images.
+
+## 2) EKS (Elastic Kubernetes Service)
+
+**The Standard:** Kubernetes Namespaces + RBAC paired with EKS Access Entries
+**How it works:**
+
+* **Workload Isolation:** Map each team's AWS IAM Role to a Kubernetes identity using EKS Access Entries. Create a distinct **Namespace** (e.g., `namespace-team-a`) for each team. Use a Kubernetes `Role` and `RoleBinding` to restrict their ability to deploy pods, read/write Secrets, and read/write ConfigMaps strictly to their specific namespace.
+* **The Shared ConfigMap:** To allow access to the single shared ConfigMap, create a separate `Role` in the namespace where that ConfigMap lives. In the RBAC definition, use the `resourceNames: ["your-shared-configmap"]` parameter so the role *only* grants access to that specific file, and then bind that role to the selected teams.
+
+## 3) MLflow running in EKS
+
+**The Standard:** MLflowHere is the single most common, industry-standard approach for achieving multi-tenancy and secure isolation for each of your requirements.
+
+### 1. ECR
+
+**The Standard:** AWS IAM Policies + Repository Prefixing
+
+Instead of giving teams access to the entire registry, you enforce a strict naming convention for repositories (e.g., `team_a/app1`). You then attach an AWS IAM Policy to the team's IAM Role that grants lifecycle permissions (`ecr:PutImage`, `ecr:InitiateLayerUpload`, etc.) specifically scoped to their prefix.
+
+* **How it works:** The IAM policy uses a wildcard in the Resource block: `"Resource": "arn:aws:ecr:region:account-id:repository/team_a/*"`. They physically cannot push, replace, or alter images outside of the `team_a/` prefix.
+
+### 2. EKS
+
+**The Standard:** Kubernetes RBAC + Namespace Isolation (Mapped via EKS Access Entries)
+
+Kubernetes is a single-tenant orchestrator natively, so soft multi-tenancy relies heavily on Namespaces.
+
+* **How it works:** You assign each team their own Namespace (e.g., `namespace: team-a`). You map their AWS IAM identity to a Kubernetes Group using EKS Access Entries (or `aws-auth`). You then create a `Role` and `RoleBinding` strictly within `team-a`, allowing them to manage Pods, ConfigMaps, and Secrets *only* in that namespace.
+* **For the shared ConfigMap:** In the namespace where the shared ConfigMap lives, you create a specific `Role` that targets only that exact resource (using `resourceNames: ["shared-config"]`) and use a `RoleBinding` to grant read access to the selected teams' groups.
+
+### 3. MLflow (in EKS)
+
+**The Standard:** MLflow Native Workspaces
+
+Historically, teams had to run separate MLflow servers on EKS to achieve this. However, MLflow natively introduced **Workspaces**, which is now the standard for sharing a single deployment.
+
+* **How it works:** You deploy one MLflow server with the `--enable-workspaces` flag backed by a PostgreSQL database. Each team is granted a Workspace, which acts as a logical container. Experiments, registered models, and permissions are scoped to that workspace. For artifact separation, MLflow automatically isolates artifacts by workspace using URI prefixing (e.g., `/workspaces/team_a/`).
+
+### 4. MWAA / Airflow
+
+**The Standard:** IAM S3 Prefix Policies + Airflow Custom RBAC Roles
+
+Because MWAA separates DAG storage (S3) from DAG execution (Airflow UI), you must secure both sides.
+
+* **S3 Storage (Code Push):** Attach an IAM Policy to Team A's deployment role allowing `s3:PutObject` strictly on `"Resource": "arn:aws:s3:::your-mwaa-bucket/dags/team_a/*"`.
+* **Airflow UI (Execution):** MWAA syncs the whole bucket, so inside the Airflow UI, you create a Custom Apache Airflow RBAC Role. This custom role restricts read/edit access explicitly to DAGs with the `team_a` prefix. You then map the team's IAM identity to this custom Airflow role in the MWAA console.
+
+### 5. PostgreSQL
+
+**The Standard:** Database Roles + Schema-Level Authorization
+
+You do not need multiple databases; you rely on standard PostgreSQL logical separation.
+
+* **How it works:** You create a distinct PostgreSQL Role (user) for the team (`CREATE ROLE team_a_user LOGIN;`). You then create a schema strictly owned by them (`CREATE SCHEMA team_a AUTHORIZATION team_a_user;`). You revoke all public access to other schemas. Finally, you set their default search path (`ALTER ROLE team_a_user SET search_path TO team_a;`). When they log in with their credentials, they are sandboxed into their own schema.
+
+### 6. S3
+
+**The Standard:** IAM Identity-Based Policies with Exact Resource ARNs
+
+The cleanest way to handle complex S3 multi-tenancy without hitting Bucket Policy size limits is to attach specific IAM policies directly to the team's IAM Role.
+
+* **How it works:**
+1. Allow `s3:ListBucket` on the specific buckets conditionally (using `s3:prefix` set to their team folder).
+2. Allow `s3:GetObject` and `s3:PutObject` on their dedicated bucket: `"Resource": "arn:aws:s3:::team-a-bucket/*"`.
+3. In the same policy, allow access to the specific shared bucket paths: `"Resource": ["arn:aws:s3:::shared-bucket/airflow/connections/team_a/*", "arn:aws:s3:::shared-bucket/airflow/variables/team_a/*"]`.
+```
+
+Lastly... create another module (kubernetes_resources) to create ConfigMaps and Kubernetes Secret that each team. Either shared among teams e.g. URI, PGHOST, PGPORT... or team specific.

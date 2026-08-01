@@ -54,37 +54,6 @@ resource "aws_iam_role_policy" "mwaa_secrets_access" {
   })
 }
 
-# ── Per-team S3 DAG path access ───────────────────────────────────────────────
-resource "aws_iam_role_policy" "mwaa_team_dag_s3_access" {
-  for_each = { for k, v in var.teams : k => v if v.has_mwaa_access }
-
-  name = "mwaa_team_dag_s3_${each.key}"
-  role = "mwaa_role"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "MWAATeamDagPush"
-        Effect = "Allow"
-        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
-        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}/${local.dag_s3_path}/${each.key}/*"
-      },
-      {
-        Sid      = "MWAATeamDagList"
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}"
-        Condition = {
-          StringLike = {
-            "s3:prefix" = "${local.dag_s3_path}/${each.key}/*"
-          }
-        }
-      }
-    ]
-  })
-}
-
 resource "aws_s3_object" "requirements" {
   bucket  = var.s3_mwaa_bucket
   key     = "${local.s3_mwaa_path}/requirements.txt"
@@ -117,13 +86,6 @@ resource "aws_mwaa_environment" "main" {
       sep                = "/"
       endpoint_url       = var.secretsmanager_service_endpoint_url
     })
-
-    # Custom RBAC role per team: read/trigger only DAGs whose dag_id starts with <team>_
-    # Airflow evaluates this as a DAG-level filter on the UI and REST API.
-    "webserver.rbac_user_registration_role" = "Public"
-
-    # One entry per team — the value is a serialised JSON RBAC role definition.
-    # Teams not in this map receive only the Public (no-op) role.
   }
 
   network_configuration {
@@ -136,4 +98,45 @@ resource "aws_mwaa_environment" "main" {
     terraform_data.upload_kubeconfig_to_s3_uri_for_airflow,
     aws_iam_role_policy.mwaa_secrets_access,
   ]
+}
+
+# ── Per-team DAG prefix IAM policy ───────────────────────────────────────────
+# Each team's role can only write into its own subfolder:
+#   s3://<mwaa_bucket>/dags/mle/
+# MiniStack: simulated.
+locals {
+  mwaa_teams = ["mle"]
+}
+resource "aws_iam_role_policy" "team_dag_s3_access" {
+  for_each = toset(local.mwaa_teams)
+
+  name = "${each.key}_dag_s3_access"
+  role = var.team_role_names[each.key]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ListBucketForTeamPrefix"
+        Effect = "Allow"
+        Action = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}"
+        Condition = {
+          StringLike = {
+            "s3:prefix" = ["${local.dag_s3_path}/${each.key}/*"]
+          }
+        }
+      },
+      {
+        Sid    = "TeamDagPrefixReadWrite"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+        ]
+        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}/${local.dag_s3_path}/${each.key}/*"
+      }
+    ]
+  })
 }

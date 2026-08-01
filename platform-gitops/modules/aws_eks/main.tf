@@ -41,14 +41,18 @@ resource "terraform_data" "init" {
   }
 }
 
-# EKS Access Entries — map each team's IRSA role → K8s group.
-# Must be added after the cluster is created (implicit dependency via cluster_name).
+# ── EKS Access Entries — map IAM Role → Kubernetes group ─────────────────────
+# When the team's IAM Role authenticates to the cluster, Kubernetes sees it as
+# a member of "<team>-group". The actual RBAC bindings are in kubernetes_resources.
+# MiniStack: simulated — the entry is stored; the k3s cluster uses the kubeconfig
+# directly and does not validate IAM identity, so this is a no-op locally but
+# is required for production EKS.
 resource "aws_eks_access_entry" "team" {
-  for_each = var.teams
+  for_each = var.team_role_arns
 
-  cluster_name      = aws_eks_cluster.main.name
-  principal_arn     = var.team_role_arns[each.key]
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = each.value
+  type          = "STANDARD"
+
   kubernetes_groups = ["${each.key}-group"]
-  type              = "STANDARD"
-  depends_on        = [aws_eks_cluster.main]
 }

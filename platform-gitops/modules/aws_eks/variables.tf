@@ -15,14 +15,8 @@ variable "ecr_registry_mirror_endpoint"     { type = string }
 
 variable "ecr_registry_secret_name" { type = string }
 
-variable "teams" {
-  description = "Team definitions used for EKS Access Entries"
-  type = map(object({
-    namespace = string
-  }))
-}
-
+# From aws_iam module output: map of team_key => IAM Role ARN
 variable "team_role_arns" {
-  description = "Map of team name → IRSA role ARN (from aws_iam_oidc module)"
-  type        = map(string)
+  type    = map(string)
+  default = {}
 }

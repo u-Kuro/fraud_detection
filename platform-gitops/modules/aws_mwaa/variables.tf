@@ -12,10 +12,8 @@ variable "aws_account_id"  { type = string }
 
 variable "secretsmanager_service_endpoint_url"  { type = string }
 
-variable "teams" {
-  description = "Team definitions — only has_mwaa_access is used here"
-  type = map(object({
-    has_mwaa_access = optional(bool, false)
-  }))
+# From aws_iam module: map of team_key => IAM Role name
+variable "team_role_names" {
+  type    = map(string)
   default = {}
 }

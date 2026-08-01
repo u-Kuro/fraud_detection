@@ -31,37 +31,50 @@ resource "helm_release" "mlflow" {
   ]
 }
 
-# ── Post-deploy: create one MLflow workspace per team that has MLflow access ──
-locals {
-  mlflow_tracking_uri = "http://${var.mlflow_host}:${var.mlflow_port}"
-}
-resource "kubernetes_job" "mlflow_create_workspaces" {
-  for_each = { for k, v in var.teams : k => v if v.mlflow_workspace != null }
-
-  metadata {
-    name      = "mlflow-create-workspace-${each.key}"
-    namespace = "default"
-  }
-  spec {
-    template {
-      spec {
-        restart_policy = "OnFailure"
-        container {
-          name  = "mlflow-workspace-init"
-          image = "curlimages/curl:latest"
-          command = [
-            "sh", "-c",
-            <<-EOT
-              curl -sf -X POST \
-                "${local.mlflow_tracking_uri}/api/2.0/mlflow/workspaces/create" \
-                -H "Content-Type: application/json" \
-                -d '{"name":"${each.value.mlflow_workspace}"}'
-            EOT
-          ]
-        }
-      }
-    }
-  }
-
-  depends_on = [helm_release.mlflow]
-}
+# # ── Post-deploy: create one MLflow workspace per team that has MLflow access ──
+# locals {
+#   mlflow_tracking_uri = "http://${var.mlflow_host}:${var.mlflow_port}"
+# }
+# resource "random_password" "team_mlflow_credentials" {
+#   for_each = var.mlflow_workspace_names
+#   length  = 24
+# }
+# resource "kubernetes_job" "mlflow_create_workspaces" {
+#   for_each = random_password.team_mlflow_credentials
+#
+#   metadata {
+#     name      = "mlflow-create-${each.key}-workspace"
+#     namespace = "default"
+#   }
+#   spec {
+#     template {
+#       spec {
+#         restart_policy = "OnFailure"
+#         container {
+#           name  = "mlflow-workspace-init"
+#           image = "curlimages/curl:latest"
+#           env {
+#             name  = "MLFLOW_TRACKING_USERNAME"
+#             value = each.key
+#           }
+#           env {
+#             name  = "MLFLOW_TRACKING_PASSWORD"
+#             value = each.value.result
+#           }
+#           command = [
+#             "sh", "-c",
+#             <<-EOT
+#               curl -sf -X POST \
+#                 -u "$MLFLOW_TRACKING_USERNAME:$MLFLOW_TRACKING_PASSWORD" \
+#                 "${local.mlflow_tracking_uri}/api/2.0/mlflow/workspaces/create" \
+#                 -H "Content-Type: application/json" \
+#                 -d '{"name":"${each.key}-workspace"}'
+#             EOT
+#           ]
+#         }
+#       }
+#     }
+#   }
+#
+#   depends_on = [helm_release.mlflow]
+# }

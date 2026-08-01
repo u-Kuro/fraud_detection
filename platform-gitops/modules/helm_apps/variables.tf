@@ -32,13 +32,3 @@ variable "aws_secret_key" {
   type = string
   sensitive = true
 }
-
-
-
-variable "teams" {
-  description = "Team definitions — only mlflow_workspace is used here"
-  type = map(object({
-    mlflow_workspace = optional(string)
-  }))
-  default = {}
-}

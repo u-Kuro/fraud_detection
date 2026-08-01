@@ -1,7 +1,5 @@
-variable "teams" {
-  description = "Team definitions — only s3_team_bucket is used here"
-  type = map(object({
-    s3_team_bucket = optional(string)
-  }))
+# From aws_iam module: map of team_key => IAM Role name
+variable "team_role_names" {
+  type    = map(string)
   default = {}
 }
