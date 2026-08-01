@@ -40,3 +40,15 @@ resource "terraform_data" "init" {
     ])
   }
 }
+
+# EKS Access Entries — map each team's IRSA role → K8s group.
+# Must be added after the cluster is created (implicit dependency via cluster_name).
+resource "aws_eks_access_entry" "team" {
+  for_each = var.teams
+
+  cluster_name      = aws_eks_cluster.main.name
+  principal_arn     = var.team_role_arns[each.key]
+  kubernetes_groups = ["${each.key}-group"]
+  type              = "STANDARD"
+  depends_on        = [aws_eks_cluster.main]
+}

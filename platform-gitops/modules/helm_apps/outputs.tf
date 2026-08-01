@@ -1,3 +1,3 @@
 output "mlflow_tracking_uri"  {
-  value = "http://${var.mlflow_host}:${var.mlflow_port}"
+  value = local.mlflow_tracking_uri
 }

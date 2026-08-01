@@ -30,3 +30,38 @@ resource "helm_release" "mlflow" {
     { name = "artifactRoot.s3.awsSecretAccessKey",     value = var.aws_secret_key },
   ]
 }
+
+# ── Post-deploy: create one MLflow workspace per team that has MLflow access ──
+locals {
+  mlflow_tracking_uri = "http://${var.mlflow_host}:${var.mlflow_port}"
+}
+resource "kubernetes_job" "mlflow_create_workspaces" {
+  for_each = { for k, v in var.teams : k => v if v.mlflow_workspace != null }
+
+  metadata {
+    name      = "mlflow-create-workspace-${each.key}"
+    namespace = "default"
+  }
+  spec {
+    template {
+      spec {
+        restart_policy = "OnFailure"
+        container {
+          name  = "mlflow-workspace-init"
+          image = "curlimages/curl:latest"
+          command = [
+            "sh", "-c",
+            <<-EOT
+              curl -sf -X POST \
+                "${local.mlflow_tracking_uri}/api/2.0/mlflow/workspaces/create" \
+                -H "Content-Type: application/json" \
+                -d '{"name":"${each.value.mlflow_workspace}"}'
+            EOT
+          ]
+        }
+      }
+    }
+  }
+
+  depends_on = [helm_release.mlflow]
+}

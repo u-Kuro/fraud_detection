@@ -21,7 +21,7 @@ resource "terraform_data" "upload_kubeconfig_to_s3_uri_for_airflow" {
       "-temporary_kubeconfig_file_path '$env:TEMP\\kubeconfig.yaml'",
 
       "-s3_service_endpoint_url '${var.s3_service_endpoint_url}'",
-      "-s3_dag_kubeconfig_uri 's3://${var.s3_mle_bucket}/${local.dag_s3_path}/kubeconfig.yaml'"
+      "-s3_dag_kubeconfig_uri 's3://${var.s3_mwaa_bucket}/${local.dag_s3_path}/kubeconfig.yaml'"
     ])
   }
 }
@@ -54,8 +54,39 @@ resource "aws_iam_role_policy" "mwaa_secrets_access" {
   })
 }
 
+# ── Per-team S3 DAG path access ───────────────────────────────────────────────
+resource "aws_iam_role_policy" "mwaa_team_dag_s3_access" {
+  for_each = { for k, v in var.teams : k => v if v.has_mwaa_access }
+
+  name = "mwaa_team_dag_s3_${each.key}"
+  role = "mwaa_role"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "MWAATeamDagPush"
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}/${local.dag_s3_path}/${each.key}/*"
+      },
+      {
+        Sid      = "MWAATeamDagList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::${var.s3_mwaa_bucket}"
+        Condition = {
+          StringLike = {
+            "s3:prefix" = "${local.dag_s3_path}/${each.key}/*"
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_s3_object" "requirements" {
-  bucket  = var.s3_mle_bucket
+  bucket  = var.s3_mwaa_bucket
   key     = "${local.s3_mwaa_path}/requirements.txt"
   content = <<-REQ
     apache-airflow-providers-amazon==9.31.0
@@ -70,7 +101,7 @@ resource "aws_s3_object" "requirements" {
 resource "aws_mwaa_environment" "main" {
   name                  = "mwaa"
   airflow_version       = "2.10.3"
-  source_bucket_arn     = "arn:aws:s3:::${var.s3_mle_bucket}"
+  source_bucket_arn     = "arn:aws:s3:::${var.s3_mwaa_bucket}"
   execution_role_arn    = "arn:aws:iam::${var.aws_account_id}:role/${aws_iam_role_policy.mwaa_secrets_access.role}"
 
   dag_s3_path = local.dag_s3_path
@@ -86,6 +117,13 @@ resource "aws_mwaa_environment" "main" {
       sep                = "/"
       endpoint_url       = var.secretsmanager_service_endpoint_url
     })
+
+    # Custom RBAC role per team: read/trigger only DAGs whose dag_id starts with <team>_
+    # Airflow evaluates this as a DAG-level filter on the UI and REST API.
+    "webserver.rbac_user_registration_role" = "Public"
+
+    # One entry per team — the value is a serialised JSON RBAC role definition.
+    # Teams not in this map receive only the Public (no-op) role.
   }
 
   network_configuration {

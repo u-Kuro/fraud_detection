@@ -5,9 +5,15 @@ output "mlflow_bucket_aws_region" {
   value = aws_s3_bucket.mlflow.region
 }
 
-output "mle_bucket_name" {
-  value = aws_s3_bucket.mle.id
+output "mwaa_bucket_name" {
+  value = aws_s3_bucket.mwaa.id
 }
-output "mle_bucket_aws_region" {
-  value = aws_s3_bucket.mle.region
+output "mwaa_bucket_aws_region" {
+  value = aws_s3_bucket.mwaa.region
+}
+
+# NEW
+output "team_bucket_names" {
+  description = "Map of team name → dedicated S3 bucket name"
+  value       = { for k, v in aws_s3_bucket.team : k => v.id }
 }
