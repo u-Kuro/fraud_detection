@@ -1,3 +1,4 @@
+# TODO - 01/08/2026 - Continue here... Create N user team credentials and attach to policy. create teams and infos here in main instead of per module
 module "ecr_repository" {
   source      = "./modules/aws_ecr"
 }
