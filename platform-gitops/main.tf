@@ -1,4 +1,23 @@
 # TODO - 01/08/2026 - Continue here... Create N user team credentials and attach to policy. create teams and infos here in main instead of per module
+
+locals {
+  teams = {
+    mle = {
+      ecr_repositories = [
+        "archive",
+        "drift_check",
+        "fraud_detection",
+        "train_model",
+      ]
+    }
+  }
+}
+
+module "iam" {
+  source = "./modules/aws_iam"
+  team_names = keys(local.teams)
+}
+
 module "ecr_repository" {
   source      = "./modules/aws_ecr"
 }

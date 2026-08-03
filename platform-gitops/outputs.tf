@@ -1,5 +1,5 @@
 output "aws_ecr_repository_urls" {
-  value = module.ecr_repository.repository_urls
+  value = module.ecr_repository.team_repository_urls
 }
 
 output "aws_eks_cluster_name" {

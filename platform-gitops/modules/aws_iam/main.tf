@@ -1,80 +1,56 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# TEAM REGISTRY — add a new team here; everything else is driven by for_each.
-# ─────────────────────────────────────────────────────────────────────────────
-locals {
-  teams = set(
-    "mle",
-    # "example_future_team"
-  )
-}
-
-# ── IAM User per team ────────────────────────────────────────────────────────
-resource "aws_iam_user" "team" {
-  for_each = local.teams
-  name     = each.key
-}
-
-# ── IAM Access Key per team (static credentials for CI/CD) ───────────────────
-resource "aws_iam_access_key" "team" {
-  for_each = local.teams
-  user     = aws_iam_user.team[each.key].name
-}
-
-# ── IAM Role per team — other modules attach service policies to this role ───
-# The team's IAM user is trusted to assume this role via STS.
-# MiniStack: simulated — role and trust policy are stored but STS is not enforced.
-resource "aws_iam_role" "team" {
-  for_each = local.teams
-  name     = "${each.key}_role"
-
+# ADMIN
+data "aws_caller_identity" "admin" {}
+resource "aws_iam_role" "admin" {
+  name = "admin_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowTeamUserToAssume"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_iam_user.team[each.key].arn
-        }
-        Action = "sts:AssumeRole"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::${data.aws_caller_identity.admin.account_id}:root"
       }
-    ]
+      Action = "sts:AssumeRole"
+    }]
   })
 }
-
-# ── ECR GetAuthorizationToken (global, not repo-scoped) ──────────────────────
-# Must be attached here because it cannot be scoped to a specific repository ARN.
-resource "aws_iam_role_policy" "team_ecr_auth" {
-  for_each = local.teams
-  name     = "${each.key}_ecr_auth"
-  role     = aws_iam_role.team[each.key].name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid      = "AllowECRLogin"
-        Effect   = "Allow"
-        Action   = ["ecr:GetAuthorizationToken"]
-        Resource = "*"
-      }
-    ]
-  })
+resource "aws_iam_role_policy_attachment" "owner_admin" {
+  role       = aws_iam_role.admin.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
-
-# ── Store access key + secret in Secrets Manager for CI/CD retrieval ─────────
-resource "aws_secretsmanager_secret" "team_credentials" {
-  for_each = local.teams
-  name     = "/teams/${each.key}/credentials"
+# TEAMS
+resource "aws_iam_user" "teams" {
+  for_each = var.team_names
+  name = each.value
 }
-
-resource "aws_secretsmanager_secret_version" "team_credentials" {
-  for_each  = local.teams
-  secret_id = aws_secretsmanager_secret.team_credentials[each.key].id
-
-  secret_string = jsonencode({
-    access_key_id     = aws_iam_access_key.team[each.key].id
-    secret_access_key = aws_iam_access_key.team[each.key].secret
-    role_arn          = aws_iam_role.team[each.key].arn
-  })
+resource "aws_iam_access_key" "teams" {
+  for_each = aws_iam_user.teams
+  user     = each.value.name
 }
+#
+# # =========================================================================
+# # 1. THE PERMISSIONS POLICY (What actions are allowed)
+# # =========================================================================
+# resource "aws_iam_policy" "teams" {
+#   name        = "S3ReadOnlyPolicy"
+#   description = "Allows reading files from S3"
+#
+#   # This is the Policy Document (JSON text)
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect   = "Allow"
+#         Action   = ["s3:GetObject", "s3:ListBucket"]
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
+# # =========================================================================
+# # 4. THE POLICY ATTACHMENT (Giving the hat its powers)
+# # =========================================================================
+# # This block connects the permissions (Step 1) directly to the Role (Step 3).
+# resource "aws_iam_role_policy_attachment" "role_attach" {
+#   role       = aws_iam_role.my_role.name         # The Role (Hat)
+#   policy_arn = aws_iam_policy.s3_read_only.arn   # The Policy (Power)
+# }

@@ -1,18 +1,26 @@
-# map of team_key => IAM Role ARN — consumed by every other service module
-output "team_role_arns" {
-  value = { for k, v in aws_iam_role.team : k => v.arn }
+output "admin_identity" {
+  value = {
+    id = data.aws_caller_identity.admin.id
+    account_id = data.aws_caller_identity.admin.account_id
+    arn = data.aws_caller_identity.admin.arn
+  }
 }
 
-output "team_user_arns" {
-  value = { for k, v in aws_iam_user.team : k => v.arn }
+output "team_access_keys" {
+  value = {
+    for k, v in aws_iam_access_key.teams : k => {
+      aws_access_key = v.id
+      aws_secret_key = v.secret
+    }
+  }
+  sensitive = true
 }
 
-# sensitive — not printed in plan output
-output "team_access_key_ids" {
-  value     = { for k, v in aws_iam_access_key.team : k => v.id }
-  sensitive = true
-}
-output "team_secret_access_keys" {
-  value     = { for k, v in aws_iam_access_key.team : k => v.secret }
-  sensitive = true
+output "team_users" {
+  value = {
+    for k, v in aws_iam_user.teams : k => {
+      name = v.name
+      arn = v.arn
+    }
+  }
 }

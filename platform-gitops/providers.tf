@@ -5,6 +5,7 @@ provider "aws" {
 
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
+    sts             = "http://localhost:4566"
     eks             = var.eks_service_endpoint_url
     s3              = var.s3_service_endpoint_url
     ecr             = "http://localhost:4566"
