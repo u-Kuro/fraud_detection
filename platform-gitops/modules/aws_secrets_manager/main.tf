@@ -1,14 +1,15 @@
-resource "aws_iam_policy" "mle_secrets_access" {
-  name        = "mle_secrets_access"
-  description = "MLE team access under /mle/*"
+resource "aws_iam_user_policy" "teams" {
+  for_each = var.teams
+  name     = "${each.key}_secretsmanager_policy"
+  user     = each.value.name
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "mle_secret_access"
-        Effect = "Allow"
-        Action = [
+        Sid     = "SMOwnConnections"
+        Effect  = "Allow"
+        Action  = [
           "secretsmanager:CreateSecret",
           "secretsmanager:DeleteSecret",
           "secretsmanager:GetSecretValue",
@@ -17,19 +18,8 @@ resource "aws_iam_policy" "mle_secrets_access" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:ListSecretVersionIds",
         ]
-        Resource = "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:/mle/*"
+        Resource = ["arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${each.key}/*"]
       }
     ]
   })
-}
-
-resource "aws_iam_policy_attachment" "mle_secrets_access" {
-  name       = "mle_secrets_access"
-  policy_arn = aws_iam_policy.mle_secrets_access.arn
-  users      = []
-  roles      = []
-  groups     = []
-  # Need to specify MLE IAM group/role here when using actual AWS.
-  # Ministack: the policy attachment exists but enforcement is simulated.
-  depends_on = [aws_iam_policy.mle_secrets_access]
 }

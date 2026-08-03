@@ -1,3 +1,10 @@
+variable "mlflow_user_name" {
+  type = string
+}
+variable "mlflow_bucket_arn" {
+  type = string
+}
+
 variable "mlflow_host" {
   type = string
   default = "mlflow"
@@ -24,11 +31,13 @@ variable "mlflow_db_password" {
   sensitive = true
 }
 
-variable "aws_access_key" {
-  type = string
-  sensitive = true
+variable "mlflow_access_key" {
+  type = map(object({
+    aws_access_key = string
+    aws_secret_key = string
+  }))
 }
-variable "aws_secret_key" {
-  type = string
-  sensitive = true
+
+variable "mlflow_teams" {
+  type = set(string)
 }

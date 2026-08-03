@@ -1,1 +1,1 @@
-variable "team_names" { type = set(string) }
+variable "teams" { type = set(string) }

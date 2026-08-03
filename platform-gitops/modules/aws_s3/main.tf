@@ -2,9 +2,22 @@ resource "aws_s3_bucket" "mwaa" {
   bucket        = "mwaa"
   force_destroy = true
 }
-resource "aws_s3_bucket_versioning" "mwaa_bucket_versioning" {
+resource "aws_s3_bucket_versioning" "mwaa" {
   bucket = aws_s3_bucket.mwaa.id
-  versioning_configuration { status = "Enabled" }
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+
+  depends_on = [aws_s3_bucket.mwaa]
+}
+resource "aws_s3_bucket_public_access_block" "mwaa" {
+  bucket                  = aws_s3_bucket.mwaa.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
   depends_on = [aws_s3_bucket.mwaa]
 }
 
@@ -12,56 +25,72 @@ resource "aws_s3_bucket" "mlflow" {
   bucket        = "mlflow"
   force_destroy = true
 }
-resource "aws_s3_bucket_versioning" "mwaa_bucket_versioning" {
+resource "aws_s3_bucket_versioning" "mlflow" {
   bucket = aws_s3_bucket.mlflow.id
-  versioning_configuration { status = "Enabled" }
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+
+  depends_on = [aws_s3_bucket.mlflow]
+}
+resource "aws_s3_bucket_public_access_block" "mlflow" {
+  bucket                  = aws_s3_bucket.mlflow.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
   depends_on = [aws_s3_bucket.mlflow]
 }
 
-locals {
-  # Teams that have their own dedicated S3 bucket
-  s3_teams = ["mle"]
-}
-resource "aws_s3_bucket" "team_s3_buckets" {
-  for_each      = local.s3_teams
-  bucket        = each.value
+resource "aws_s3_bucket" "teams" {
+  for_each      = var.teams
+  bucket        = each.key
   force_destroy = true
 }
-resource "aws_s3_bucket_versioning" "team_s3_buckets_versioning" {
-  for_each  = aws_s3_bucket.team_s3_buckets
+resource "aws_s3_bucket_versioning" "teams" {
+  for_each  = aws_s3_bucket.teams
   bucket    = each.value.id
-  versioning_configuration { status = "Enabled" }
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+
   depends_on = [aws_s3_bucket.mlflow]
 }
+resource "aws_s3_bucket_public_access_block" "teams" {
+  for_each                = aws_s3_bucket.teams
+  bucket                  = each.value.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 
-# ── Team bucket IAM policy — full access to own bucket only ──────────────────
-# MiniStack: simulated.
-resource "aws_iam_role_policy" "team_s3_bucket_access" {
-  for_each = aws_s3_bucket.team_s3_buckets
+  depends_on = [aws_s3_bucket.mwaa]
+}
 
-  name = "${each.value.id}_s3_bucket_access"
-  role = var.team_role_names[each.key]
+resource "aws_iam_user_policy" "teams" {
+  for_each = aws_s3_bucket.teams
+  name     = "${each.key}_s3_policy"
+  user     = var.teams[each.key].name
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "ListOwnBucket"
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::${each.value.id}"
-      },
-      {
-        Sid    = "FullAccessOwnBucket"
+        Sid    = "S3OwnTeamBucket"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
-          "s3:GetObjectVersion",
-          "s3:DeleteObjectVersion",
+          "s3:ListBucket"
         ]
-        Resource = "arn:aws:s3:::${each.value.id}/*"
+        Resource = [
+          each.value.arn,
+          "${each.value.arn}/*"
+        ]
       }
     ]
   })

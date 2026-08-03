@@ -16,20 +16,6 @@ variable "mlflow_postgresql_password" {
   sensitive = true
 }
 
-variable "mle_postgresql_username" {
-  type      = string
-  sensitive = true
-}
-variable "mle_postgresql_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "mle_migrations_postgresql_username" {
-  type      = string
-  sensitive = true
-}
-variable "mle_migrations_postgresql_password" {
-  type      = string
-  sensitive = true
+variable "postgresql_teams" {
+  type = set(string)
 }

@@ -13,18 +13,25 @@ resource "aws_iam_role" "admin" {
     }]
   })
 }
-resource "aws_iam_role_policy_attachment" "owner_admin" {
+resource "aws_iam_role_policy_attachment" "admin" {
   role       = aws_iam_role.admin.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 # TEAMS
 resource "aws_iam_user" "teams" {
-  for_each = var.team_names
+  for_each = var.teams
   name = each.value
 }
 resource "aws_iam_access_key" "teams" {
   for_each = aws_iam_user.teams
   user     = each.value.name
+}
+# MLFLOW
+resource "aws_iam_user" "mlflow" {
+  name = "mlflow"
+}
+resource "aws_iam_access_key" "mlflow" {
+  user = aws_iam_user.mlflow.name
 }
 #
 # # =========================================================================

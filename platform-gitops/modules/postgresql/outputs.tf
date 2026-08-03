@@ -7,20 +7,17 @@ output "mlflow_password" {
   sensitive = true
 }
 
-output "mle_username" {
-  value = postgresql_role.mle.name
+output "teams_credentials" {
+  value = {
+    for k, v in random_password.teams
+    : k => v.result
+  }
   sensitive = true
 }
-output "mle_password" {
-  value = postgresql_role.mle.password
-  sensitive = true
-}
-
-output "mle_migration_username" {
-  value = postgresql_role.mle_migration.name
-  sensitive = true
-}
-output "mle_migration_password" {
-  value = postgresql_role.mle_migration.password
+output "teams_migration_credentials" {
+  value = {
+    for k, v in random_password.teams_migration
+    : k => v.result
+  }
   sensitive = true
 }

@@ -34,7 +34,15 @@ variable "ecr_registry_mirror_endpoint_url" {
 }
 variable "ecr_registry_secret_name" {
   type      = string
-  default   = "ecr-secret"
+  default   = "ecr_secret"
+}
+variable "ecr_registry_username" {
+  type      = string
+  sensitive = true
+}
+variable "ecr_registry_password" {
+  type      = string
+  sensitive = true
 }
 
 variable "s3_internal_endpoint_url" {

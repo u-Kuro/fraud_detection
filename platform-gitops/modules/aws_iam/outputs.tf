@@ -4,6 +4,7 @@ output "admin_identity" {
     account_id = data.aws_caller_identity.admin.account_id
     arn = data.aws_caller_identity.admin.arn
   }
+  sensitive = true
 }
 
 output "team_access_keys" {
@@ -22,5 +23,19 @@ output "team_users" {
       name = v.name
       arn = v.arn
     }
+  }
+}
+
+output "mlflow_access_key" {
+  value = {
+    aws_access_key = aws_iam_access_key.mlflow.id
+    aws_secret_key = aws_iam_access_key.mlflow.secret
+  }
+  sensitive = true
+}
+
+output "mlflow_user" {
+  value = {
+    name = aws_iam_user.mlflow.name
   }
 }
