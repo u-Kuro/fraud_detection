@@ -13,7 +13,9 @@ param(
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
 
-    [Parameter(Mandatory)][string]$ecr_registry_secret_name
+    [Parameter(Mandatory)][string]$ecr_registry_secret_name,
+    [Parameter(Mandatory)][string]$ecr_registry_username,
+    [Parameter(Mandatory)][string]$ecr_registry_password
 )
 
 Set-StrictMode -Version Latest
@@ -132,8 +134,8 @@ if (-not $api_recovered) {
 # $env:KUBECONFIG is already set from the readiness block above.
 kubectl create secret docker-registry "${ecr_registry_secret_name}" `
     --docker-server="${ecr_registry_endpoint}" `
-    --docker-username=AWS `
-    --docker-password=test `
+    --docker-username="${ecr_registry_username}" `
+    --docker-password="${ecr_registry_password}" `
     --dry-run=client -o yaml | kubectl apply -f -
 
 if ($LASTEXITCODE -ne 0) {
