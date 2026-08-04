@@ -1,22 +1,4 @@
-resource "aws_iam_role" "node" {
-  name = "eks_node_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "node_ecr" {
-  role       = aws_iam_role.node.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
+# REPOSITORIES
 locals {
   team_repositories = toset(flatten([
     for team, values in var.teams : [
@@ -31,32 +13,37 @@ resource "aws_ecr_repository" "teams" {
   image_tag_mutability  = "MUTABLE"
   force_delete          = true
 }
-resource "aws_iam_user_policy" "teams" {
+# TEAM PERMISSIONS
+resource "aws_iam_role_policy" "teams" {
   for_each  = var.teams
-  name      = "${each.key}_ecr_policy"
-  user      = each.value.name
-
+  role      = each.value.role_arn
   policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["ecr:GetAuthorizationToken"]
-        Resource = "*"
+        Effect    = "Allow"
+        Action    = ["ecr:GetAuthorizationToken"]
+        Resource  = "*"
       },
       {
-        Effect   = "Allow"
-        Action   = [
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:PutImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
-        ]
-        Resource = "arn:aws:ecr:*:${var.aws_account_id}:repository/${each.key}/*"
-      }
+        Effect    = "Allow"
+        Action    = "*"
+        Resource  = "arn:aws:ecr:*:${var.admin_aws_account_id}:repository/${each.key}/*"
+      },
     ]
+  })
+}
+resource "aws_ecr_repository_policy" "ecr" {
+  for_each    = aws_ecr_repository.teams
+  repository  = each.value.name
+  policy = jsonencode({
+    Statement = [{
+      Effect    = "Allow"
+      Action    = "*"
+      Resource  = "*"
+      Principal = {
+        AWS = var.teams[each.key].role_arn
+      }
+    }]
   })
 }

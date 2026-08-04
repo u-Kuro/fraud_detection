@@ -1,15 +1,14 @@
 # ADMIN
 data "aws_caller_identity" "admin" {}
 resource "aws_iam_role" "admin" {
-  name = "admin_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect    = "Allow"
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
       Principal = {
-        AWS = "arn:aws:iam::${data.aws_caller_identity.admin.account_id}:root"
+        AWS = data.aws_caller_identity.admin.arn
       }
-      Action = "sts:AssumeRole"
     }]
   })
 }
@@ -18,46 +17,82 @@ resource "aws_iam_role_policy_attachment" "admin" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 # TEAMS
-resource "aws_iam_user" "teams" {
-  for_each = var.teams
-  name = each.value
+resource "aws_iam_group" "teams" {
+  for_each  = var.teams
+  name      = each.value
 }
 resource "aws_iam_access_key" "teams" {
-  for_each = aws_iam_user.teams
+  for_each = aws_iam_group.teams
   user     = each.value.name
 }
-# MLFLOW
-resource "aws_iam_user" "mlflow" {
-  name = "mlflow"
+resource "aws_iam_role" "teams" {
+  for_each = aws_iam_group.teams
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
+      Principal = {
+        AWS = each.value.arn
+      }
+    }]
+  })
 }
-resource "aws_iam_access_key" "mlflow" {
-  user = aws_iam_user.mlflow.name
+# SERVICES
+resource "aws_iam_role" "ec2" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
 }
-#
-# # =========================================================================
-# # 1. THE PERMISSIONS POLICY (What actions are allowed)
-# # =========================================================================
-# resource "aws_iam_policy" "teams" {
-#   name        = "S3ReadOnlyPolicy"
-#   description = "Allows reading files from S3"
-#
-#   # This is the Policy Document (JSON text)
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect   = "Allow"
-#         Action   = ["s3:GetObject", "s3:ListBucket"]
-#         Resource = "*"
-#       }
-#     ]
-#   })
-# }
-# # =========================================================================
-# # 4. THE POLICY ATTACHMENT (Giving the hat its powers)
-# # =========================================================================
-# # This block connects the permissions (Step 1) directly to the Role (Step 3).
-# resource "aws_iam_role_policy_attachment" "role_attach" {
-#   role       = aws_iam_role.my_role.name         # The Role (Hat)
-#   policy_arn = aws_iam_policy.s3_read_only.arn   # The Policy (Power)
-# }
+resource "aws_iam_role" "eks" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
+      Principal = {
+        Service = "eks.amazonaws.com"
+      }
+    }]
+  })
+}
+resource "aws_iam_role" "mwaa" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect  = "Allow"
+        Action  = "sts:AssumeRole"
+        Principal = {
+          Service = "airflow.amazonaws.com"
+        }
+      },
+      {
+        Effect  = "Allow"
+        Action  = "sts:AssumeRole"
+        Principal = {
+          Service = "airflow-env.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+resource "aws_iam_role" "rds" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
+      Principal = {
+        Service = "rds.amazonaws.com"
+      }
+    }]
+  })
+}

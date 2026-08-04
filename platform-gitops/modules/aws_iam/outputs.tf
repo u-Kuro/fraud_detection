@@ -1,41 +1,42 @@
-output "admin_identity" {
+output "admin" {
   value = {
-    id = data.aws_caller_identity.admin.id
-    account_id = data.aws_caller_identity.admin.account_id
-    arn = data.aws_caller_identity.admin.arn
+    account_id  = data.aws_caller_identity.admin.account_id
+    arn         = data.aws_caller_identity.admin.arn
   }
-  sensitive = true
 }
 
-output "team_access_keys" {
+output "teams" {
   value = {
-    for k, v in aws_iam_access_key.teams : k => {
-      aws_access_key = v.id
-      aws_secret_key = v.secret
+    for team in var.teams : team => {
+      access_keys = {
+        aws_access_key = aws_iam_access_key.teams[team].id
+        aws_secret_key = aws_iam_access_key.teams[team].secret
+      }
+      role = {
+        arn = aws_iam_role.teams[team].arn
+      }
     }
   }
   sensitive = true
 }
 
-output "team_users" {
+output "services" {
   value = {
-    for k, v in aws_iam_user.teams : k => {
-      name = v.name
-      arn = v.arn
+    ec2 = {
+      name  = aws_iam_role.ec2.name
+      arn   = aws_iam_role.ec2.arn
     }
-  }
-}
-
-output "mlflow_access_key" {
-  value = {
-    aws_access_key = aws_iam_access_key.mlflow.id
-    aws_secret_key = aws_iam_access_key.mlflow.secret
-  }
-  sensitive = true
-}
-
-output "mlflow_user" {
-  value = {
-    name = aws_iam_user.mlflow.name
+    eks = {
+      name  = aws_iam_role.eks.name
+      arn   = aws_iam_role.eks.arn
+    }
+    mwaa = {
+      name  = aws_iam_role.mwaa.name
+      arn   = aws_iam_role.mwaa.arn
+    }
+    rds = {
+      name  = aws_iam_role.rds.name
+      arn   = aws_iam_role.rds.arn
+    }
   }
 }

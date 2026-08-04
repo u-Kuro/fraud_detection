@@ -25,12 +25,11 @@ module "ecr_repository" {
   teams = {
     for team, values in local.teams : team => {
       ecr_repositories  = values.ecr_repositories
-      name              = module.iam.team_users[team].name
-      arn               = module.iam.team_users[team].arn
+      role_arn          = module.iam.teams[team].role.arn
     }
   }
 
-  aws_account_id  = module.iam.admin_identity.account_id
+  admin_aws_account_id  = module.iam.admin.account_id
 
   depends_on = [module.iam]
 }
@@ -42,7 +41,7 @@ module "ecr_repository" {
 module "eks_cluster" {
   source = "./modules/aws_eks"
 
-  admin_arn = module.iam.admin_identity.arn
+  admin_arn = module.iam.admin.arn
 
   teams = {
     for team, values in module.iam.team_users : team => {

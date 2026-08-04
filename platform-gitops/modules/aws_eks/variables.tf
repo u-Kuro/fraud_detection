@@ -1,10 +1,24 @@
+variable "services_role" {
+  type = object({
+    eks = object({
+      name  = string
+      arn   = string
+    })
+    ec2 = object({
+      name  = string
+      arn   = string
+    })
+  })
+}
+
 variable "admin_arn" {
   type = string
 }
 
 variable "teams" {
   type = map(object({
-    arn = string
+    role_arn  = string
+    namespace = string
   }))
 }
 
