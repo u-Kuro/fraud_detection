@@ -36,14 +36,14 @@ provider "postgresql" {
   expected_version  = "15"
 }
 
-locals {
-  kubeconfig_file_path = "${var.kubeconfig_host_directory_path}/${var.kubeconfig_host_file_name}"
+resource "local_file" "kubeconfig_file" {
+  filename = "${var.kubeconfig_host_directory_path}/${var.kubeconfig_host_file_name}"
 }
 provider "kubernetes" {
-  config_path = local.kubeconfig_file_path
+  config_path = local_file.kubeconfig_file.filename
 }
 provider "helm" {
   kubernetes = {
-    config_path = local.kubeconfig_file_path
+    config_path = local_file.kubeconfig_file.filename
   }
 }

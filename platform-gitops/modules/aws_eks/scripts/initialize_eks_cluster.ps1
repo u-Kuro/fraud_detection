@@ -15,7 +15,7 @@ param(
 
     [Parameter(Mandatory)][string]$ecr_registry_secret_name,
     [Parameter(Mandatory)][string]$ecr_registry_username,
-    [Parameter(Mandatory)][string]$ecr_registry_password
+    [Parameter(Mandatory)][securestring]$ecr_registry_password
 )
 
 Set-StrictMode -Version Latest
@@ -100,6 +100,7 @@ Write-Host "[EKS] k3s API is ready."
 # Set containerd to pull from MiniStack ECR
 # k3s uses containerd, not Docker daemon. docker login has no effect on k3s.
 # registries.yaml tells containerd where to find the MiniStack ECR mirror.
+$plain_ecr_registry_password = [System.Net.NetworkCredential]::new("", "${ecr_registry_password}").Password
 $registries_yaml = @"
 mirrors:
   "${ecr_registry_endpoint}":
@@ -108,8 +109,8 @@ mirrors:
 configs:
   "${ecr_registry_mirror_endpoint}":
     auth:
-      username: AWS
-      password: test
+      username: "${ecr_registry_username}"
+      password: "${plain_ecr_registry_password}"
 "@
 
 $temp_registries = Join-Path $env:TEMP "ministack-registries.yaml"
@@ -135,7 +136,7 @@ if (-not $api_recovered) {
 kubectl create secret docker-registry "${ecr_registry_secret_name}" `
     --docker-server="${ecr_registry_endpoint}" `
     --docker-username="${ecr_registry_username}" `
-    --docker-password="${ecr_registry_password}" `
+    --docker-password="${plain_ecr_registry_password}" `
     --dry-run=client -o yaml | kubectl apply -f -
 
 if ($LASTEXITCODE -ne 0) {
