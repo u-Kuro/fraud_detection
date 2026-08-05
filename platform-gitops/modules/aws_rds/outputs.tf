@@ -1,21 +1,11 @@
-output "identifier" {
-  value = aws_db_instance.rds.identifier
-}
-output "address" {
-  value = aws_db_instance.rds.address
-}
-output "port" {
-  value = aws_db_instance.rds.port
-}
-output "name" {
-  value = aws_db_instance.rds.db_name
-}
-
-output "username" {
-  value     = aws_db_instance.rds.username
-  sensitive = true
-}
-output "password" {
-  value     = aws_db_instance.rds.password
+output "rds" {
+  value = {
+    identifier  = aws_db_instance.rds.identifier
+    address     = aws_db_instance.rds.address
+    port        = aws_db_instance.rds.port
+    name        = aws_db_instance.rds.db_name
+    username    = aws_db_instance.rds.username
+    password    = aws_db_instance.rds.password
+  }
   sensitive = true
 }
