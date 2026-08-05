@@ -1,5 +1,3 @@
-# TODO - 03/08/2026 - Continue here... Create N user team credentials and attach to policy. create teams and infos here in main instead of per module
-
 locals {
   teams = {
     mle = {
@@ -16,7 +14,7 @@ locals {
 module "iam" {
   source = "./modules/aws_iam"
 
-  teams  = keys(local.teams)
+  teams = keys(local.teams)
 }
 
 module "ecr_repository" {
@@ -24,12 +22,12 @@ module "ecr_repository" {
 
   teams = {
     for team, values in local.teams : team => {
-      ecr_repositories  = values.ecr_repositories
-      role_arn          = module.iam.teams[team].role.arn
+      ecr_repositories = values.ecr_repositories
+      role_arn         = module.iam.teams[team].role.arn
     }
   }
 
-  admin_aws_account_id  = module.iam.admin.account_id
+  admin_aws_account_id = module.iam.admin.account_id
 
   depends_on = [module.iam]
 }
@@ -49,22 +47,22 @@ module "eks_cluster" {
     }
   }
 
-  aws_access_key  = var.aws_access_key
-  aws_secret_key  = var.aws_secret_key
-  aws_region      = var.aws_region
+  aws_access_key = var.aws_access_key
+  aws_secret_key = var.aws_secret_key
+  aws_region     = var.aws_region
 
   eks_service_endpoint_url = var.eks_service_endpoint_url
 
-  kubeconfig_host_directory_path  = var.kubeconfig_host_directory_path
-  kubeconfig_host_file_name       = var.kubeconfig_host_file_name
+  kubeconfig_host_directory_path = var.kubeconfig_host_directory_path
+  kubeconfig_host_file_name      = var.kubeconfig_host_file_name
 
-  ecr_registry_endpoint             = var.ecr_registry_endpoint
-  ecr_registry_mirror_endpoint_url  = var.ecr_registry_mirror_endpoint_url
-  ecr_registry_mirror_endpoint      = var.ecr_registry_mirror_endpoint
+  ecr_registry_endpoint            = var.ecr_registry_endpoint
+  ecr_registry_mirror_endpoint_url = var.ecr_registry_mirror_endpoint_url
+  ecr_registry_mirror_endpoint     = var.ecr_registry_mirror_endpoint
 
-  ecr_registry_secret_name  = var.ecr_registry_secret_name
-  ecr_registry_username     = var.ecr_registry_username
-  ecr_registry_password     = var.ecr_registry_password
+  ecr_registry_secret_name = var.ecr_registry_secret_name
+  ecr_registry_username    = var.ecr_registry_username
+  ecr_registry_password    = var.ecr_registry_password
 
   depends_on = [module.iam]
 }
@@ -108,12 +106,12 @@ module "secrets_manager" {
 module "aws_mwaa_environment" {
   source = "./modules/aws_mwaa"
 
-  aws_access_key  = var.aws_access_key
-  aws_secret_key  = var.aws_secret_key
-  aws_region      = var.aws_region
+  aws_access_key = var.aws_access_key
+  aws_secret_key = var.aws_secret_key
+  aws_region     = var.aws_region
 
-  eks_service_endpoint_url  = var.eks_service_endpoint_url
-  eks_cluster_name          = module.eks_cluster.name
+  eks_service_endpoint_url = var.eks_service_endpoint_url
+  eks_cluster_name         = module.eks_cluster.name
 
   s3_service_endpoint_url = var.s3_service_endpoint_url
   s3_mwaa_bucket_name     = module.s3.mwaa_bucket_name
@@ -129,10 +127,13 @@ module "aws_mwaa_environment" {
     }
   }
 
+  kubeconfig_file_path = local_file.kubeconfig_file.filename
+
   depends_on = [
     module.iam,
     module.eks_cluster,
-    module.s3
+    module.s3,
+    local_file.kubeconfig_file
   ]
 }
 
@@ -142,8 +143,8 @@ module "postgresql" {
   db_name           = module.rds_db.name
   db_owner_username = module.rds_db.username
 
-  mlflow_postgresql_username  = var.mlflow_postgresql_username
-  mlflow_postgresql_password  = var.mlflow_postgresql_password
+  mlflow_postgresql_username = var.mlflow_postgresql_username
+  mlflow_postgresql_password = var.mlflow_postgresql_password
 
   postgresql_teams = toset(keys(local.teams))
 
@@ -158,9 +159,9 @@ module "helm_apps" {
   mlflow_user_name  = module.iam.mlflow_user.name
   mlflow_bucket_arn = module.s3.mlflow_bucket_arn
 
-  rds_db_address  = module.rds_db.address
-  rds_db_port     = module.rds_db.port
-  rds_db_name     = module.rds_db.name
+  rds_db_address = module.rds_db.address
+  rds_db_port    = module.rds_db.port
+  rds_db_name    = module.rds_db.name
 
   s3_internal_endpoint_url    = var.s3_internal_endpoint_url
   s3_mlflow_bucket_aws_region = module.s3.mlflow_bucket_aws_region

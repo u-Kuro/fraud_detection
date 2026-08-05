@@ -15,6 +15,8 @@ resource "aws_iam_role" "admin" {
 resource "aws_iam_role_policy_attachment" "admin" {
   role       = aws_iam_role.admin.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+
+  depends_on = [aws_iam_role.admin]
 }
 # TEAMS
 resource "aws_iam_group" "teams" {
@@ -24,6 +26,8 @@ resource "aws_iam_group" "teams" {
 resource "aws_iam_access_key" "teams" {
   for_each = aws_iam_group.teams
   user     = each.value.name
+
+  depends_on = [aws_iam_group.teams]
 }
 resource "aws_iam_role" "teams" {
   for_each = aws_iam_group.teams
@@ -37,6 +41,8 @@ resource "aws_iam_role" "teams" {
       }
     }]
   })
+
+  depends_on = [aws_iam_access_key.teams]
 }
 # SERVICES
 resource "aws_iam_role" "ec2" {
@@ -66,22 +72,16 @@ resource "aws_iam_role" "eks" {
 resource "aws_iam_role" "mwaa" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect  = "Allow"
-        Action  = "sts:AssumeRole"
-        Principal = {
-          Service = "airflow.amazonaws.com"
-        }
-      },
-      {
-        Effect  = "Allow"
-        Action  = "sts:AssumeRole"
-        Principal = {
-          Service = "airflow-env.amazonaws.com"
-        }
+    Statement = [{
+      Effect  = "Allow"
+      Action  = "sts:AssumeRole"
+      Principal = {
+        Service = [
+          "airflow.amazonaws.com",
+          "airflow-env.amazonaws.com"
+        ]
       }
-    ]
+    }]
   })
 }
 resource "aws_iam_role" "rds" {

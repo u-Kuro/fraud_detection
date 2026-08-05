@@ -1,3 +1,23 @@
+resource "kubernetes_secret" "ecr_registry" {
+  metadata {
+    name      = var.ecr_registry_secret_name
+    namespace = var.namespace
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        (var.ecr_registry_endpoint) = {
+          username = var.ecr_registry_username
+          password = var.ecr_registry_password
+          auth     = base64encode("${var.ecr_registry_username}:${var.ecr_registry_password}")
+        }
+      }
+    })
+  }
+}
 # ─────────────────────────────────────────────────────────────────────────────
 # Team Namespaces
 # ─────────────────────────────────────────────────────────────────────────────

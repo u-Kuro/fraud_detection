@@ -1,9 +1,9 @@
 output "team_access_keys" {
-  value = module.iam.team_access_keys
+  value     = module.iam.team_access_keys
   sensitive = true
 }
 output "mlflow_access_key" {
-  value = module.iam.mlflow_access_key
+  value     = module.iam.mlflow_access_key
   sensitive = true
 }
 
@@ -47,18 +47,18 @@ output "mlflow_tracking_uri" {
 }
 
 output "postgresql_mlflow_username" {
-  value = module.postgresql.mlflow_username
+  value     = module.postgresql.mlflow_username
   sensitive = true
 }
 output "postgresql_mlflow_password" {
-  value = module.postgresql.mlflow_password
+  value     = module.postgresql.mlflow_password
   sensitive = true
 }
 output "teams_credentials" {
-  value = module.postgresql.teams_credentials
+  value     = module.postgresql.teams_credentials
   sensitive = true
 }
 output "teams_migration_credentials" {
-  value = module.postgresql.teams_migration_credentials
+  value     = module.postgresql.teams_migration_credentials
   sensitive = true
 }

@@ -1,68 +1,40 @@
+# EKS AUTHENTICATION
 locals {
   dag_s3_path_name = "dags"
 }
-resource "terraform_data" "upload_kubeconfig_to_s3_uri_for_airflow" {
-  triggers_replace = {
-    eks_cluster_name = var.eks_cluster_name
-  }
-
-  provisioner "local-exec" {
-    interpreter = ["PowerShell", "-Command"]
-    command     = join(" ", [
-      "& '${path.module}/scripts/upload_kubeconfig_to_s3_uri_for_airflow.ps1'",
-
-      "-aws_access_key '${var.aws_access_key}'",
-      "-aws_secret_key '${var.aws_secret_key}'",
-      "-aws_region '${var.aws_region}'",
-
-      "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
-      "-eks_cluster_name '${var.eks_cluster_name}'",
-      "-temporary_kubeconfig_file_path '$env:TEMP\\kubeconfig.yaml'",
-
-      "-s3_service_endpoint_url '${var.s3_service_endpoint_url}'",
-      "-s3_dag_kubeconfig_uri 's3://${var.s3_mwaa_bucket_name}/${local.dag_s3_path_name}/kubeconfig.yaml'"
-    ])
-  }
+resource "aws_s3_object" "copy_kubeconfig_for_ministack_airflow" {
+  bucket = var.s3_mwaa_bucket_name
+  key    = "${local.dag_s3_path_name}/kubeconfig.yaml"
+  source = var.kubeconfig_file_path
+  etag   = filemd5(var.kubeconfig_file_path)
 }
-
-resource "aws_iam_role" "mwaa" {
-  name = "mwaa_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = {
-        Service = [
-          "airflow.amazonaws.com",
-          "airflow-env.amazonaws.com"
-        ]
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
+# MWAA
 locals {
   airflow_secrets_connections_prefix = "airflow/connections"
   airflow_secrets_variables_prefix   = "airflow/variables"
 }
 resource "aws_iam_role_policy" "mwaa" {
-  name = "mwaa_role_policy"
-  role = aws_iam_role.mwaa.id
+  role = var.mwaa_role_arn
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          var.s3_mwaa_bucket_arn,
-          "${var.s3_mwaa_bucket_arn}/*"
-        ]
+          Effect = "Allow"
+          Action = [
+              "s3:ListBucket",
+              "s3:GetBucketLocation",
+              "s3:ListBucketVersions"
+          ]
+          Resource = var.s3_mwaa_bucket_arn
+      },
+      {
+          Effect = "Allow"
+          Action = [
+              "s3:GetObject",
+              "s3:GetObjectVersion",
+              "s3:PutObject"
+          ],
+          Resource = "${var.s3_mwaa_bucket_arn}/*"
       },
       {
         Effect = "Allow"
@@ -72,19 +44,18 @@ resource "aws_iam_role_policy" "mwaa" {
         ]
         Resource = [
           "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/*",
-          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/*"
         ]
       }
     ]
   })
 }
-
 resource "aws_mwaa_environment" "mwaa" {
   name               = "mwaa"
   airflow_version    = "2.10.3"
-  execution_role_arn = aws_iam_role.mwaa.arn
+  execution_role_arn = var.mwaa_role_arn
   source_bucket_arn  = var.s3_mwaa_bucket_arn
-  dag_s3_path        = "${var.s3_mwaa_bucket_name}/${local.dag_s3_path_name}"
+  dag_s3_path        = local.dag_s3_path_name
 
   airflow_configuration_options = {
     "secrets.backend"         = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
@@ -100,58 +71,47 @@ resource "aws_mwaa_environment" "mwaa" {
     security_group_ids  = ["sg-00000000000000001"]
     subnet_ids          = ["subnet-00000000000000001", "subnet-00000000000000002"]
   }
-}
 
-resource "aws_iam_user_policy" "teams" {
+  depends_on = [aws_iam_role_policy.mwaa]
+}
+# TEAM PERMISSIONS
+resource "aws_iam_role_policy" "teams" {
   for_each = var.teams
-  name     = "${each.key}_mwaa_policy"
-  user     = each.value.name
+  role     = each.value.role_arn
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid     = "S3OwnDAGs"
-        Effect  = "Allow"
-        Action  = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          var.s3_mwaa_bucket_arn,
-          "${var.s3_mwaa_bucket_arn}/${local.dag_s3_path_name}/${each.key}/*"
-        ]
+        Effect = "Allow"
+        Action = ["s3:ListBucket"]
+        Resource = var.s3_mwaa_bucket_arn
         Condition = {
           StringLike = {
-            "s3:prefix" = ["${local.dag_s3_path_name}/${each.key}/*"]
+            "s3:prefix" = [
+              "${local.dag_s3_path_name}/${each.key}",
+              "${local.dag_s3_path_name}/${each.key}/*"
+            ]
           }
         }
       },
       {
-        Sid     = "SMOwnConnections"
         Effect  = "Allow"
-        Action  = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret",
-          "secretsmanager:CreateSecret",
-          "secretsmanager:PutSecretValue",
-          "secretsmanager:DeleteSecret"
+        Action  = "s3:*"
+        Resource = [
+          "${var.s3_mwaa_bucket_arn}/${local.dag_s3_path_name}/${each.key}",
+          "${var.s3_mwaa_bucket_arn}/${local.dag_s3_path_name}/${each.key}/*"
         ]
-        Resource = ["arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*"]
       },
       {
-        Sid     = "SMOwnVariables"
         Effect  = "Allow"
-        Action  = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret",
-          "secretsmanager:CreateSecret",
-          "secretsmanager:PutSecretValue",
-          "secretsmanager:DeleteSecret"
+        Action  = "secretsmanager:*"
+        Resource = [
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}-*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}-*"
         ]
-        Resource = ["arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*"]
       },
     ]
   })

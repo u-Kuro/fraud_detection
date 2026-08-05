@@ -1,3 +1,6 @@
+data "aws_iam_policy" "secretsmanager_read_write" {
+  name = "SecretsManagerReadWrite"
+}
 resource "aws_iam_user_policy" "teams" {
   for_each = var.teams
   name     = "${each.key}_secretsmanager_policy"

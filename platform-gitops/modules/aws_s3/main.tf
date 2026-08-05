@@ -1,3 +1,5 @@
+# TODO - 05/08/2026 - Continue here...
+# MWAA
 resource "aws_s3_bucket" "mwaa" {
   bucket        = "mwaa"
   force_destroy = true
@@ -20,7 +22,30 @@ resource "aws_s3_bucket_public_access_block" "mwaa" {
 
   depends_on = [aws_s3_bucket.mwaa]
 }
+# RDS
+resource "aws_s3_bucket" "rds" {
+  bucket        = "rds"
+  force_destroy = true
+}
+resource "aws_s3_bucket_versioning" "rds" {
+  bucket = aws_s3_bucket.rds.id
 
+  versioning_configuration {
+    status = "Enabled"
+  }
+
+  depends_on = [aws_s3_bucket.rds]
+}
+resource "aws_s3_bucket_public_access_block" "rds" {
+  bucket                  = aws_s3_bucket.rds.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  depends_on = [aws_s3_bucket.rds]
+}
+# MLFLOW
 resource "aws_s3_bucket" "mlflow" {
   bucket        = "mlflow"
   force_destroy = true
@@ -57,7 +82,7 @@ resource "aws_s3_bucket_versioning" "teams" {
     status = "Enabled"
   }
 
-  depends_on = [aws_s3_bucket.mlflow]
+  depends_on = [aws_s3_bucket.teams]
 }
 resource "aws_s3_bucket_public_access_block" "teams" {
   for_each                = aws_s3_bucket.teams
@@ -67,12 +92,11 @@ resource "aws_s3_bucket_public_access_block" "teams" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 
-  depends_on = [aws_s3_bucket.mwaa]
+  depends_on = [aws_s3_bucket.teams]
 }
 
 resource "aws_iam_user_policy" "teams" {
   for_each = aws_s3_bucket.teams
-  name     = "${each.key}_s3_policy"
   user     = var.teams[each.key].name
 
   policy = jsonencode({

@@ -1,6 +1,6 @@
 param(
-    [Parameter(Mandatory)][string]$aws_access_key,
-    [Parameter(Mandatory)][string]$aws_secret_key,
+    [Parameter(Mandatory)][securestring]$aws_access_key,
+    [Parameter(Mandatory)][securestring]$aws_secret_key,
     [Parameter(Mandatory)][string]$aws_region,
 
     [Parameter(Mandatory)][string]$eks_service_endpoint_url,
@@ -13,7 +13,6 @@ param(
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint_url,
     [Parameter(Mandatory)][string]$ecr_registry_mirror_endpoint,
 
-    [Parameter(Mandatory)][string]$ecr_registry_secret_name,
     [Parameter(Mandatory)][string]$ecr_registry_username,
     [Parameter(Mandatory)][securestring]$ecr_registry_password
 )
@@ -22,8 +21,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # Configure aws in host
-aws configure set aws_access_key_id "${aws_access_key}"
-aws configure set aws_secret_access_key "${aws_secret_key}"
+$plain_aws_access_key = ConvertFrom-SecureString -SecureString $aws_access_key -AsPlainText
+$plain_aws_secret_key = ConvertFrom-SecureString -SecureString $aws_secret_key -AsPlainText
+aws configure set aws_access_key_id "${plain_aws_access_key}"
+aws configure set aws_secret_access_key "${plain_aws_secret_key}"
 aws configure set region "${aws_region}"
 
 # Wait for cluster to be active
@@ -44,9 +45,6 @@ if ($status -ne "ACTIVE") {
 
 # Find the eks container name
 $eks_container_name = docker ps --filter "name=ministack-eks" --format "{{.Names}}" | Select-Object -First 1
-if (-not $eks_container_name) {
-    $eks_container_name = docker ps --filter "name=k3s" --format "{{.Names}}" | Select-Object -First 1
-}
 if (-not $eks_container_name) {
     Write-Error "[EKS] No k3s container found. Confirm MiniStack was started with the Docker socket mounted."; exit 1
 }
@@ -100,7 +98,7 @@ Write-Host "[EKS] k3s API is ready."
 # Set containerd to pull from MiniStack ECR
 # k3s uses containerd, not Docker daemon. docker login has no effect on k3s.
 # registries.yaml tells containerd where to find the MiniStack ECR mirror.
-$plain_ecr_registry_password = [System.Net.NetworkCredential]::new("", "${ecr_registry_password}").Password
+$plain_ecr_registry_password = ConvertFrom-SecureString -SecureString $ecr_registry_password -AsPlainText
 $registries_yaml = @"
 mirrors:
   "${ecr_registry_endpoint}":
@@ -112,8 +110,7 @@ configs:
       username: "${ecr_registry_username}"
       password: "${plain_ecr_registry_password}"
 "@
-
-$temp_registries = Join-Path $env:TEMP "ministack-registries.yaml"
+$temp_registries = Join-Path $env:TEMP "ministack_registries.yaml"
 $registries_yaml | Set-Content $temp_registries -Encoding utf8
 
 docker cp $temp_registries "${eks_container_name}:${k3s_mount_directory_path}/registries.yaml"
@@ -130,17 +127,3 @@ do {
 if (-not $api_recovered) {
     Write-Error "[EKS] k3s API did not recover after restart within ${max_recovery_wait}s."; exit 1
 }
-
-# Create ECR imagePullSecret in k3s
-# $env:KUBECONFIG is already set from the readiness block above.
-kubectl create secret docker-registry "${ecr_registry_secret_name}" `
-    --docker-server="${ecr_registry_endpoint}" `
-    --docker-username="${ecr_registry_username}" `
-    --docker-password="${plain_ecr_registry_password}" `
-    --dry-run=client -o yaml | kubectl apply -f -
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "[EKS] Failed to apply ${ecr_registry_secret_name}. kubectl exited $LASTEXITCODE."; exit 1
-}
-Write-Host "[EKS] ${ecr_registry_secret_name} applied."
-Write-Host "[EKS] Setup complete."

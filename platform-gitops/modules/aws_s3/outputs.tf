@@ -8,6 +8,16 @@ output "mwaa_bucket_aws_region" {
   value = aws_s3_bucket.mwaa.region
 }
 
+output "rds_bucket_name" {
+  value = aws_s3_bucket.rds.id
+}
+output "rds_bucket_arn" {
+  value = aws_s3_bucket.rds.arn
+}
+output "rds_bucket_aws_region" {
+  value = aws_s3_bucket.rds.region
+}
+
 output "mlflow_bucket_name" {
   value = aws_s3_bucket.mlflow.id
 }

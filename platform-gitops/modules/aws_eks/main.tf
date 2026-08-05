@@ -112,8 +112,8 @@ resource "aws_eks_access_policy_association" "teams" {
     aws_eks_access_entry.teams
   ]
 }
-# INITIALIZATION FOR MINISTACK
-resource "terraform_data" "initialize_eks_cluster" {
+# INITIALIZATION FOR EKS CLUSTER (MINISTACK)
+resource "terraform_data" "ministack_eks_cluster_initialization" {
   depends_on = [aws_eks_cluster.eks]
 
   # Re-run local-exec if cluster id changed
@@ -124,10 +124,10 @@ resource "terraform_data" "initialize_eks_cluster" {
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command     = join(" ", [
-      "& '${path.module}/scripts/initialize_eks_cluster.ps1'",
+      "& '${path.module}/scripts/ministack_eks_cluster_initialization.ps1'",
 
-      "-aws_access_key '${var.aws_access_key}'",
-      "-aws_secret_key '${var.aws_secret_key}'",
+      "-aws_access_key (ConvertTo-SecureString '${var.aws_access_key}' -AsPlainText -Force)",
+      "-aws_secret_key (ConvertTo-SecureString '${var.aws_secret_key}' -AsPlainText -Force)",
       "-aws_region '${var.aws_region}'",
 
       "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
@@ -140,7 +140,6 @@ resource "terraform_data" "initialize_eks_cluster" {
       "-ecr_registry_mirror_endpoint_url '${var.ecr_registry_mirror_endpoint_url}'",
       "-ecr_registry_mirror_endpoint '${var.ecr_registry_mirror_endpoint}'",
 
-      "-ecr_registry_secret_name '${var.ecr_registry_secret_name}'",
       "-ecr_registry_username '${var.ecr_registry_username}'",
       "-ecr_registry_password '${var.ecr_registry_password}'",
     ])

@@ -22,13 +22,16 @@ resource "aws_iam_role_policy" "teams" {
     Statement = [
       {
         Effect    = "Allow"
-        Action    = ["ecr:GetAuthorizationToken"]
+        Action    = "ecr:GetAuthorizationToken"
         Resource  = "*"
       },
       {
         Effect    = "Allow"
-        Action    = "*"
-        Resource  = "arn:aws:ecr:*:${var.admin_aws_account_id}:repository/${each.key}/*"
+        Action    = "ecr:*"
+        Resource  = [
+          "arn:aws:ecr:*:${var.admin_aws_account_id}:repository/${each.key}",
+          "arn:aws:ecr:*:${var.admin_aws_account_id}:repository/${each.key}/*"
+        ]
       },
     ]
   })
@@ -39,7 +42,7 @@ resource "aws_ecr_repository_policy" "ecr" {
   policy = jsonencode({
     Statement = [{
       Effect    = "Allow"
-      Action    = "*"
+      Action    = "ecr:*"
       Resource  = "*"
       Principal = {
         AWS = var.teams[each.key].role_arn
