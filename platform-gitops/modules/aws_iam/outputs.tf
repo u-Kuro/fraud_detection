@@ -7,13 +7,13 @@ output "admin" {
 
 output "teams" {
   value = {
-    for team in var.teams : team => {
+    for k in var.teams : k => {
       access_keys = {
-        aws_access_key = aws_iam_access_key.teams[team].id
-        aws_secret_key = aws_iam_access_key.teams[team].secret
+        aws_access_key = aws_iam_access_key.teams[k].id
+        aws_secret_key = aws_iam_access_key.teams[k].secret
       }
       role = {
-        arn = aws_iam_role.teams[team].arn
+        arn = aws_iam_role.teams[k].arn
       }
     }
   }

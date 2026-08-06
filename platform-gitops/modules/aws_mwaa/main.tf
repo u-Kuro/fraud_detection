@@ -107,10 +107,11 @@ resource "aws_iam_role_policy" "teams" {
         Effect  = "Allow"
         Action  = "secretsmanager:*"
         Resource = [
-          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*",
+
           "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}-*",
-          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*",
-          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}-*"
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}-*",
+          "arn:aws:secretsmanager:*:${var.aws_account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*"
         ]
       },
     ]

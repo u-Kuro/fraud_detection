@@ -170,7 +170,7 @@ module "helm_apps" {
   mlflow_db_username = module.postgresql.mlflow_username
   mlflow_db_password = module.postgresql.mlflow_password
 
-  mlflow_access_key = module.iam.mlflow_access_key
+  admin = module.iam.mlflow_access_key
 
   mlflow_teams = toset(keys(local.teams))
 

@@ -31,7 +31,7 @@ variable "mlflow_db_password" {
   sensitive = true
 }
 
-variable "mlflow_access_key" {
+variable "admin" {
   type = map(object({
     aws_access_key = string
     aws_secret_key = string

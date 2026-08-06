@@ -14,14 +14,29 @@ artifactRoot:
     path: "artifacts"
 #   awsAccessKeyId: [dynamic]
 #   awsSecretAccessKey: [dynamic]
+#   bucket: [dynamic]
   proxiedArtifactStorage: true # Changes destination host from s3 to mlflow
 
 extraFlags:
   - serveArtifacts # Enables mlflow to proxy artifact connection from s3 (uploads/downloads)
 
-# extraEnvVars:
+extraEnvVars:
+  MLFLOW_ENABLE_WORKSPACES: true
 #   MLFLOW_S3_ENDPOINT_URL: [dynamic]
-#   WS_DEFAULT_REGION: [dynamic]
+#   AWS_DEFAULT_REGION: [dynamic]
+
+auth:
+  enabled: true
+  defaultPermission: MANAGE
+  postgres:
+    enabled: true
+#   host: [dynamic]
+#   port: [dynamic]
+#   database: [dynamic]
+#   user: [dynamic]
+#   password: [dynamic]
+
+# flaskServerSecretKey: [dynamic] # Avoids unexpected logout
 
 service:
   type: ClusterIP # Internal access only

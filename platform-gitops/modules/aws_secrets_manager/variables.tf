@@ -1,6 +1,6 @@
 variable "teams" {
   type = map(object({
-    name = string
+    role_arn = string
   }))
 }
 variable "aws_account_id" { type = string }

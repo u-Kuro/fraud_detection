@@ -1,4 +1,3 @@
-# TODO - 05/08/2026 - Continue here....
 # MWAA
 resource "aws_s3_bucket" "mwaa" {
   bucket        = "mwaa"
@@ -68,7 +67,7 @@ resource "aws_s3_bucket_public_access_block" "mlflow" {
 
   depends_on = [aws_s3_bucket.mlflow]
 }
-
+# TEAMS
 resource "aws_s3_bucket" "teams" {
   for_each      = var.teams
   bucket        = each.key
@@ -94,28 +93,29 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 
   depends_on = [aws_s3_bucket.teams]
 }
-
-resource "aws_iam_user_policy" "teams" {
-  for_each = aws_s3_bucket.teams
-  user     = var.teams[each.key].name
+# TEAM PERMISSIONS
+resource "aws_iam_role_policy" "teams" {
+  for_each = var.teams
+  role     = each.value.role_arn
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "S3OwnTeamBucket"
         Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
+        Action = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.teams[each.key].arn
+      },
+      {
+        Effect  = "Allow"
+        Action  = "s3:*"
         Resource = [
-          each.value.arn,
-          "${each.value.arn}/*"
+          aws_s3_bucket.teams[each.key].arn,
+          "${aws_s3_bucket.teams[each.key].arn}/*"
         ]
       }
     ]
   })
+
+  depends_on = [aws_s3_bucket.teams]
 }
