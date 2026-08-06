@@ -1,8 +1,16 @@
 variable "teams" {
   type = map(object({
-    ecr_repositories = set(string)
-    role_arn         = string
+    role = object({
+      arn = string
+    })
+    ecr = object({
+      repositories = set(string)
+    })
   }))
 }
 
-variable "admin_aws_account_id" { type = string }
+variable "aws_admin" {
+  type = object({
+    account_id = string
+  })
+}

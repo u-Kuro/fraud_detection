@@ -1,13 +1,49 @@
-variable "kubeconfig_file_path" { type = string }
-variable "s3_mwaa_bucket_name"  { type = string }
+variable "s3" {
+  type = object({
+    mwaa_bucket = object({
+      arn  = string
+      name = string
+    })
+  })
+}
 
-variable "mwaa_role_arn"                        { type = string }
-variable "s3_mwaa_bucket_arn"                   { type = string }
-variable "aws_account_id"                       { type = string }
-variable "secretsmanager_service_endpoint_url"  { type = string }
+variable "kubeconfig" {
+  type = object({
+    host = object({
+      file = object({
+        path = string
+      })
+    })
+  })
+}
+
+variable "mwaa" {
+  type = object({
+    role = object({
+      arn = string
+    })
+  })
+}
+
+variable "aws_admin" {
+  type = object({
+    accout_id = string
+  })
+  sensitive = true
+}
+
+variable "secretsmanager" {
+  type = object({
+    container = object({
+      endpoint_url = string
+    })
+  })
+}
 
 variable "teams" {
   type = map(object({
-    role_arn = string
+    role = object({
+      arn = string
+    })
   }))
 }

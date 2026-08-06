@@ -1,45 +1,74 @@
-variable "services_role" {
+variable "eks" {
   type = object({
-    eks = object({
-      name  = string
-      arn   = string
+    role = object({
+      arn  = string
+      name = string
     })
-    ec2 = object({
-      name  = string
-      arn   = string
+    host = object({
+      endpoint_url = string
     })
   })
 }
 
-variable "admin_arn" {
-  type = string
+variable "ec2" {
+  type = object({
+    role = object({
+      arn  = string
+      name = string
+    })
+  })
+}
+
+variable "aws_admin" {
+  type = object({
+    arn        = string
+    region     = string
+    access_key = string
+    secret_key = string
+  })
+  sensitive = true
 }
 
 variable "teams" {
   type = map(object({
-    role_arn  = string
-    namespace = string
+    role = object({
+      arn = string
+    })
+    kubernetes = object({
+      namespace = string
+    })
   }))
 }
 
-variable "aws_access_key" {
-  type = string
+variable "local_files" {
+  type = object({
+    directory = object({
+      path = string
+    })
+  })
+}
+
+variable "ecr" {
+  type = object({
+    username = string
+    password = string
+    host = object({
+      endpoint = string
+    })
+    container = object({
+      endpoint     = string
+      endpoint_url = string
+    })
+  })
   sensitive = true
 }
-variable "aws_secret_key" {
-  type = string
-  sensitive = true
+
+variable "kubeconfig" {
+  type = object({
+    host = object({
+      file = object({
+        path = string
+      })
+    })
+  })
 }
-variable "aws_region"     { type = string }
-
-variable "eks_service_endpoint_url" { type = string }
-
-variable "kubeconfig_host_directory_path" { type = string }
-variable "kubeconfig_host_file_name"      { type = string }
-
-variable "ecr_registry_endpoint"            { type = string }
-variable "ecr_registry_mirror_endpoint_url" { type = string }
-variable "ecr_registry_mirror_endpoint"     { type = string }
-
-variable "ecr_registry_username"    { type = string }
-variable "ecr_registry_password"    { type = string }

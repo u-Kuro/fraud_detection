@@ -74,8 +74,8 @@ resource "aws_s3_bucket" "teams" {
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "teams" {
-  for_each  = aws_s3_bucket.teams
-  bucket    = each.value.id
+  for_each = aws_s3_bucket.teams
+  bucket   = each.value.id
 
   versioning_configuration {
     status = "Enabled"
@@ -96,19 +96,19 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 # TEAM PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
   for_each = var.teams
-  role     = each.value.role_arn
+  role     = each.value.role.arn
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = ["s3:ListBucket"]
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
         Resource = aws_s3_bucket.teams[each.key].arn
       },
       {
-        Effect  = "Allow"
-        Action  = "s3:*"
+        Effect = "Allow"
+        Action = "s3:*"
         Resource = [
           aws_s3_bucket.teams[each.key].arn,
           "${aws_s3_bucket.teams[each.key].arn}/*"

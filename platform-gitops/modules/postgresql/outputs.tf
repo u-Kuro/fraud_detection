@@ -1,9 +1,9 @@
 output "mlflow_username" {
-  value = postgresql_role.mlflow.name
+  value     = postgresql_role.mlflow.name
   sensitive = true
 }
 output "mlflow_password" {
-  value = postgresql_role.mlflow.password
+  value     = postgresql_role.mlflow.password
   sensitive = true
 }
 

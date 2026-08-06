@@ -18,10 +18,10 @@ variable "team_role_arns" {
 }
 
 # ── Shared platform values injected into ConfigMaps ──────────────────────────
-variable "rds_host"           { type = string }
-variable "rds_port"           { type = number }
-variable "rds_db_name"        { type = string }
-variable "aws_region"         { type = string }
-variable "s3_endpoint_url"    { type = string }
+variable "rds_host" { type = string }
+variable "rds_port" { type = number }
+variable "rds_db_name" { type = string }
+variable "aws_region" { type = string }
+variable "s3_endpoint_url" { type = string }
 variable "mlflow_tracking_uri" { type = string }
 variable "mwaa_webserver_url" { type = string }

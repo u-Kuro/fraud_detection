@@ -3,17 +3,17 @@ data "aws_iam_policy" "eks_cluster_policy" {
   name = "AmazonEKSClusterPolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks" {
-  role       = var.services_role.eks.name
+  role       = var.eks.role.name
   policy_arn = data.aws_iam_policy.eks_cluster_policy.arn
 }
 resource "aws_eks_cluster" "eks" {
-  name      = "eks"
-  version   = "1.32"
-  role_arn  = var.services_role.eks.arn
+  name     = "eks"
+  version  = "1.32"
+  role_arn = var.eks.role.arn
 
   vpc_config {
-    security_group_ids  = ["sg-00000000000000000"]
-    subnet_ids          = ["subnet-00000000000000000", "subnet-00000000000000001"]
+    security_group_ids = ["sg-00000000000000000"]
+    subnet_ids         = ["subnet-00000000000000000", "subnet-00000000000000001"]
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks]
@@ -23,26 +23,26 @@ data "aws_iam_policy" "eks_worker_node_policy" {
   name = "AmazonEKSWorkerNodePolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  role       = var.services_role.ec2.name
+  role       = var.ec2.role.name
   policy_arn = data.aws_iam_policy.eks_worker_node_policy.arn
 }
 data "aws_iam_policy" "eks_cni_policy" {
   name = "AmazonEKS_CNI_Policy"
 }
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = var.services_role.ec2.name
+  role       = var.ec2.role.name
   policy_arn = data.aws_iam_policy.eks_cni_policy.arn
 }
 data "aws_iam_policy" "ecr_read_only" {
   name = "AmazonEC2ContainerRegistryReadOnly"
 }
 resource "aws_iam_role_policy_attachment" "ecr_read_only" {
-  role       = var.services_role.ec2.name
+  role       = var.ec2.role.name
   policy_arn = data.aws_iam_policy.ecr_read_only.arn
 }
 resource "aws_eks_node_group" "node" {
-  cluster_name    = aws_eks_cluster.eks.id
-  node_role_arn   = var.services_role.ec2.arn
+  cluster_name  = aws_eks_cluster.eks.id
+  node_role_arn = var.ec2.role.arn
 
   scaling_config {
     desired_size = 1
@@ -70,14 +70,14 @@ locals {
 # ADMIN CLUSTER PERMISSION
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.admin_arn
+  principal_arn = var.aws_admin.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.admin_arn
+  principal_arn = var.aws_admin.arn
   policy_arn    = local.cluster_access_policy_arns.cluster_admin
 
   access_scope { type = "cluster" }
@@ -91,7 +91,7 @@ resource "aws_eks_access_policy_association" "admin" {
 resource "aws_eks_access_entry" "teams" {
   for_each      = var.teams
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = each.value.role_arn
+  principal_arn = each.value.role.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
@@ -99,12 +99,12 @@ resource "aws_eks_access_entry" "teams" {
 resource "aws_eks_access_policy_association" "teams" {
   for_each      = var.teams
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = each.value.role_arn
+  principal_arn = each.value.role.arn
   policy_arn    = local.cluster_access_policy_arns.edit
 
   access_scope {
     type       = "namespace"
-    namespaces = [each.value.namespace]
+    namespaces = [each.value.kubernetes.namespace]
   }
 
   depends_on = [
@@ -112,8 +112,32 @@ resource "aws_eks_access_policy_association" "teams" {
     aws_eks_access_entry.teams
   ]
 }
-# INITIALIZATION FOR EKS CLUSTER (MINISTACK)
-resource "terraform_data" "ministack_eks_cluster_initialization" {
+# ADDITIONAL SETUP FOR MINISTACK EKS
+resource "local_sensitive_file" "kubeconfig_container" {
+  filename        = "${var.local_files.directory.path}/kubeconfig.yaml"
+  file_permission = "0600"
+}
+resource "local_sensitive_file" "ecr_registries" {
+  filename        = "${var.local_files.directory.path}/registries.yaml"
+  file_permission = "0600"
+
+  content = yamlencode({
+    mirrors = {
+      (var.ecr.host.endpoint) = {
+        endpoint = [var.ecr.container.endpoint_url]
+      }
+    }
+    configs = {
+      (var.ecr.container.endpoint) = {
+        auth = {
+          username = var.ecr.username
+          password = var.ecr.password
+        }
+      }
+    }
+  })
+}
+resource "terraform_data" "additional_setup_for_ministack_eks" {
   depends_on = [aws_eks_cluster.eks]
 
   # Re-run local-exec if cluster id changed
@@ -123,25 +147,20 @@ resource "terraform_data" "ministack_eks_cluster_initialization" {
 
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
-    command     = join(" ", [
-      "& '${path.module}/scripts/ministack_eks_cluster_initialization.ps1'",
+    command = join(" ", [
+      "& '${path.module}/scripts/additional_setup_for_ministack_eks.ps1'",
 
-      "-aws_access_key (ConvertTo-SecureString '${var.aws_access_key}' -AsPlainText -Force)",
-      "-aws_secret_key (ConvertTo-SecureString '${var.aws_secret_key}' -AsPlainText -Force)",
-      "-aws_region '${var.aws_region}'",
+      "-aws_admin_access_key (ConvertTo-SecureString '${var.aws_admin.access_key}' -AsPlainText -Force)",
+      "-aws_admin_secret_key (ConvertTo-SecureString '${var.aws_admin.secret_key}' -AsPlainText -Force)",
+      "-aws_admin_region '${var.aws_admin.region}'",
 
-      "-eks_service_endpoint_url '${var.eks_service_endpoint_url}'",
+      "-eks_host_endpoint_url '${var.eks.host.endpoint_url}'",
       "-eks_cluster_name '${aws_eks_cluster.eks.id}'",
 
-      "-kubeconfig_host_directory_path '${var.kubeconfig_host_directory_path}'",
-      "-kubeconfig_host_file_name '${var.kubeconfig_host_file_name}'",
+      "-kubeconfig_container_file_path '${local_sensitive_file.kubeconfig_container.filename}'",
+      "-kubeconfig_host_file_path '${var.kubeconfig.host.file.path}'",
 
-      "-ecr_registry_endpoint '${var.ecr_registry_endpoint}'",
-      "-ecr_registry_mirror_endpoint_url '${var.ecr_registry_mirror_endpoint_url}'",
-      "-ecr_registry_mirror_endpoint '${var.ecr_registry_mirror_endpoint}'",
-
-      "-ecr_registry_username '${var.ecr_registry_username}'",
-      "-ecr_registry_password '${var.ecr_registry_password}'",
+      "-registries_host_file_path '${local_sensitive_file.ecr_registries.filename}'",
     ])
   }
 }

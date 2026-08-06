@@ -1,11 +1,23 @@
-variable "db_username" {
-  type      = string
-  sensitive = true
-}
-variable "db_password" {
-  type      = string
+variable "db" {
+  type = object({
+    username = string
+    password = string
+  })
   sensitive = true
 }
 
-variable "rds_role_arn"       { type = string }
-variable "s3_rds_bucket_arn"  { type = string }
+variable "rds" {
+  type = object({
+    role = object({
+      arn = string
+    })
+  })
+}
+
+variable "s3" {
+  type = object({
+    rds_bucket = object({
+      arn = string
+    })
+  })
+}

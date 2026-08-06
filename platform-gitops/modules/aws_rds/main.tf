@@ -3,14 +3,14 @@ resource "aws_db_instance" "rds" {
   engine              = "postgres"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
-  username            = var.db_username
-  password            = var.db_password
+  username            = var.db.username
+  password            = var.db.password
   db_name             = "main"
   skip_final_snapshot = true
 }
 
 resource "aws_iam_role_policy" "rds" {
-  role = var.rds_role_arn
+  role = var.rds.role.arn
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -24,8 +24,8 @@ resource "aws_iam_role_policy" "rds" {
           "s3:GetBucketLocation"
         ]
         Resource = [
-          var.s3_rds_bucket_arn,
-          "${var.s3_rds_bucket_arn}/*"
+          var.s3.rds_bucket.arn,
+          "${var.s3.rds_bucket.arn}/*"
         ]
       }
     ]

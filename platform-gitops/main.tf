@@ -39,7 +39,7 @@ module "ecr_repository" {
 module "eks_cluster" {
   source = "./modules/aws_eks"
 
-  admin_arn = module.iam.admin.arn
+  aws_admin = module.iam.admin.arn
 
   teams = {
     for team, values in module.iam.team_users : team => {
@@ -51,20 +51,23 @@ module "eks_cluster" {
   aws_secret_key = var.aws_secret_key
   aws_region     = var.aws_region
 
-  eks_service_endpoint_url = var.eks_service_endpoint_url
+  eks_service_endpoint_url = var.eks_host_endpoint_url
 
-  kubeconfig_host_directory_path = var.kubeconfig_host_directory_path
-  kubeconfig_host_file_name      = var.kubeconfig_host_file_name
+  local_files_directory_path = local.local_files_directory_path
+  kubeconfig_host_file_name  = var.kubeconfig_host_file_name
 
-  ecr_registry_endpoint            = var.ecr_registry_endpoint
-  ecr_registry_mirror_endpoint_url = var.ecr_registry_mirror_endpoint_url
-  ecr_registry_mirror_endpoint     = var.ecr_registry_mirror_endpoint
+  ecr_registry_endpoint            = var.ecr_host_registry_endpoint
+  ecr_registry_mirror_endpoint_url = var.ecr_container_endpoint_url
+  ecr_registry_mirror_endpoint     = var.ecr_container_endpoint
 
-  ecr_registry_secret_name = var.ecr_registry_secret_name
-  ecr_registry_username    = var.ecr_registry_username
-  ecr_registry_password    = var.ecr_registry_password
+  ecr_registry_secret_name = var.ecr_secret_name
+  ecr_registry_username    = var.ecr_username
+  ecr_registry_password    = var.ecr_password
 
-  depends_on = [module.iam]
+  depends_on = [
+    local_file.kubeconfig_file,
+    module.iam
+  ]
 }
 
 module "rds_db" {
@@ -110,16 +113,16 @@ module "aws_mwaa_environment" {
   aws_secret_key = var.aws_secret_key
   aws_region     = var.aws_region
 
-  eks_service_endpoint_url = var.eks_service_endpoint_url
+  eks_service_endpoint_url = var.eks_host_endpoint_url
   eks_cluster_name         = module.eks_cluster.name
 
-  s3_service_endpoint_url = var.s3_service_endpoint_url
+  s3_service_endpoint_url = var.s3_host_endpoint_url
   s3_mwaa_bucket_name     = module.s3.mwaa_bucket_name
   s3_mwaa_bucket_arn      = module.s3.mwaa_bucket_arn
 
   aws_account_id = var.aws_account_id
 
-  secretsmanager_service_endpoint_url = var.secretsmanager_service_endpoint_url
+  secretsmanager_service_endpoint_url = var.secretsmanager_host_endpoint_url
 
   teams = {
     for team, values in local.teams : team => {
@@ -153,8 +156,8 @@ module "postgresql" {
   ]
 }
 
-module "helm_apps" {
-  source = "./modules/helm_apps"
+module "mlflow" {
+  source = "modules/mlflow"
 
   mlflow_user_name  = module.iam.mlflow_user.name
   mlflow_bucket_arn = module.s3.mlflow_bucket_arn
@@ -163,14 +166,14 @@ module "helm_apps" {
   rds_db_port    = module.rds_db.port
   rds_db_name    = module.rds_db.name
 
-  s3_internal_endpoint_url    = var.s3_internal_endpoint_url
+  s3_internal_endpoint_url    = var.s3_container_endpoint_url
   s3_mlflow_bucket_aws_region = module.s3.mlflow_bucket_aws_region
   s3_mlflow_bucket            = module.s3.mlflow_bucket_name
 
   mlflow_db_username = module.postgresql.mlflow_username
   mlflow_db_password = module.postgresql.mlflow_password
 
-  admin = module.iam.mlflow_access_key
+  aws_admin = module.iam.mlflow_access_key
 
   mlflow_teams = toset(keys(local.teams))
 

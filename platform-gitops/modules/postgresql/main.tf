@@ -1,3 +1,4 @@
+# TODO - 06/08/2026 - Continue here...
 # MLFLOW
 resource "postgresql_schema" "mlflow" {
   name  = "mlflow"
@@ -23,7 +24,7 @@ resource "postgresql_grant" "mlflow_schema" {
   role        = postgresql_role.mlflow.name
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.mlflow,
     postgresql_role.mlflow
   ]
@@ -34,7 +35,7 @@ resource "postgresql_grant" "mlflow_table" {
   role        = postgresql_role.mlflow.name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.mlflow,
     postgresql_role.mlflow
   ]
@@ -45,7 +46,7 @@ resource "postgresql_grant" "mlflow_sequence" {
   role        = postgresql_role.mlflow.name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT", "UPDATE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.mlflow,
     postgresql_role.mlflow
   ]
@@ -53,13 +54,13 @@ resource "postgresql_grant" "mlflow_sequence" {
 
 # MLE (/dags and /services)
 resource "random_password" "teams" {
-  for_each  = var.postgresql_teams
-  length    = 24
+  for_each = var.postgresql_teams
+  length   = 24
 }
 resource "postgresql_schema" "teams" {
-  for_each  = random_password.teams
-  name      = each.key
-  owner     = var.db_owner_username
+  for_each = random_password.teams
+  name     = each.key
+  owner    = var.db_owner_username
 }
 resource "postgresql_role" "teams" {
   for_each            = random_password.teams
@@ -84,7 +85,7 @@ resource "postgresql_grant" "teams_schema" {
   role        = postgresql_role.teams[each.key].name
   object_type = "schema"
   privileges  = ["USAGE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams
   ]
@@ -96,7 +97,7 @@ resource "postgresql_grant" "teams_table" {
   role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams
   ]
@@ -108,15 +109,15 @@ resource "postgresql_grant" "teams_sequence" {
   role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams
   ]
 }
 # MLE Migrations (/database)
 resource "random_password" "teams_migration" {
-  for_each  = var.postgresql_teams
-  length    = 24
+  for_each = var.postgresql_teams
+  length   = 24
 }
 resource "postgresql_role" "teams_migration" {
   for_each            = random_password.teams_migration
@@ -141,7 +142,7 @@ resource "postgresql_grant" "teams_migration_schema" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams_migration
   ]
@@ -153,7 +154,7 @@ resource "postgresql_grant" "mle_migration_table" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams_migration
   ]
@@ -165,7 +166,7 @@ resource "postgresql_grant" "mle_migration_sequence" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT", "UPDATE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams_migration
   ]
@@ -179,7 +180,7 @@ resource "postgresql_default_privileges" "mle_future_tables" {
   role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams_migration,
     postgresql_role.teams
@@ -193,7 +194,7 @@ resource "postgresql_default_privileges" "mle_future_sequences" {
   role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
-  depends_on  = [
+  depends_on = [
     postgresql_schema.teams,
     postgresql_role.teams_migration,
     postgresql_role.teams

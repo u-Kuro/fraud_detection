@@ -43,7 +43,7 @@ output "aws_s3_mle_bucket_name" {
 }
 
 output "mlflow_tracking_uri" {
-  value = module.helm_apps.mlflow_tracking_uri
+  value = module.mlflow.mlflow_tracking_uri
 }
 
 output "postgresql_mlflow_username" {

@@ -6,12 +6,12 @@ provider "aws" {
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
     sts            = "http://localhost:4566"
-    eks            = var.eks_service_endpoint_url
-    s3             = var.s3_service_endpoint_url
+    eks            = var.eks_host_endpoint_url
+    s3             = var.s3_host_endpoint_url
     ecr            = "http://localhost:4566"
     mwaa           = "http://localhost:4566"
     rds            = "http://localhost:4566"
-    secretsmanager = var.secretsmanager_service_endpoint_url
+    secretsmanager = var.secretsmanager_host_endpoint_url
     iam            = "http://localhost:4566"
   }
 
@@ -36,14 +36,15 @@ provider "postgresql" {
   expected_version = "15"
 }
 
-resource "local_file" "kubeconfig_file" {
-  filename = "${var.kubeconfig_host_directory_path}/${var.kubeconfig_host_file_name}"
+resource "local_sensitive_file" "kubeconfig_host" {
+  filename        = "${local.local_files_directory_path}/kubeconfig_host.yaml"
+  file_permission = "0600"
 }
 provider "kubernetes" {
-  config_path = local_file.kubeconfig_file.filename
+  config_path = local_sensitive_file.kubeconfig_host.filename
 }
 provider "helm" {
   kubernetes = {
-    config_path = local_file.kubeconfig_file.filename
+    config_path = local_sensitive_file.kubeconfig_host.filename
   }
 }
