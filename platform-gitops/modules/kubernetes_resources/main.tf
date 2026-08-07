@@ -1,5 +1,5 @@
 # TODO - 07/08/2026 - Continue here...
-resource "kubernetes_config_map" "team" {
+resource "kubernetes_config_map" "teams" {
   for_each = var.aws.users.teams
 
   metadata {
@@ -12,7 +12,7 @@ resource "kubernetes_config_map" "team" {
   }
 }
 
-resource "kubernetes_secret" "team" {
+resource "kubernetes_secret" "teams" {
   for_each = var.aws.users.teams
   type = "Opaque"
 
