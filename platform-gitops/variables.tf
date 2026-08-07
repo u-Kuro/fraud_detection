@@ -24,10 +24,12 @@ variable "secretsmanager_host_endpoint_url" {
   type    = string
   default = "http://localhost:4566"
 }
-
-variable "ecr_host_registry_endpoint" {
-  type    = string
-  default = "localhost:4566"
+data "aws_ecr_authorization_token" "token" {}
+locals {
+  ecr_aws_endpoint = replace(data.aws_ecr_authorization_token.token.proxy_endpoint, "/^[^:]+:\\/\\//", "")
+  ecr_username = data.aws_ecr_authorization_token.token.user_name
+  ecr_password = data.aws_ecr_authorization_token.token.password
+  ecr_authorization_token = data.aws_ecr_authorization_token.token.authorization_token
 }
 variable "ecr_container_endpoint" {
   type    = string

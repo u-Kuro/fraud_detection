@@ -1,17 +1,30 @@
-variable "s3" {
+variable "aws" {
   type = object({
-    mwaa_bucket = object({
-      arn  = string
-      name = string
+    users = object({
+      admin = object({
+        account_id = string
+      })
+      teams = map(object({
+        role = object({
+          arn = string
+        })
+      }))
     })
   })
+  sensitive = true
 }
 
-variable "kubeconfig" {
+
+variable "local_files" {
   type = object({
-    host = object({
-      file = object({
-        path = string
+    directory = object({
+      path = string
+    })
+    kubeconfig = object({
+      host = object({
+        file = object({
+          path = string
+        })
       })
     })
   })
@@ -25,11 +38,15 @@ variable "mwaa" {
   })
 }
 
-variable "aws_admin" {
+variable "s3" {
   type = object({
-    accout_id = string
+    buckets = object({
+      mwaa = object({
+        arn  = string
+        name = string
+      })
+    })
   })
-  sensitive = true
 }
 
 variable "secretsmanager" {
@@ -38,12 +55,4 @@ variable "secretsmanager" {
       endpoint_url = string
     })
   })
-}
-
-variable "teams" {
-  type = map(object({
-    role = object({
-      arn = string
-    })
-  }))
 }

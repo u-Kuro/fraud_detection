@@ -1,24 +1,42 @@
-variable "mlflow" {
+variable "aws" {
   type = object({
-    host = optional(string, "mlflow")
-    port = optional(number, 5000)
-    admin = object({
-      username = string
-      password = string
+    users = object({
+      admin = object({
+        access_key = string
+        region     = string
+        secret_key = string
+      })
+      mlflow_teams = set(string)
     })
-    flask_server_secret_key = string
   })
   sensitive = true
 }
 
-variable "db" {
+variable "mlflow" {
   type = object({
+    flask_server_secret_key = string
+    host = optional(string, "mlflow")
+    port = optional(number, 5000)
+    users = object({
+      admin = object({
+        password = string
+        username = string
+      })
+    })
+  })
+  sensitive = true
+}
+
+variable "rds" {
+  type = object({
+    db_name = string
     host    = string
     port    = number
-    db_name = string
-    mlflow = object({
-      username = string
-      password = string
+    users = object({
+      mlflow = object({
+        password = string
+        username = string
+      })
     })
   })
   sensitive = true
@@ -26,25 +44,14 @@ variable "db" {
 
 variable "s3" {
   type = object({
-    mlflow_bucket = object({
-      arn  = string
-      name = string
+    buckets = object({
+      mlflow = object({
+        arn  = string
+        name = string
+      })
     })
     network = object({
       endpoint_url = string
     })
   })
-}
-
-variable "aws_admin" {
-  type = object({
-    access_key = string
-    secret_key = string
-    region     = string
-  })
-  sensitive = true
-}
-
-variable "mlflow_teams" {
-  type = set(string)
 }

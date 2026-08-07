@@ -1,7 +1,7 @@
 # REPOSITORIES
 locals {
   team_repositories = toset(flatten([
-    for team, values in var.teams : [
+    for team, values in var.aws.users.teams : [
       for repository in values.ecr.repositories :
       "${team}/${repository}"
     ]
@@ -15,7 +15,7 @@ resource "aws_ecr_repository" "teams" {
 }
 # TEAM PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
-  for_each = var.teams
+  for_each = var.aws.users.teams
   role     = each.value.role.arn
   policy = jsonencode({
     Version = "2012-10-17"
@@ -29,8 +29,8 @@ resource "aws_iam_role_policy" "teams" {
         Effect = "Allow"
         Action = "ecr:*"
         Resource = [
-          "arn:aws:ecr:*:${var.aws_admin.account_id}:repository/${each.key}",
-          "arn:aws:ecr:*:${var.aws_admin.account_id}:repository/${each.key}/*"
+          "arn:aws:ecr:*:${var.aws.users.admin.account_id}:repository/${each.key}",
+          "arn:aws:ecr:*:${var.aws.users.admin.account_id}:repository/${each.key}/*"
         ]
       },
     ]
@@ -45,7 +45,7 @@ resource "aws_ecr_repository_policy" "ecr" {
       Action   = "ecr:*"
       Resource = "*"
       Principal = {
-        AWS = var.teams[each.key].role_arn
+        AWS = var.aws.users.teams[each.key].role.arn
       }
     }]
   })

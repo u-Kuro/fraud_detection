@@ -1,23 +1,20 @@
-variable "db" {
-  type = object({
-    username = string
-    password = string
-  })
-  sensitive = true
-}
-
 variable "rds" {
   type = object({
     role = object({
       arn = string
     })
+    password = string
+    username = string
   })
+  sensitive = true
 }
 
 variable "s3" {
   type = object({
-    rds_bucket = object({
-      arn = string
+    buckets = object({
+      rds = object({
+        arn = string
+      })
     })
   })
 }

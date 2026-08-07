@@ -1,13 +1,23 @@
-variable "eks" {
+variable "aws" {
   type = object({
-    role = object({
-      arn  = string
-      name = string
-    })
-    host = object({
-      endpoint_url = string
+    users = object({
+      admin = object({
+        arn        = string
+        access_key = string
+        region     = string
+        secret_key = string
+      })
+      teams = map(object({
+        kubernetes = object({
+          namespace = string
+        })
+        role = object({
+          arn = string
+        })
+      }))
     })
   })
+  sensitive = true
 }
 
 variable "ec2" {
@@ -19,56 +29,45 @@ variable "ec2" {
   })
 }
 
-variable "aws_admin" {
+variable "ecr" {
   type = object({
-    arn        = string
-    region     = string
-    access_key = string
-    secret_key = string
+    container = object({
+      endpoint     = string
+      endpoint_url = string
+    })
+    aws = object({
+      endpoint = string
+    })
+    password = string
+    username = string
   })
   sensitive = true
 }
 
-variable "teams" {
-  type = map(object({
+variable "eks" {
+  type = object({
+    host = object({
+      endpoint_url = string
+    })
     role = object({
-      arn = string
+      arn  = string
+      name = string
     })
-    kubernetes = object({
-      namespace = string
-    })
-  }))
+  })
 }
 
 variable "local_files" {
   type = object({
+    kubeconfig = object({
+      host = object({
+        file = object({
+          path = string
+        })
+      })
+    })
     directory = object({
       path = string
     })
   })
 }
 
-variable "ecr" {
-  type = object({
-    username = string
-    password = string
-    host = object({
-      endpoint = string
-    })
-    container = object({
-      endpoint     = string
-      endpoint_url = string
-    })
-  })
-  sensitive = true
-}
-
-variable "kubeconfig" {
-  type = object({
-    host = object({
-      file = object({
-        path = string
-      })
-    })
-  })
-}

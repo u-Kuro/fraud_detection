@@ -70,14 +70,14 @@ locals {
 # ADMIN CLUSTER PERMISSION
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.aws_admin.arn
+  principal_arn = var.aws.users.admin.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.aws_admin.arn
+  principal_arn = var.aws.users.admin.arn
   policy_arn    = local.cluster_access_policy_arns.cluster_admin
 
   access_scope { type = "cluster" }
@@ -89,7 +89,7 @@ resource "aws_eks_access_policy_association" "admin" {
 }
 # TEAM CLUSTER PERMISSIONS
 resource "aws_eks_access_entry" "teams" {
-  for_each      = var.teams
+  for_each      = var.aws.users.teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   type          = "STANDARD"
@@ -97,7 +97,7 @@ resource "aws_eks_access_entry" "teams" {
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "teams" {
-  for_each      = var.teams
+  for_each      = var.aws.users.teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   policy_arn    = local.cluster_access_policy_arns.edit
@@ -123,7 +123,7 @@ resource "local_sensitive_file" "ecr_registries" {
 
   content = yamlencode({
     mirrors = {
-      (var.ecr.host.endpoint) = {
+      (var.ecr.aws.endpoint) = {
         endpoint = [var.ecr.container.endpoint_url]
       }
     }
@@ -150,15 +150,15 @@ resource "terraform_data" "additional_setup_for_ministack_eks" {
     command = join(" ", [
       "& '${path.module}/scripts/additional_setup_for_ministack_eks.ps1'",
 
-      "-aws_admin_access_key (ConvertTo-SecureString '${var.aws_admin.access_key}' -AsPlainText -Force)",
-      "-aws_admin_secret_key (ConvertTo-SecureString '${var.aws_admin.secret_key}' -AsPlainText -Force)",
-      "-aws_admin_region '${var.aws_admin.region}'",
+      "-aws_admin_access_key (ConvertTo-SecureString '${var.aws.users.admin.access_key}' -AsPlainText -Force)",
+      "-aws_admin_secret_key (ConvertTo-SecureString '${var.aws.users.admin.secret_key}' -AsPlainText -Force)",
+      "-aws_admin_region '${var.aws.users.admin.region}'",
 
       "-eks_host_endpoint_url '${var.eks.host.endpoint_url}'",
       "-eks_cluster_name '${aws_eks_cluster.eks.id}'",
 
       "-kubeconfig_container_file_path '${local_sensitive_file.kubeconfig_container.filename}'",
-      "-kubeconfig_host_file_path '${var.kubeconfig.host.file.path}'",
+      "-kubeconfig_host_file_path '${var.local_files.kubeconfig.host.file.path}'",
 
       "-registries_host_file_path '${local_sensitive_file.ecr_registries.filename}'",
     ])

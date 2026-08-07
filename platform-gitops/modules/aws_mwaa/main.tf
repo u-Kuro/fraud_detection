@@ -4,11 +4,11 @@ locals {
   kubeconfig_mwaa_file_path = "kubeconfig.yaml"
 }
 resource "aws_s3_object" "upload_kubeconfig_for_ministack_mwaa" {
-  bucket = var.s3.mwaa_bucket.name
+  bucket = var.s3.buckets.mwaa.name
   # Path after dag_s3_path is the location in MWAA e.g. /usr/local/airflow/dags/[kubeconfig.yaml]
   key    = "${local.dag_s3_path_name}/${local.kubeconfig_mwaa_file_path}"
-  source = var.kubeconfig.host.file.path
-  etag   = filemd5(var.kubeconfig.host.file.path)
+  source = var.local_files.kubeconfig.host.file.path
+  etag   = filemd5(var.local_files.kubeconfig.host.file.path)
 }
 # MWAA
 locals {
@@ -27,7 +27,7 @@ resource "aws_iam_role_policy" "mwaa" {
           "s3:GetBucketLocation",
           "s3:ListBucketVersions"
         ]
-        Resource = var.s3.mwaa_bucket.arn
+        Resource = var.s3.buckets.mwaa.arn
       },
       {
         Effect = "Allow"
@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "mwaa" {
           "s3:GetObjectVersion",
           "s3:PutObject"
         ],
-        Resource = "${var.s3.mwaa_bucket.arn}/*"
+        Resource = "${var.s3.buckets.mwaa.arn}/*"
       },
       {
         Effect = "Allow"
@@ -45,8 +45,8 @@ resource "aws_iam_role_policy" "mwaa" {
           "secretsmanager:DescribeSecret"
         ]
         Resource = [
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_connections_prefix}/*",
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_variables_prefix}/*"
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_connections_prefix}/*",
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_variables_prefix}/*"
         ]
       }
     ]
@@ -56,7 +56,7 @@ resource "aws_mwaa_environment" "mwaa" {
   name               = "mwaa"
   airflow_version    = "2.10.3"
   execution_role_arn = var.mwaa.role.arn
-  source_bucket_arn  = var.s3.mwaa_bucket.arn
+  source_bucket_arn  = var.s3.buckets.mwaa.arn
   dag_s3_path        = local.dag_s3_path_name
 
   airflow_configuration_options = {
@@ -78,7 +78,7 @@ resource "aws_mwaa_environment" "mwaa" {
 }
 # TEAM PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
-  for_each = var.teams
+  for_each = var.aws.users.teams
   role     = each.value.role.arn
 
   policy = jsonencode({
@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "teams" {
       {
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = var.s3.mwaa_bucket.arn
+        Resource = var.s3.buckets.mwaa.arn
         Condition = {
           StringLike = {
             "s3:prefix" = [
@@ -101,8 +101,8 @@ resource "aws_iam_role_policy" "teams" {
         Effect = "Allow"
         Action = "s3:*"
         Resource = [
-          "${var.s3.mwaa_bucket.arn}/${local.dag_s3_path_name}/${each.key}",
-          "${var.s3.mwaa_bucket.arn}/${local.dag_s3_path_name}/${each.key}/*"
+          "${var.s3.buckets.mwaa.arn}/${local.dag_s3_path_name}/${each.key}",
+          "${var.s3.buckets.mwaa.arn}/${local.dag_s3_path_name}/${each.key}/*"
         ]
       },
       {
@@ -110,10 +110,10 @@ resource "aws_iam_role_policy" "teams" {
         Action = "secretsmanager:*"
         Resource = [
 
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}-*",
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*",
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}-*",
-          "arn:aws:secretsmanager:*:${var.aws_admin.accout_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*"
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}-*",
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_connections_prefix}/${each.key}/*",
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}-*",
+          "arn:aws:secretsmanager:*:${var.aws.users.admin.account_id}:secret:${local.airflow_secrets_variables_prefix}/${each.key}/*"
         ]
       },
     ]

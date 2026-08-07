@@ -20,7 +20,7 @@ resource "aws_iam_role_policy_attachment" "admin" {
 }
 # TEAMS
 resource "aws_iam_user" "teams" {
-  for_each = var.teams
+  for_each = var.aws.users.teams
   name     = each.value
 }
 resource "aws_iam_access_key" "teams" {
@@ -98,7 +98,7 @@ resource "aws_iam_role" "rds" {
 }
 # MLFLOW
 resource "aws_iam_user" "teams" {
-  for_each = var.teams
+  for_each = var.aws.users.teams
   name     = each.value
 }
 resource "aws_iam_access_key" "teams" {
