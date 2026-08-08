@@ -21,7 +21,7 @@ variable "local_files" {
       path = string
     })
     kubeconfig = object({
-      host = object({
+      container = object({
         file = object({
           path = string
         })

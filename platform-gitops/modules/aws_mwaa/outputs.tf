@@ -6,5 +6,5 @@ output "webserver_url" {
 }
 
 output "kubeconfig_mwaa_file_path" {
-  value = local.kubeconfig_mwaa_file_path
+  value = local.mwaa_kubeconfig_file_path
 }

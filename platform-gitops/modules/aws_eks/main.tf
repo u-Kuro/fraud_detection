@@ -3,13 +3,13 @@ data "aws_iam_policy" "eks_cluster_policy" {
   name = "AmazonEKSClusterPolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks" {
-  role       = var.eks.role.name
+  role       = local.eks.role.name
   policy_arn = data.aws_iam_policy.eks_cluster_policy.arn
 }
 resource "aws_eks_cluster" "eks" {
   name     = "eks"
   version  = "1.32"
-  role_arn = var.eks.role.arn
+  role_arn = local.eks.role.arn
 
   vpc_config {
     security_group_ids = ["sg-00000000000000000"]
@@ -23,26 +23,26 @@ data "aws_iam_policy" "eks_worker_node_policy" {
   name = "AmazonEKSWorkerNodePolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  role       = var.ec2.role.name
+  role       = local.ec2.role.name
   policy_arn = data.aws_iam_policy.eks_worker_node_policy.arn
 }
 data "aws_iam_policy" "eks_cni_policy" {
   name = "AmazonEKS_CNI_Policy"
 }
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = var.ec2.role.name
+  role       = local.ec2.role.name
   policy_arn = data.aws_iam_policy.eks_cni_policy.arn
 }
 data "aws_iam_policy" "ecr_read_only" {
   name = "AmazonEC2ContainerRegistryReadOnly"
 }
 resource "aws_iam_role_policy_attachment" "ecr_read_only" {
-  role       = var.ec2.role.name
+  role       = local.ec2.role.name
   policy_arn = data.aws_iam_policy.ecr_read_only.arn
 }
 resource "aws_eks_node_group" "node" {
   cluster_name  = aws_eks_cluster.eks.id
-  node_role_arn = var.ec2.role.arn
+  node_role_arn = local.ec2.role.arn
 
   scaling_config {
     desired_size = 1
@@ -59,25 +59,17 @@ resource "aws_eks_node_group" "node" {
     aws_iam_role_policy_attachment.ecr_read_only,
   ]
 }
-# CLUSTER PERMISSIONS
-locals {
-  cluster_access_policy_arn = "arn:aws:eks::aws:cluster-access-policy"
-  cluster_access_policy_arns = {
-    cluster_admin = "${local.cluster_access_policy_arn}/AmazonEKSClusterAdminPolicy"
-    edit          = "${local.cluster_access_policy_arn}/AmazonEKSEditPolicy"
-  }
-}
 # ADMIN CLUSTER PERMISSION
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.aws.users.admin.arn
+  principal_arn = local.aws.users.admin.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = var.aws.users.admin.arn
+  principal_arn = local.aws.users.admin.arn
   policy_arn    = local.cluster_access_policy_arns.cluster_admin
 
   access_scope { type = "cluster" }
@@ -89,7 +81,7 @@ resource "aws_eks_access_policy_association" "admin" {
 }
 # TEAM CLUSTER PERMISSIONS
 resource "aws_eks_access_entry" "teams" {
-  for_each      = var.aws.users.teams
+  for_each      = local.aws.users.teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   type          = "STANDARD"
@@ -97,7 +89,7 @@ resource "aws_eks_access_entry" "teams" {
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "teams" {
-  for_each      = var.aws.users.teams
+  for_each      = local.aws.users.teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   policy_arn    = local.cluster_access_policy_arns.edit
@@ -114,24 +106,24 @@ resource "aws_eks_access_policy_association" "teams" {
 }
 # ADDITIONAL SETUP FOR MINISTACK EKS
 resource "local_sensitive_file" "kubeconfig_container" {
-  filename        = "${var.local_files.directory.path}/kubeconfig.yaml"
+  filename        = "${local.local_files.directory.path}/kubeconfig.yaml"
   file_permission = "0600"
 }
 resource "local_sensitive_file" "ecr_registries" {
-  filename        = "${var.local_files.directory.path}/registries.yaml"
+  filename        = "${local.local_files.directory.path}/registries.yaml"
   file_permission = "0600"
 
   content = yamlencode({
     mirrors = {
-      (var.ecr.aws.endpoint) = {
-        endpoint = [var.ecr.container.endpoint_url]
+      (local.ecr.aws.endpoint) = {
+        endpoint = [local.ecr.container.endpoint_url]
       }
     }
     configs = {
-      (var.ecr.container.endpoint) = {
+      (local.ecr.container.endpoint) = {
         auth = {
-          username = var.ecr.username
-          password = var.ecr.password
+          username = local.ecr.username
+          password = local.ecr.password
         }
       }
     }
@@ -150,15 +142,15 @@ resource "terraform_data" "additional_setup_for_ministack_eks" {
     command = join(" ", [
       "& '${path.module}/scripts/additional_setup_for_ministack_eks.ps1'",
 
-      "-aws_admin_access_key (ConvertTo-SecureString '${var.aws.users.admin.access_key}' -AsPlainText -Force)",
-      "-aws_admin_secret_key (ConvertTo-SecureString '${var.aws.users.admin.secret_key}' -AsPlainText -Force)",
-      "-aws_admin_region '${var.aws.users.admin.region}'",
+      "-aws_admin_access_key (ConvertTo-SecureString '${local.aws.users.admin.access_key}' -AsPlainText -Force)",
+      "-aws_admin_secret_key (ConvertTo-SecureString '${local.aws.users.admin.secret_key}' -AsPlainText -Force)",
+      "-aws_admin_region '${local.aws.users.admin.region}'",
 
-      "-eks_host_endpoint_url '${var.eks.host.endpoint_url}'",
+      "-eks_host_endpoint_url '${local.eks.host.endpoint_url}'",
       "-eks_cluster_name '${aws_eks_cluster.eks.id}'",
 
       "-kubeconfig_container_file_path '${local_sensitive_file.kubeconfig_container.filename}'",
-      "-kubeconfig_host_file_path '${var.local_files.kubeconfig.host.file.path}'",
+      "-kubeconfig_host_file_path '${local.local_files.kubeconfig.host.file.path}'",
 
       "-registries_host_file_path '${local_sensitive_file.ecr_registries.filename}'",
     ])

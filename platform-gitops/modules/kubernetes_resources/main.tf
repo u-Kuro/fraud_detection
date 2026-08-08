@@ -1,6 +1,6 @@
-# TODO - 07/08/2026 - Continue here...
+# TODO - 08/08/2026 - Continue here...
 resource "kubernetes_config_map" "teams" {
-  for_each = var.aws.users.teams
+  for_each = local.aws.users.teams
 
   metadata {
     name      = "base"
@@ -13,7 +13,7 @@ resource "kubernetes_config_map" "teams" {
 }
 
 resource "kubernetes_secret" "teams" {
-  for_each = var.aws.users.teams
+  for_each = local.aws.users.teams
   type = "Opaque"
 
   metadata {
@@ -70,7 +70,7 @@ resource "kubernetes_secret" "teams" {
 #            --timeout=300s
 
 resource "kubernetes_secret" "ecr_registry" {
-  for_each = var.aws.users.teams
+  for_each = local.aws.users.teams
   type = "kubernetes.io/dockerconfigjson"
 
   metadata {
@@ -82,10 +82,10 @@ resource "kubernetes_secret" "ecr_registry" {
     ".dockerconfigjson" = jsonencode({
       auths = {
         # Matches to original endpoint in EKS. In MiniStack's EKS (registries.yaml), it's set to redirect to MiniStack's ECR endpoint.
-        (var.ecr.aws.endpoint) = {
-          username = var.ecr.aws.token.username
-          password = var.ecr.aws.token.password
-          auth     = var.ecr.aws.token.authorization_token
+        (local.ecr.aws.endpoint) = {
+          username = local.ecr.aws.token.username
+          password = local.ecr.aws.token.password
+          auth     = local.ecr.aws.token.authorization_token
         }
       }
     })

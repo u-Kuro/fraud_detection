@@ -69,7 +69,7 @@ resource "aws_s3_bucket_public_access_block" "mlflow" {
 }
 # TEAMS
 resource "aws_s3_bucket" "teams" {
-  for_each      = var.aws.users.teams
+  for_each      = local.aws.users.teams
   bucket        = each.key
   force_destroy = true
 }
@@ -95,7 +95,7 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 }
 # TEAM PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
-  for_each = var.aws.users.teams
+  for_each = local.aws.users.teams
   role     = each.value.role.arn
 
   policy = jsonencode({
