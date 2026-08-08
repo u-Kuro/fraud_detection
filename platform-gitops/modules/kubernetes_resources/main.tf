@@ -3,23 +3,23 @@
 # - MWAA to mlflow-pod (real aws use alb/elb) so try to create one
 # egress
 # - POD to S3 (real aws calls https directly) so just use docker network ip (dns does not work)
-POD calls
-- Postgres
-- S3
-- MWAA
-- Slack
-- MLFLOW x
-MWAA calls
-- POD
-- GitHub (act)
-- Slack
-- Postgres x
-- S3 x
-- Secret Manager x
-- ECR x
-- EKS x
-Slack Calls
-- POD
+# POD calls
+# - Postgres
+# - S3
+# - MWAA
+# - Slack
+# - MLFLOW x
+# MWAA calls
+# - POD
+# - GitHub (act)
+# - Slack
+# - Postgres x
+# - S3 x
+# - Secret Manager x
+# - ECR x
+# - EKS x
+# Slack Calls
+# - POD
 
 
 
