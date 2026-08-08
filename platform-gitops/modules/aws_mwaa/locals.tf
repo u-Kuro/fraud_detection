@@ -1,17 +1,17 @@
 # INPUTS
 locals {
-  aws = var.aws
-  mwaa = var.mwaa
-  s3 = var.s3
+  aws            = var.aws
+  local_files    = var.local_files
+  mwaa           = var.mwaa
+  s3             = var.s3
   secretsmanager = var.secretsmanager
-  local_files = var.local_files
 }
 # COMPUTED
 locals {
   # DAGS
   s3_dags = {
+    arn  = "${local.s3.buckets.mwaa.arn}/${local.s3_dags.path}"
     path = "dags"
-    arn = "${local.s3.buckets.mwaa.arn}/${local.s3_dags.path}"
   }
   # KUBECONFIG `/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]`
   s3_kubeconfig_file_path_for_mwaa = "kubeconfig.yaml"

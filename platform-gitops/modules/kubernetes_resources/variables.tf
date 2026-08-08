@@ -15,8 +15,8 @@ variable "ecr" {
     aws = object({
       endpoint = string
       token = object({
-        username = string
-        password = string
+        username            = string
+        password            = string
         authorization_token = string
       })
     })

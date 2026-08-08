@@ -1,6 +1,6 @@
 variable "rds" {
   type = object({
-    db_name = string
+    db_name  = string
     username = string
     users = object({
       mlflow = object({

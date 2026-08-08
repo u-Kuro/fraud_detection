@@ -14,7 +14,6 @@ variable "aws" {
   sensitive = true
 }
 
-
 variable "local_files" {
   type = object({
     directory = object({

@@ -14,7 +14,7 @@ resource "kubernetes_config_map" "teams" {
 
 resource "kubernetes_secret" "teams" {
   for_each = local.aws.users.teams
-  type = "Opaque"
+  type     = "Opaque"
 
   metadata {
     name      = "base"
@@ -71,7 +71,7 @@ resource "kubernetes_secret" "teams" {
 
 resource "kubernetes_secret" "ecr_registry" {
   for_each = local.aws.users.teams
-  type = "kubernetes.io/dockerconfigjson"
+  type     = "kubernetes.io/dockerconfigjson"
 
   metadata {
     name      = "ecr-dockerconfigjson"

@@ -18,7 +18,7 @@ resource "postgresql_grant" "mlflow_database" {
   object_type = "database"
   privileges  = ["CONNECT"]
 
-  depends_on  = [postgresql_role.mlflow]
+  depends_on = [postgresql_role.mlflow]
 }
 resource "postgresql_grant" "mlflow_schema" {
   database    = local.rds.db_name
@@ -79,7 +79,7 @@ resource "postgresql_grant" "teams_database" {
   object_type = "database"
   privileges  = ["CONNECT"]
 
-  depends_on  = [postgresql_role.teams]
+  depends_on = [postgresql_role.teams]
 }
 resource "postgresql_grant" "teams_schema" {
   for_each    = postgresql_schema.teams
@@ -138,7 +138,7 @@ resource "postgresql_grant" "teams_migration_database" {
   object_type = "database"
   privileges  = ["CONNECT"]
 
-  depends_on  = [postgresql_role.teams_migration]
+  depends_on = [postgresql_role.teams_migration]
 }
 resource "postgresql_grant" "teams_migration_schema" {
   for_each    = postgresql_schema.teams

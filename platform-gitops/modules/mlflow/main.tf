@@ -51,7 +51,7 @@ resource "kubernetes_config_map" "create_mlflow_workspace" {
     namespace = local.eks.kubernetes.mlflow.namespace
   }
   data = {
-    (local.create_mflow_workspace_script_file_name) = file("${path.module}/${local.scripts_path_name}/${local.create_mflow_workspace_script_file_name}")
+    (local.scripts.files.create_mlflow_workspace.name) = file("${path.module}/${local.scripts.files.create_mlflow_workspace.relative.path}")
   }
   immutable = true
 }
@@ -71,7 +71,7 @@ resource "kubernetes_job" "teams" {
         volume {
           name = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
           config_map {
-            name = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
+            name         = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
             default_mode = "0755" # rwx r-x r-x
           }
         }
@@ -80,7 +80,7 @@ resource "kubernetes_job" "teams" {
           name  = "create-mlflow-workspace-${each.value}"
           image = "alpine:3"
 
-          command = ["/bin/sh", "/${local.scripts_path_name}/${local.create_mflow_workspace_script_file_name}"]
+          command = ["/bin/sh", "/${local.scripts.files.create_mlflow_workspace.relative.path}"]
 
           env {
             name  = "MLFLOW_TRACKING_URI"
@@ -101,7 +101,7 @@ resource "kubernetes_job" "teams" {
 
           volume_mount {
             name       = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
-            mount_path = "/${local.scripts_path_name}"
+            mount_path = "/${local.scripts.relative.path}"
           }
         }
       }

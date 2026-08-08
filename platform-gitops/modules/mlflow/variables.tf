@@ -15,8 +15,8 @@ variable "aws" {
 variable "mlflow" {
   type = object({
     flask_server_secret_key = string
-    host = optional(string, "mlflow")
-    port = optional(number, 5000)
+    host                    = optional(string, "mlflow")
+    port                    = optional(number, 5000)
     users = object({
       admin = object({
         password = string

@@ -26,9 +26,9 @@ variable "secretsmanager_host_endpoint_url" {
 }
 data "aws_ecr_authorization_token" "token" {}
 locals {
-  ecr_aws_endpoint = replace(data.aws_ecr_authorization_token.token.proxy_endpoint, "/^[^:]+:\\/\\//", "")
-  ecr_username = data.aws_ecr_authorization_token.token.user_name
-  ecr_password = data.aws_ecr_authorization_token.token.password
+  ecr_aws_endpoint        = replace(data.aws_ecr_authorization_token.token.proxy_endpoint, "/^[^:]+:\\/\\//", "")
+  ecr_username            = data.aws_ecr_authorization_token.token.user_name
+  ecr_password            = data.aws_ecr_authorization_token.token.password
   ecr_authorization_token = data.aws_ecr_authorization_token.token.authorization_token
 }
 variable "ecr_container_endpoint" {
