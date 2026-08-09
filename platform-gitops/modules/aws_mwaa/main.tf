@@ -18,7 +18,6 @@ resource "aws_iam_role_policy" "mwaa" {
         Action = "s3:*"
         Resource = [
           local.s3.buckets.mwaa_teams[each.key].arn,
-          "${local.s3.buckets.mwaa_teams[each.key].arn}/",
           "${local.s3.buckets.mwaa_teams[each.key].arn}/*"
         ]
       },
@@ -27,11 +26,9 @@ resource "aws_iam_role_policy" "mwaa" {
         Action = "secretsmanager:*"
         Resource = [
           "${local.secretsmanager_airflow.connections.arn}/${each.key}",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}/",
           "${local.secretsmanager_airflow.connections.arn}/${each.key}/*",
 
           "${local.secretsmanager_airflow.variables.arn}/${each.key}",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}/",
           "${local.secretsmanager_airflow.variables.arn}/${each.key}/*"
         ]
       }
@@ -76,7 +73,6 @@ resource "aws_iam_role_policy" "mwaa_teams" {
         Action = "s3:*"
         Resource = [
           "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_team_dag_path}",
-          "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_team_dag_path}/",
           "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_team_dag_path}/*"
         ]
       },
@@ -85,19 +81,13 @@ resource "aws_iam_role_policy" "mwaa_teams" {
         Action = "secretsmanager:*"
         Resource = [
           "${local.secretsmanager_airflow.connections.arn}/${each.key}",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}-",
           "${local.secretsmanager_airflow.connections.arn}/${each.key}-*",
-
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}*",
+          "${local.secretsmanager_airflow.connections.arn}/${each.key}/",
           "${local.secretsmanager_airflow.connections.arn}/${each.key}/*",
 
           "${local.secretsmanager_airflow.variables.arn}/${each.key}",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}-",
           "${local.secretsmanager_airflow.variables.arn}/${each.key}-*",
-
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}*",
+          "${local.secretsmanager_airflow.variables.arn}/${each.key}/",
           "${local.secretsmanager_airflow.variables.arn}/${each.key}/*",
         ]
       },
