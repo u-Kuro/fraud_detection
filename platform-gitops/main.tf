@@ -156,6 +156,12 @@ module "postgresql" {
   ]
 }
 
+module "aws_alb" {
+  source = "./modules/aws_alb"
+
+  depends_on = [module.eks_cluster]
+}
+
 module "mlflow" {
   source = "modules/mlflow"
 
@@ -176,6 +182,12 @@ module "mlflow" {
   aws_admin = module.iam.mlflow_access_key
 
   mlflow_teams = toset(keys(local.teams))
+
+  alb = {
+    listener_arn = module.aws_alb.listener_arn
+    vpc_id       = module.aws_alb.vpc_id
+    dns_name     = module.aws_alb.alb_dns_name
+  }
 
   depends_on = [
     module.iam,
