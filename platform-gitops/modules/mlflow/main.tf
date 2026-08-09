@@ -44,18 +44,18 @@ resource "helm_release" "mlflow" {
     { name = "flaskServerSecretKey", value = local.mlflow.flask_server_secret_key },
   ]
 }
-# TEAM WORKSPACES
+# MLFLOW TEAMS' WORKSPACES
 resource "kubernetes_config_map" "create_mlflow_workspace" {
   metadata {
     name      = "create-mlflow-workspace-script"
     namespace = local.eks.kubernetes.mlflow.namespace
   }
   data = {
-    (local.scripts.files.create_mlflow_workspace.name) = file("${path.module}/${local.scripts.files.create_mlflow_workspace.relative.path}")
+    (local.create_mlflow_workspace_script_file_name) = file("${path.module}/${local.create_mlflow_workspace_script_file_relative_path}")
   }
   immutable = true
 }
-resource "kubernetes_job" "teams" {
+resource "kubernetes_job" "mlflow_teams" {
   for_each = local.aws.users.mlflow_teams
 
   metadata {
@@ -80,7 +80,7 @@ resource "kubernetes_job" "teams" {
           name  = "create-mlflow-workspace-${each.value}"
           image = "alpine:3"
 
-          command = ["/bin/sh", "/${local.scripts.files.create_mlflow_workspace.relative.path}"]
+          command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
 
           env {
             name  = "MLFLOW_TRACKING_URI"
@@ -101,7 +101,7 @@ resource "kubernetes_job" "teams" {
 
           volume_mount {
             name       = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
-            mount_path = "/${local.scripts.relative.path}"
+            mount_path = "/${local.scripts_relative_path}"
           }
         }
       }

@@ -79,17 +79,17 @@ resource "aws_eks_access_policy_association" "admin" {
     aws_eks_access_entry.admin
   ]
 }
-# TEAM CLUSTER PERMISSIONS
-resource "aws_eks_access_entry" "teams" {
-  for_each      = local.aws.users.teams
+# EKS TEAMS' CLUSTER PERMISSIONS
+resource "aws_eks_access_entry" "eks_teams" {
+  for_each      = local.aws.users.eks_teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
-resource "aws_eks_access_policy_association" "teams" {
-  for_each      = local.aws.users.teams
+resource "aws_eks_access_policy_association" "eks_teams" {
+  for_each      = local.aws.users.eks_teams
   cluster_name  = aws_eks_cluster.eks.id
   principal_arn = each.value.role.arn
   policy_arn    = local.cluster_access_policy_arns.edit
@@ -101,7 +101,7 @@ resource "aws_eks_access_policy_association" "teams" {
 
   depends_on = [
     aws_eks_cluster.eks,
-    aws_eks_access_entry.teams
+    aws_eks_access_entry.eks_teams
   ]
 }
 # ADDITIONAL SETUP FOR MINISTACK EKS

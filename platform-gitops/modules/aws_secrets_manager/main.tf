@@ -1,6 +1,6 @@
-# TEAM PERMISSIONS
-resource "aws_iam_role_policy" "teams" {
-  for_each = local.aws.users.teams
+# SECRETMANAGER TEAMS' PERMISSIONS
+resource "aws_iam_role_policy" "secretmanager_teams" {
+  for_each = local.aws.users.secretmanager_teams
   role     = each.value.role.arn
 
   policy = jsonencode({

@@ -4,7 +4,7 @@ variable "aws" {
       admin = object({
         account_id = string
       })
-      teams = map(object({
+      mwaa_teams = map(object({
         role = object({
           arn = string
         })
@@ -40,10 +40,9 @@ variable "mwaa" {
 variable "s3" {
   type = object({
     buckets = object({
-      mwaa = object({
-        arn  = string
-        name = string
-      })
+      mwaa_teams = map(object({
+        arn = string
+      }))
     })
   })
 }

@@ -4,7 +4,7 @@ variable "aws" {
       admin = object({
         account_id = string
       })
-      teams = map(object({
+      ecr_teams = map(object({
         ecr = object({
           repositories = set(string)
         })

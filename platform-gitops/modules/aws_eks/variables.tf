@@ -7,7 +7,7 @@ variable "aws" {
         region     = string
         secret_key = string
       })
-      teams = map(object({
+      eks_teams = map(object({
         kubernetes = object({
           namespace = string
         })

@@ -18,17 +18,7 @@ locals {
   # MLFLOW
   mlflow_tracking_uri = "http://${local.mlflow.host}:${local.mlflow.port}"
   # SCRIPTS
-  scripts = {
-    files = {
-      create_mlflow_workspace = {
-        name = "create_mlflow_workspace.sh"
-        relative = {
-          path = "${local.scripts.relative.path}/${local.scripts.files.create_mlflow_workspace.name}"
-        }
-      }
-    }
-    relative = {
-      path = "scripts"
-    }
-  }
+  scripts_relative_path = "scripts"
+  create_mlflow_workspace_script_file_name = "create_mlflow_workspace.sh"
+  create_mlflow_workspace_script_file_relative_path = "${local.scripts_relative_path}/${local.create_mlflow_workspace_script_file_name}"
 }

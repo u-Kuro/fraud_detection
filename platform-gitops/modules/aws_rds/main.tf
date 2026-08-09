@@ -1,3 +1,4 @@
+# RDS
 resource "aws_db_instance" "rds" {
   identifier          = "rds"
   engine              = "postgres"
@@ -8,7 +9,6 @@ resource "aws_db_instance" "rds" {
   db_name             = "main"
   skip_final_snapshot = true
 }
-
 resource "aws_iam_role_policy" "rds" {
   role = var.rds.role.arn
   policy = jsonencode({
@@ -16,13 +16,7 @@ resource "aws_iam_role_policy" "rds" {
     Statement = [
       {
         Effect = "Allow"
-        Action = [
-          "s3:PutObject*",
-          "s3:GetObject*",
-          "s3:ListBucket",
-          "s3:DeleteObject*",
-          "s3:GetBucketLocation"
-        ]
+        Action = "s3:*"
         Resource = [
           var.s3.buckets.rds.arn,
           "${var.s3.buckets.rds.arn}/*"

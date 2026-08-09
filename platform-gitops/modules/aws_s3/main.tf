@@ -93,7 +93,7 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 
   depends_on = [aws_s3_bucket.teams]
 }
-# TEAM PERMISSIONS
+# TEAMS' PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
   for_each = local.aws.users.teams
   role     = each.value.role.arn
@@ -101,11 +101,6 @@ resource "aws_iam_role_policy" "teams" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = aws_s3_bucket.teams[each.key].arn
-      },
       {
         Effect = "Allow"
         Action = "s3:*"
@@ -118,4 +113,20 @@ resource "aws_iam_role_policy" "teams" {
   })
 
   depends_on = [aws_s3_bucket.teams]
+}
+# MWAA TEAMS
+resource "aws_s3_bucket" "mwaa_teams" {
+  for_each      = local.aws.users.mwaa_teams
+  bucket        = each.key
+  force_destroy = true
+}
+resource "aws_s3_bucket_versioning" "teams" {
+  for_each = aws_s3_bucket.mwaa_teams
+  bucket   = each.value.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+
+  depends_on = [aws_s3_bucket.mwaa_teams]
 }

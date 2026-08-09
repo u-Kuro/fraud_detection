@@ -1,13 +1,13 @@
-# REPOSITORIES
-resource "aws_ecr_repository" "teams" {
-  for_each             = local.team_repositories
+# ECR TEAMS' REPOSITORIES
+resource "aws_ecr_repository" "ecr_teams" {
+  for_each             = local.ecr_teams_repositories
   name                 = each.value # [team]/[repository]
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 }
-# TEAM PERMISSIONS
-resource "aws_iam_role_policy" "teams" {
-  for_each = local.aws.users.teams
+# ECR TEAMS' PERMISSIONS
+resource "aws_iam_role_policy" "ecr_teams" {
+  for_each = local.aws.users.ecr_teams
   role     = each.value.role.arn
   policy = jsonencode({
     Version = "2012-10-17"
@@ -28,8 +28,8 @@ resource "aws_iam_role_policy" "teams" {
     ]
   })
 }
-resource "aws_ecr_repository_policy" "ecr" {
-  for_each   = aws_ecr_repository.teams
+resource "aws_ecr_repository_policy" "ecr_teams" {
+  for_each   = aws_ecr_repository.ecr_teams
   repository = each.value.name
   policy = jsonencode({
     Statement = [{
@@ -37,7 +37,7 @@ resource "aws_ecr_repository_policy" "ecr" {
       Action   = "ecr:*"
       Resource = "*"
       Principal = {
-        AWS = local.aws.users.teams[each.key].role.arn
+        AWS = local.aws.users.ecr_teams[each.key].role.arn
       }
     }]
   })

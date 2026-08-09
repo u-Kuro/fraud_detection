@@ -6,6 +6,7 @@ variable "aws" {
           arn = string
         })
       }))
+      mwaa_teams = set(string)
     })
   })
 }

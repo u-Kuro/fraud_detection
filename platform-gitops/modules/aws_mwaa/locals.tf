@@ -8,11 +8,8 @@ locals {
 }
 # COMPUTED
 locals {
-  # DAGS
-  s3_dags = {
-    arn  = "${local.s3.buckets.mwaa.arn}/${local.s3_dags.path}"
-    path = "dags"
-  }
+  # DAG
+  s3_team_dag_path     = "DAG"
   # KUBECONFIG `/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]`
   s3_kubeconfig_file_path_for_mwaa = "kubeconfig.yaml"
   # AIRFLOW SECRETS MANAGER BACKEND
@@ -24,13 +21,13 @@ locals {
       prefix = "airflow/variables"
     }
   }
+  _secretsmanager_base_arn_ = "arn:aws:secretsmanager:*:${local.aws.users.admin.account_id}:secret"
   secretsmanager_airflow = {
-    arn = "arn:aws:secretsmanager:*:${local.aws.users.admin.account_id}:secret"
     connections = {
-      arn = "${local.secretsmanager_airflow.arn}:${local.airflow_secrets_backend.connections.prefix}"
+      arn = "${local._secretsmanager_base_arn_}:${local.airflow_secrets_backend.connections.prefix}"
     }
     variables = {
-      arn = "${local.secretsmanager_airflow.arn}:${local.airflow_secrets_backend.variables.prefix}"
+      arn = "${local._secretsmanager_base_arn_}:${local.airflow_secrets_backend.variables.prefix}"
     }
   }
 }

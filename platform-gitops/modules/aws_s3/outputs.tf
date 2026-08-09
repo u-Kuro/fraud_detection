@@ -22,12 +22,22 @@ output "mlflow_bucket" {
   }
 }
 
-output "team_buckets" {
+output "teams_buckets" {
   value = {
     for k, v in aws_s3_bucket.teams : k => {
-      name   = aws_s3_bucket.mlflow.id
-      arn    = aws_s3_bucket.mlflow.arn
-      region = aws_s3_bucket.mlflow.region
+      name   = v.id
+      arn    = v.arn
+      region = v.region
+    }
+  }
+}
+
+output "mwaa_teams_buckets" {
+  value = {
+    for k, v in aws_s3_bucket.mwaa_teams : k => {
+      name   = v.id
+      arn    = v.arn
+      region = v.region
     }
   }
 }
