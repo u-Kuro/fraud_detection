@@ -22,6 +22,7 @@ extraFlags:
 
 extraEnvVars:
   MLFLOW_ENABLE_WORKSPACES: true
+#   SCRIPT_NAME: [dynamic] # Aligns request calls with path prefixed host from reverse proxy (traefik)
 #   MLFLOW_S3_ENDPOINT_URL: [dynamic]
 #   AWS_DEFAULT_REGION: [dynamic]
 
@@ -40,6 +41,7 @@ auth:
 
 service:
   type: ClusterIP # Internal access only
-# port: [dynamic]
+  port: 80 # HTTP
+# containerPort: [dynamic] # targetPort and containerPort
 
 # fullnameOverride: [dynamic] # Sets hostname

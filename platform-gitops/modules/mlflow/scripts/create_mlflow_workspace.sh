@@ -7,13 +7,13 @@ apk add --no-cache curl jq > /dev/null 2>&1
 # Create user if not exists
 USER_STATUS=$( \
   curl -s -o /dev/null -w "%{http_code}" \
-  "${MLFLOW_TRACKING_URI}/api/2.0/mlflow/users/get?username=${TEAM}" \
+  "${MLFLOW_INTERNAL_URL}/api/2.0/mlflow/users/get?username=${TEAM}" \
   -u "${ADMIN}" \
 )
 
 if [ "$USER_STATUS" != "200" ]; then
   echo "Creating user: ${TEAM}"
-  curl -sf -X POST "${MLFLOW_TRACKING_URI}/api/2.0/mlflow/users/create" \
+  curl -sf -X POST "${MLFLOW_INTERNAL_URL}/api/2.0/mlflow/users/create" \
     -u "${ADMIN}" \
     -H "Content-Type: application/json" \
     -d "{\"username\": \"${TEAM}\", \"password\": \"${PASSWORD}\"}"
@@ -24,7 +24,7 @@ fi
 # Create workspace if not exists
 WORKSPACE_NAME="${TEAM}_workspace"
 WORKSPACE_ID=$( \
-  curl -sf "${MLFLOW_TRACKING_URI}/api/3.0/mlflow/workspaces" \
+  curl -sf "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces" \
   -u "${ADMIN}" | \
   jq -r ".workspaces[] | select(.name == \"${WORKSPACE_NAME}\") | .id" \
 )
@@ -32,7 +32,7 @@ WORKSPACE_ID=$( \
 if [ -z "$WORKSPACE_ID" ]; then
   echo "Creating workspace: ${WORKSPACE_NAME}"
   WORKSPACE_ID=$( \
-    curl -sf -X POST "${MLFLOW_TRACKING_URI}/api/3.0/mlflow/workspaces" \
+    curl -sf -X POST "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces" \
     -u "${ADMIN}" \
     -H "Content-Type: application/json" \
     -d "{\"name\": \"${WORKSPACE_NAME}\"}" | jq -r '.workspace.id' \
@@ -43,13 +43,13 @@ fi
 
 # Grant edit permission if not set
 PERMISSION=$( \
-  curl -sf "${MLFLOW_TRACKING_URI}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
+  curl -sf "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
   -u "${ADMIN}" | \
   jq -r ".permissions[] | select(.username == \"${TEAM}\") | .permission // empty" \
 )
 if [ "$PERMISSION" != "EDIT" ]; then
   echo "Granting permission to ${TEAM} on workspace ${WORKSPACE_ID}"
-  curl -sf -X POST "${MLFLOW_TRACKING_URI}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
+  curl -sf -X POST "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
     -u "${ADMIN}" \
     -H "Content-Type: application/json" \
     -d "{\"username\": \"${TEAM}\", \"permission\": \"EDIT\"}"

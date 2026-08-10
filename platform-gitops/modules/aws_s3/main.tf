@@ -130,3 +130,24 @@ resource "aws_s3_bucket_versioning" "teams" {
 
   depends_on = [aws_s3_bucket.mwaa_teams]
 }
+# MWAA TEAMS' PERMISSIONS
+resource "aws_iam_role_policy" "mwaa_teams" {
+  for_each = local.aws.users.mwaa_teams
+  role     = each.value.role.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "s3:*"
+        Resource = [
+          aws_s3_bucket.teams[each.key].arn,
+          "${aws_s3_bucket.teams[each.key].arn}/*"
+        ]
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket.mwaa_teams]
+}

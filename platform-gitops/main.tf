@@ -157,7 +157,7 @@ module "postgresql" {
 }
 
 module "aws_alb" {
-  source = "./modules/aws_alb"
+  source = "modules/aws_lb"
 
   depends_on = [module.eks_cluster]
 }

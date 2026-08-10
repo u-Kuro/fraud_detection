@@ -1,4 +1,4 @@
-# TODO - 08/08/2026 - Continue here...
+# TODO - 10/08/2026 - Continue here...
 # ingress
 # - MWAA to mlflow-pod (real aws use alb/elb) so try to create one
 # egress
@@ -21,8 +21,6 @@
 # Slack Calls
 # - POD
 
-
-
 resource "kubernetes_config_map" "teams" {
   for_each = local.aws.users.teams
 
@@ -32,7 +30,80 @@ resource "kubernetes_config_map" "teams" {
   }
 
   data = {
-    # INFRA URLS
+    # POSTGRES
+    PGHOST = ""
+    PGPORT = ""
+    PGUSER = ""
+    PGPASSWORD = ""
+    PGDATABASE = ""
+    # S3 / MWAA
+    AWS_ACCESS_KEY_ID = ""
+    AWS_SECRET_ACCESS_KEY = ""
+    AWS_DEFAULT_REGION = ""
+    # MWAA
+    AWS_ENDPOINT_URL_MWAA = ""
+    MWAA_ENVIRONMENT_NAME = "" # Not Fixed
+    # MLFLOW
+    MLFLOW_TRACKING_URI = "" # Internal
+    MLFLOW_TRACKING_USERNAME = ""
+    MLFLOW_TRACKING_PASSWORD = ""
+    # SLACK (TEAM CREATED)
+    # SLACK_BOT_TOKEN = ""
+    # SLACK_APP_TOKEN = ""
+    # SLACK_SIGNING_SECRET = ""
+    # SLACK_CHANNEL_ID = ""
+
+    # For secretsmanager connection
+    # POSTGRES
+    postgres = {
+     "conn_type": "postgres",
+     "host": "PGHOST",
+     "port": 0,
+     "login": "PGUSER",
+     "password": "PGPASSWORD",
+     "schema": "PGDATABASE" # Unexpectedly called schema
+    }
+    # S3
+    s3 = {
+     "conn_type": "aws",
+     "login": "AWS_ACCESS_KEY_ID",
+     "password": "AWS_SECRET_ACCESS_KEY",
+     "extra": {
+       "region_name": "AWS_DEFAULT_REGION"
+     }
+    }
+    # SLACK (TEAM CREATED)
+    # slack = {
+    #   "conn_type": "slack",
+    #   "password": "YOUR_SLACK_BOT_TOKEN"
+    # }
+    # GITHUB (TEAM CREATED)
+    # github = {
+    #  "conn_type": "http",
+    #  "host": "https://api.github.com",
+    #  "extra": {
+    #    "headers": {
+    #      "Authorization": "Bearer ghp_YourGitHubPersonalAccessTokenHere",
+    #      "Accept": "application/vnd.github+json",
+    #      "X-GitHub-Api-Version": "2022-11-28"
+    #    }
+    #  }
+    # }
+
+    # For secretsmanager variables (Prefixed with AIRFLOW_VAR_ so Fixed won't work)
+    # POSTGRES
+    POSTGRES_CONNECTION_ID = ""
+    # S3
+    S3_CONNECTION_ID = ""
+    # MLFLOW (Fixed won't work)
+    MLFLOW_TRACKING_URI = "" # External
+    MLFLOW_TRACKING_USERNAME = ""
+    MLFLOW_TRACKING_PASSWORD = ""
+    # GITHUB (TEAM CREATED)
+    # GITHUB_CONNECTION_ID = ""
+    # SLACK (TEAM CREATED)
+    # SLACK_CONNECTION_ID = ""
+    # SLACK_CHANNEL_ID = ""
   }
 }
 
@@ -49,49 +120,6 @@ resource "kubernetes_secret" "teams" {
     # SECRETS
   }
 }
-
-#name: CD
-#
-#on:
-#  push:
-#    branches: [main]
-#
-#env:
-#  AWS_REGION: ap-southeast-1
-#  ECR_REGISTRY: 123456789.dkr.ecr.ap-southeast-1.amazonaws.com
-#  ECR_REPOSITORY: team-a-app
-#  IMAGE_TAG: ${{ github.sha }}
-#  DEPLOYMENT_NAME: team-a-app
-#  NAMESPACE: team-a-namespace
-#
-#jobs:
-#  deploy:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Configure AWS credentials
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          aws-region: ${{ env.AWS_REGION }}
-#
-#      - name: Login to ECR
-#        uses: aws-actions/amazon-ecr-login@v2
-#
-#      - name: Update kubeconfig
-#        run: aws eks update-kubeconfig --name eks --region ${{ env.AWS_REGION }}
-#
-#      ...
-#
-#      - name: Wait for rollout
-#        run: |
-#          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
-#            -n ${{ env.NAMESPACE }} \
-#            --timeout=300s
 
 resource "kubernetes_secret" "ecr_registry" {
   for_each = local.aws.users.teams

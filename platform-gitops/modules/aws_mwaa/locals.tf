@@ -8,8 +8,9 @@ locals {
 }
 # COMPUTED
 locals {
-  # DAG
-  s3_team_dag_path     = "DAG"
+  # MWAA
+  s3_mwaa_requirements_path = "requirements.txt"
+  s3_mwaa_dag_path = "DAG"
   # KUBECONFIG `/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]`
   s3_kubeconfig_file_path_for_mwaa = "kubeconfig.yaml"
   # AIRFLOW SECRETS MANAGER BACKEND

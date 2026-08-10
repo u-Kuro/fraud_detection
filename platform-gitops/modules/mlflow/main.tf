@@ -15,7 +15,8 @@ resource "helm_release" "mlflow" {
 
   set = [
     { name = "fullnameOverride", value = local.mlflow.host },
-    { name = "service.port", value = local.mlflow.port },
+    { name = "extraEnvVars.SCRIPT_NAME", value = "/${local.mlflow.host}" },
+    { name = "service.containerPort", value = local.mlflow.port },
 
     { name = "backendStore.postgres.host", value = local.rds.host },
     { name = "backendStore.postgres.port", value = local.rds.port },
@@ -42,6 +43,59 @@ resource "helm_release" "mlflow" {
     { name = "auth.postgres.user", value = local.rds.users.mlflow.username },
     { name = "auth.postgres.password", value = local.rds.users.mlflow.password },
     { name = "flaskServerSecretKey", value = local.mlflow.flask_server_secret_key },
+  ]
+}
+resource "kubernetes_manifest" "mlflow_middleware" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "Middleware"
+    metadata = {
+      name      = "mlflow-middleware"
+      namespace = local.eks.kubernetes.mlflow.namespace
+    }
+    spec = {
+      stripPrefix = {
+        prefixes = ["/${local.mlflow.host}"]
+      }
+    }
+  }
+
+  depends_on = [helm_release.mlflow]
+}
+resource "kubernetes_manifest" "mlflow_ingress_route" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "IngressRoute"
+    metadata = {
+      name      = "mlflow-ingress-route"
+      namespace = local.eks.kubernetes.mlflow.namespace
+    }
+    spec = {
+      entryPoints = ["web", "websecure"] # http 80 / https 443
+      routes = [
+        {
+          match = "PathPrefix(`/${local.mlflow.host}`)"
+          kind  = "Rule"
+          middlewares = [
+            {
+              name      = kubernetes_manifest.mlflow_middleware.manifest.metadata.name
+              namespace = local.eks.kubernetes.mlflow.namespace
+            }
+          ]
+          services = [
+            {
+              name = local.mlflow.host  # fullnameOverride → Service name
+              port = local.mlflow.port
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+  depends_on = [
+    helm_release.mlflow,
+    kubernetes_manifest.mlflow_middleware,
   ]
 }
 # MLFLOW TEAMS' WORKSPACES
@@ -83,8 +137,8 @@ resource "kubernetes_job" "mlflow_teams" {
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
 
           env {
-            name  = "MLFLOW_TRACKING_URI"
-            value = local.mlflow_tracking_uri
+            name  = "MLFLOW_INTERNAL_URL"
+            value = local.mlflow_internal_url
           }
           env {
             name  = "TEAM"

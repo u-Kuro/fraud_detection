@@ -5,14 +5,16 @@ provider "aws" {
 
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
-    sts            = "http://localhost:4566"
-    eks            = var.eks_host_endpoint_url
-    s3             = var.s3_host_endpoint_url
+    ec2            = "http://localhost:4566"
     ecr            = "http://localhost:4566"
+    elbv2          = "http://localhost:4566"
+    eks            = var.eks_host_endpoint_url
+    iam            = "http://localhost:4566"
     mwaa           = "http://localhost:4566"
     rds            = "http://localhost:4566"
+    s3             = var.s3_host_endpoint_url
     secretsmanager = var.secretsmanager_host_endpoint_url
-    iam            = "http://localhost:4566"
+    sts            = "http://localhost:4566"
   }
 
   # Forces S3 URLs to use "http://localhost:4566/bucket-name" (path-style)

@@ -7,7 +7,7 @@ output "admin" {
 
 output "teams" {
   value = {
-    for k in var.teams : k => {
+    for k in local.aws.users.teams : k => {
       access_keys = {
         aws_access_key = aws_iam_access_key.teams[k].id
         aws_secret_key = aws_iam_access_key.teams[k].secret

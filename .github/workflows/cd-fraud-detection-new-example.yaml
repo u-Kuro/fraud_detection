@@ -1,0 +1,169 @@
+# TODO - Use as guideline for new CI/CD later.
+name: Deploy Fraud Detection API
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 000000000000.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: fraud_detection_api
+  DEPLOYMENT_NAME: fraud-detection-api
+  NAMESPACE: mle
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── AWS / ECR ──────────────────────────────────────────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── kubectl ────────────────────────────────────────────────────────────
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      # ── Namespace ──────────────────────────────────────────────────────────
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace ${{ env.NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── ConfigMap (created by this workflow, idempotent) ───────────────────
+      # Non-sensitive values only. Replace hardcoded values with
+      # AWS Secrets Manager fetches if needed (see comment below secret step).
+      - name: Create ConfigMap
+        run: |
+          kubectl create configmap ${{ env.DEPLOYMENT_NAME }}-config \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=MODEL_VERSION=${{ github.sha }} \
+            --from-literal=ENVIRONMENT=production \
+            --from-literal=LOG_LEVEL=INFO \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── Secret (created by this workflow, idempotent) ──────────────────────
+      # Source: GitHub Actions secrets.
+      # To use AWS Secrets Manager instead, add a step before this:
+      #
+      #   - name: Fetch secrets from AWS
+      #     run: |
+      #       SECRET=$(aws secretsmanager get-secret-value \
+      #         --secret-id fraud-detection/prod \
+      #         --query SecretString --output text)
+      #       echo "FRAUD_API_KEY=$(echo $SECRET | jq -r .api_key)" >> $GITHUB_ENV
+      #       echo "FRAUD_DB_PASSWORD=$(echo $SECRET | jq -r .db_password)" >> $GITHUB_ENV
+      #
+      # Then reference ${{ env.FRAUD_API_KEY }} below instead of secrets.X
+      - name: Create Secret
+        run: |
+          kubectl create secret generic ${{ env.DEPLOYMENT_NAME }}-secret \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=API_KEY=${{ secrets.FRAUD_API_KEY }} \
+            --from-literal=DB_PASSWORD=${{ secrets.FRAUD_DB_PASSWORD }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── Deployment ─────────────────────────────────────────────────────────
+      # kubectl apply is idempotent:
+      #   first run  → creates the Deployment
+      #   later runs → patches it, Kubernetes executes rolling update
+      #
+      # change-cause annotation appears in: kubectl rollout history
+      - name: Apply Deployment
+        env:
+          IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${{ env.DEPLOYMENT_NAME }}
+            namespace: ${{ env.NAMESPACE }}
+            annotations:
+              kubernetes.io/change-cause: "${{ github.sha }} by ${{ github.actor }}"
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: ${{ env.DEPLOYMENT_NAME }}
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 1        # spin up 1 new pod BEFORE killing old
+                maxUnavailable: 0  # never kill old pod until new one is ready
+            template:
+              metadata:
+                labels:
+                  app: ${{ env.DEPLOYMENT_NAME }}
+              spec:
+                containers:
+                  - name: ${{ env.DEPLOYMENT_NAME }}
+                    image: ${IMAGE}
+                    ports:
+                      - containerPort: 8080
+                    # Required for true zero downtime —
+                    # Kubernetes waits for this to pass before routing
+                    # traffic and before removing the old pod
+                    readinessProbe:
+                      httpGet:
+                        path: /health
+                        port: 8080
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                      failureThreshold: 3
+                    envFrom:
+                      # existing — pre-created outside this workflow
+                      - configMapRef:
+                          name: base
+                      - secretRef:
+                          name: base
+                      # created above in this workflow
+                      - configMapRef:
+                          name: ${{ env.DEPLOYMENT_NAME }}-config
+                      - secretRef:
+                          name: ${{ env.DEPLOYMENT_NAME }}-secret
+          EOF
+
+      # ── Rollout watch ──────────────────────────────────────────────────────
+      # continue-on-error lets the next step (rollback) run even on timeout.
+      # Without it, a failed rollout would skip the rollback step entirely.
+      - name: Wait for rollout
+        id: rollout
+        continue-on-error: true
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.NAMESPACE }} \
+            --timeout=5m
+
+      # ── Auto-rollback ──────────────────────────────────────────────────────
+      # Runs only if the rollout timed out or pods never became ready.
+      # kubectl rollout undo reverts to the previous revision (previous image).
+      # exit 1 at the end makes the job red — rollback is not a success.
+      - name: Rollback on failure
+        if: steps.rollout.outcome == 'failure'
+        run: |
+          echo "Deployment failed — rolling back"
+          kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.NAMESPACE }}
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.NAMESPACE }} \
+            --timeout=2m
+          echo "::error::Deployment failed and was rolled back to previous version"
+          exit 1

@@ -19,6 +19,11 @@ variable "local_files" {
     directory = object({
       path = string
     })
+    mwaa_requirements = object({
+      file = object({
+        path = string
+      })
+    })
     kubeconfig = object({
       container = object({
         file = object({
