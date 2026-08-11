@@ -22,7 +22,7 @@ variable "mlflow" {
   type = object({
     flask_server_secret_key = string
     host                    = optional(string, "mlflow")
-    port                    = object({
+    port = object({
       container = optional(number, 8080)
     })
     users = object({

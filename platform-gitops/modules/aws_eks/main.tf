@@ -12,7 +12,7 @@ resource "aws_eks_cluster" "eks" {
   role_arn = local.eks.role.arn
 
   vpc_config {
-    subnet_ids         = ["subnet-00000000000000000", "subnet-00000000000000001"]
+    subnet_ids = ["subnet-00000000000000000", "subnet-00000000000000001"]
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks]

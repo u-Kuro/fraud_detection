@@ -42,7 +42,7 @@ variable "eks" {
 variable "mlflow" {
   type = object({
     url = object({
-      egress = string
+      egress  = string
       ingress = string
     })
     users = object({
@@ -76,8 +76,8 @@ variable "mwaa" {
 variable "rds" {
   type = object({
     postgresql = object({
-      host = string
-      port = number
+      host    = string
+      port    = number
       db_name = string
       users = object({
         teams = map(object({

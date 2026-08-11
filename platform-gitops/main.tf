@@ -1,13 +1,13 @@
 locals {
   teams = {
     MLE = {
-      ECR = true
-      EKS = true
-      MWAA = true
-      S3 = true
+      ECR            = true
+      EKS            = true
+      MWAA           = true
+      S3             = true
       SECRETSMANAGER = true
-      MLFLOW = true
-      POSTGRESQL = true
+      MLFLOW         = true
+      POSTGRESQL     = true
     }
   }
 }

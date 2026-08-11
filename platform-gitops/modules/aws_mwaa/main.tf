@@ -19,9 +19,9 @@ resource "aws_mwaa_environment" "mwaa" {
   airflow_version    = "2.10.3"
   execution_role_arn = each.value.role.arn
 
-  source_bucket_arn  = local.s3.buckets.mwaa_teams[each.key].arn
-  requirements_s3_path  = local.s3_mwaa_requirements_path
-  dag_s3_path        = "${local.s3_mwaa_dag_path}/"
+  source_bucket_arn    = local.s3.buckets.mwaa_teams[each.key].arn
+  requirements_s3_path = local.s3_mwaa_requirements_path
+  dag_s3_path          = "${local.s3_mwaa_dag_path}/"
 
   airflow_configuration_options = {
     "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"

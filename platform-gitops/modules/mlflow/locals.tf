@@ -10,7 +10,7 @@ locals {
 locals {
   # SYSTEM PORTS
   system_ports = {
-    http = 80
+    http  = 80
     https = 443
   }
   # KUBERNETES
@@ -24,7 +24,7 @@ locals {
   # MLFLOW
   mlflow_url = {
     internal = "http://${local.mlflow.host}"
-    external =  "http://${local.lb.dns_name}/${local.mlflow.host}"
+    external = "http://${local.lb.dns_name}/${local.mlflow.host}"
   }
   # SCRIPTS
   scripts_relative_path                             = "scripts"

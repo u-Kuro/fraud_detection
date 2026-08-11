@@ -31,8 +31,8 @@ resource "kubernetes_config_map" "eks_teams" {
 
   data = {
     # POSTGRES
-    PGHOST = local.rds.postgresql.host
-    PGPORT = local.rds.postgresql.port
+    PGHOST     = local.rds.postgresql.host
+    PGPORT     = local.rds.postgresql.port
     PGDATABASE = local.rds.postgresql.db_name
     # S3 / MWAA
     AWS_DEFAULT_REGION = local.aws.users.admin.region
@@ -57,10 +57,10 @@ resource "kubernetes_secret" "eks_teams" {
 
   data = {
     # POSTGRES
-    PGUSER = local.rds.postgresql.users.teams[each.key].username
+    PGUSER     = local.rds.postgresql.users.teams[each.key].username
     PGPASSWORD = local.rds.postgresql.users.teams[each.key].password
     # S3 / MWAA
-    AWS_ACCESS_KEY_ID = local.aws.users.teams[each.key].username
+    AWS_ACCESS_KEY_ID     = local.aws.users.teams[each.key].username
     AWS_SECRET_ACCESS_KEY = local.aws.users.teams[each.key].password
     # MLFLOW
     MLFLOW_TRACKING_USERNAME = local.mlflow.users.teams[each.key].username
@@ -77,16 +77,16 @@ resource "aws_secretsmanager_secret" "postgres_connection" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_connections.postgres_id}"
 }
 resource "aws_secretsmanager_secret_version" "postgres_connection" {
-  for_each = aws_secretsmanager_secret.postgres_connection
+  for_each  = aws_secretsmanager_secret.postgres_connection
   secret_id = each.value.id
 
   secret_string = jsonencode({
-   conn_type = "postgres",
-   host = local.rds.postgresql.host,
-   port = local.rds.postgresql.port,
-   login = local.rds.postgresql.users.teams[each.key].username,
-   password = local.rds.postgresql.users.teams[each.key].password,
-   schema = local.rds.postgresql.db_name
+    conn_type = "postgres",
+    host      = local.rds.postgresql.host,
+    port      = local.rds.postgresql.port,
+    login     = local.rds.postgresql.users.teams[each.key].username,
+    password  = local.rds.postgresql.users.teams[each.key].password,
+    schema    = local.rds.postgresql.db_name
   })
 
   depends_on = [aws_secretsmanager_secret.postgres_connection]
@@ -96,16 +96,16 @@ resource "aws_secretsmanager_secret" "s3_connection" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_connections.s3_id}"
 }
 resource "aws_secretsmanager_secret_version" "s3_connection" {
-  for_each = aws_secretsmanager_secret.s3_connection
+  for_each  = aws_secretsmanager_secret.s3_connection
   secret_id = each.value.id
 
   secret_string = jsonencode({
-   conn_type = "aws",
-   login = local.aws.users.teams[each.key].username,
-   password = local.aws.users.teams[each.key].password,
-   extra = {
-     region_name = local.aws.users.admin.region
-   }
+    conn_type = "aws",
+    login     = local.aws.users.teams[each.key].username,
+    password  = local.aws.users.teams[each.key].password,
+    extra = {
+      region_name = local.aws.users.admin.region
+    }
   })
 
   depends_on = [aws_secretsmanager_secret.s3_connection]
@@ -117,7 +117,7 @@ resource "aws_secretsmanager_secret" "postgres_connection_id" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.connection_ids.postgres}"
 }
 resource "aws_secretsmanager_secret_version" "postgres_connection_id" {
-  for_each = aws_secretsmanager_secret.postgres_connection_id
+  for_each  = aws_secretsmanager_secret.postgres_connection_id
   secret_id = each.value.id
 
   secret_string = local.mwaa_connections.postgres_id
@@ -129,7 +129,7 @@ resource "aws_secretsmanager_secret" "s3_connection_id" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.connection_ids.postgres}"
 }
 resource "aws_secretsmanager_secret_version" "s3_connection_id" {
-  for_each = aws_secretsmanager_secret.s3_connection_id
+  for_each  = aws_secretsmanager_secret.s3_connection_id
   secret_id = each.value.id
 
   secret_string = local.mwaa_connections.s3_id
@@ -142,7 +142,7 @@ resource "aws_secretsmanager_secret" "mlflow_tracking_uri" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.mlflow_ids.uri}"
 }
 resource "aws_secretsmanager_secret_version" "mlflow_tracking_uri" {
-  for_each = aws_secretsmanager_secret.mlflow_tracking_uri
+  for_each  = aws_secretsmanager_secret.mlflow_tracking_uri
   secret_id = each.value.id
 
   secret_string = local.mlflow.url.ingress
@@ -154,7 +154,7 @@ resource "aws_secretsmanager_secret" "mlflow_tracking_username" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.mlflow_ids.username}"
 }
 resource "aws_secretsmanager_secret_version" "mlflow_tracking_username" {
-  for_each = aws_secretsmanager_secret.mlflow_tracking_username
+  for_each  = aws_secretsmanager_secret.mlflow_tracking_username
   secret_id = each.value.id
 
   secret_string = local.mlflow.users.teams[each.key].username
@@ -166,7 +166,7 @@ resource "aws_secretsmanager_secret" "mlflow_tracking_password" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.mlflow_ids.password}"
 }
 resource "aws_secretsmanager_secret_version" "mlflow_tracking_password" {
-  for_each = aws_secretsmanager_secret.mlflow_tracking_password
+  for_each  = aws_secretsmanager_secret.mlflow_tracking_password
   secret_id = each.value.id
 
   secret_string = local.mlflow.users.teams[each.key].password
@@ -179,7 +179,7 @@ resource "aws_secretsmanager_secret" "mwaa_dag_s3_uri" {
   name     = "${local.mwaa.users.teams[each.key].connections.prefix}/${local.mwaa_variables.mwaa_ids.dag_s3_uri}"
 }
 resource "aws_secretsmanager_secret_version" "mwaa_dag_s3_uri" {
-  for_each = aws_secretsmanager_secret.mwaa_dag_s3_uri
+  for_each  = aws_secretsmanager_secret.mwaa_dag_s3_uri
   secret_id = each.value.id
 
   secret_string = local.mwaa.dag_s3_uri
