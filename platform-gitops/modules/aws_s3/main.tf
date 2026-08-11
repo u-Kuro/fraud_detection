@@ -1,29 +1,6 @@
-# MWAA
-resource "aws_s3_bucket" "mwaa" {
-  bucket        = "mwaa"
-  force_destroy = true
-}
-resource "aws_s3_bucket_versioning" "mwaa" {
-  bucket = aws_s3_bucket.mwaa.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-
-  depends_on = [aws_s3_bucket.mwaa]
-}
-resource "aws_s3_bucket_public_access_block" "mwaa" {
-  bucket                  = aws_s3_bucket.mwaa.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
-  depends_on = [aws_s3_bucket.mwaa]
-}
 # RDS
 resource "aws_s3_bucket" "rds" {
-  bucket        = "rds"
+  bucket        = "RDS"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "rds" {
@@ -46,7 +23,7 @@ resource "aws_s3_bucket_public_access_block" "rds" {
 }
 # MLFLOW
 resource "aws_s3_bucket" "mlflow" {
-  bucket        = "mlflow"
+  bucket        = "MLFLOW"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "mlflow" {
@@ -108,6 +85,13 @@ resource "aws_iam_role_policy" "teams" {
           aws_s3_bucket.teams[each.key].arn,
           "${aws_s3_bucket.teams[each.key].arn}/*"
         ]
+      },
+      {
+        Effect = "Deny"
+        Action = [
+          "s3:DeleteBucket"
+        ]
+        Resource = aws_s3_bucket.teams[each.key].arn
       }
     ]
   })
@@ -117,7 +101,7 @@ resource "aws_iam_role_policy" "teams" {
 # MWAA TEAMS
 resource "aws_s3_bucket" "mwaa_teams" {
   for_each      = local.aws.users.mwaa_teams
-  bucket        = each.key
+  bucket        = "${each.key}_MWAA"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "teams" {
@@ -145,6 +129,13 @@ resource "aws_iam_role_policy" "mwaa_teams" {
           aws_s3_bucket.teams[each.key].arn,
           "${aws_s3_bucket.teams[each.key].arn}/*"
         ]
+      },
+      {
+        Effect = "Deny"
+        Action = [
+          "s3:DeleteBucket"
+        ]
+        Resource = aws_s3_bucket.teams[each.key].arn
       }
     ]
   })

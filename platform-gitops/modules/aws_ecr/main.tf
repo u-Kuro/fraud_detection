@@ -1,10 +1,3 @@
-# ECR TEAMS' REPOSITORIES
-resource "aws_ecr_repository" "ecr_teams" {
-  for_each             = local.ecr_teams_repositories
-  name                 = each.value # [team]/[repository]
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-}
 # ECR TEAMS' PERMISSIONS
 resource "aws_iam_role_policy" "ecr_teams" {
   for_each = local.aws.users.ecr_teams
@@ -26,19 +19,5 @@ resource "aws_iam_role_policy" "ecr_teams" {
         ]
       },
     ]
-  })
-}
-resource "aws_ecr_repository_policy" "ecr_teams" {
-  for_each   = aws_ecr_repository.ecr_teams
-  repository = each.value.name
-  policy = jsonencode({
-    Statement = [{
-      Effect   = "Allow"
-      Action   = "ecr:*"
-      Resource = "*"
-      Principal = {
-        AWS = local.aws.users.ecr_teams[each.key].role.arn
-      }
-    }]
   })
 }

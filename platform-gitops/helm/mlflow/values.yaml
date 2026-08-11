@@ -41,7 +41,7 @@ auth:
 
 service:
   type: ClusterIP # Internal access only
-  port: 80 # HTTP
+# port: [dynamic] # service port (HTTP)
 # containerPort: [dynamic] # targetPort and containerPort
 
 # fullnameOverride: [dynamic] # Sets hostname

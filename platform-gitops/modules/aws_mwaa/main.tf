@@ -15,7 +15,7 @@ resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
 }
 resource "aws_mwaa_environment" "mwaa" {
   for_each           = local.aws.users.mwaa_teams
-  name               = "mwaa_${each.key}"
+  name               = "${each.key}_MWAA"
   airflow_version    = "2.10.3"
   execution_role_arn = each.value.role.arn
 
@@ -66,6 +66,17 @@ resource "aws_iam_role_policy" "mwaa_teams" {
           "${local.secretsmanager_airflow.variables.arn}/${each.key}/*",
         ]
       },
+      {
+        Effect = "Deny"
+        Action = [
+          "s3:DeleteObject",
+          "s3:DeleteObjectVersion"
+        ]
+        Resource = [
+          "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_mwaa_requirements_path}",
+          "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
+        ]
+      }
     ]
   })
 }

@@ -1,13 +1,18 @@
 # INPUTS
 locals {
   aws    = var.aws
-  lb = var.lb
+  lb     = var.lb
   mlflow = var.mlflow
   rds    = var.rds
   s3     = var.s3
 }
 # COMPUTED
 locals {
+  # SYSTEM PORTS
+  system_ports = {
+    http = 80
+    https = 443
+  }
   # KUBERNETES
   eks = {
     kubernetes = {
@@ -17,8 +22,10 @@ locals {
     }
   }
   # MLFLOW
-  mlflow_internal_url = "http://${local.mlflow.host}"
-  mlflow_external_url = "http://${local.lb.dns_name}/mlflow"
+  mlflow_url = {
+    internal = "http://${local.mlflow.host}"
+    external =  "http://${local.lb.dns_name}/${local.mlflow.host}"
+  }
   # SCRIPTS
   scripts_relative_path                             = "scripts"
   create_mlflow_workspace_script_file_name          = "create_mlflow_workspace.sh"

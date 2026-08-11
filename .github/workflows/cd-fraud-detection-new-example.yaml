@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 000000000000.dkr.ecr.us-east-1.amazonaws.com
-  ECR_REPOSITORY: fraud_detection_api
+  ECR_REPOSITORY: mle/fraud_detection_api
   DEPLOYMENT_NAME: fraud-detection-api
   NAMESPACE: mle
 
@@ -30,6 +30,17 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      # ── ECR Repository ─────────────────────────────────────────────────────
+      - name: Create ECR repository if not exists
+        run: |
+          aws ecr describe-repositories \
+            --repository-names ${{ env.ECR_REPOSITORY }} \
+            --region ${{ env.AWS_REGION }} \
+          || aws ecr create-repository \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --image-tag-mutability MUTABLE \
+            --region ${{ env.AWS_REGION }}
 
       # ── kubectl ────────────────────────────────────────────────────────────
       - name: Set up kubectl

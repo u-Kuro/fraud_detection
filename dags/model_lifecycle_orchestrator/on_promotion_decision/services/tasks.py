@@ -35,9 +35,12 @@ def apply_model_deployment() -> HttpOperator:
             "Authorization": "Bearer {{ var.value.github_token }}", # TODO - add in secretsmanager? airflow/variables/github_token
             "Accept": "application/vnd.github.v3+json",
         },
+        # Data unused for nektos/act
         data=json.dumps({
-            "ref": GitHubConfig.reference,
-            "inputs": {}
+            "ref": "main",
+            "inputs": {
+                "environment": "production"
+            }
         }),
         response_check=lambda response: response.status_code == 204,
     )

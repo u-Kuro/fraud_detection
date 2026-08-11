@@ -12,6 +12,5 @@ locals {
   _cluster_access_policy_arn_ = "arn:aws:eks::aws:cluster-access-policy"
   cluster_access_policy_arns = {
     cluster_admin = "${local._cluster_access_policy_arn_}/AmazonEKSClusterAdminPolicy"
-    edit          = "${local._cluster_access_policy_arn_}/AmazonEKSEditPolicy"
   }
 }

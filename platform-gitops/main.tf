@@ -1,12 +1,13 @@
 locals {
   teams = {
-    mle = {
-      ecr_repositories = [
-        "archive",
-        "drift_check",
-        "fraud_detection",
-        "train_model",
-      ]
+    MLE = {
+      ECR = true
+      EKS = true
+      MWAA = true
+      S3 = true
+      SECRETSMANAGER = true
+      MLFLOW = true
+      POSTGRESQL = true
     }
   }
 }

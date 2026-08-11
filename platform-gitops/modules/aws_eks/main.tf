@@ -7,12 +7,11 @@ resource "aws_iam_role_policy_attachment" "eks" {
   policy_arn = data.aws_iam_policy.eks_cluster_policy.arn
 }
 resource "aws_eks_cluster" "eks" {
-  name     = "eks"
+  name     = "EKS"
   version  = "1.32"
   role_arn = local.eks.role.arn
 
   vpc_config {
-    security_group_ids = ["sg-00000000000000000"]
     subnet_ids         = ["subnet-00000000000000000", "subnet-00000000000000001"]
   }
 
@@ -88,15 +87,24 @@ resource "aws_eks_access_entry" "eks_teams" {
 
   depends_on = [aws_eks_cluster.eks]
 }
-resource "aws_eks_access_policy_association" "eks_teams" {
-  for_each      = local.aws.users.eks_teams
-  cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = each.value.role.arn
-  policy_arn    = local.cluster_access_policy_arns.edit
+resource "kubernetes_role_binding" "eks_teams" {
+  for_each = local.aws.users.eks_teams
 
-  access_scope {
-    type       = "namespace"
-    namespaces = [each.value.kubernetes.namespace]
+  metadata {
+    name      = "${each.key}_ROLE_BINDING"
+    namespace = each.value.kubernetes.namespace
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "edit"
+  }
+
+  subject {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Group"
+    name      = "${each.key}:team"
   }
 
   depends_on = [

@@ -1,6 +1,6 @@
 # MLFLOW
 resource "postgresql_schema" "mlflow" {
-  name  = "mlflow"
+  name  = "MLFLOW"
   owner = local.rds.username
 }
 resource "postgresql_role" "mlflow" {
@@ -123,8 +123,8 @@ resource "postgresql_grant" "postgresql_teams_sequence" {
 # POSTGRESQL TEAMS' MIGRATIONS
 resource "postgresql_role" "postgresql_teams_migration" {
   for_each            = local.aws.users.postgresql_teams
-  name                = "${each.value}_migration"
-  password            = "${each.value}_migration" # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
+  name                = "${each.value}_MIGRATION"
+  password            = "${each.value}_MIGRATION" # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
   login               = true
   skip_reassign_owned = true
   search_path         = postgresql_schema.postgresql_teams[each.value].name

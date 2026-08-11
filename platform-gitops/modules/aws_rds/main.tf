@@ -1,12 +1,12 @@
 # RDS
 resource "aws_db_instance" "rds" {
-  identifier          = "rds"
+  identifier          = "RDS"
   engine              = "postgres"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
   username            = var.rds.username
   password            = var.rds.password
-  db_name             = "main"
+  db_name             = "MAIN"
   skip_final_snapshot = true
 }
 resource "aws_iam_role_policy" "rds" {

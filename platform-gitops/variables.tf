@@ -45,7 +45,7 @@ variable "ecr_container_endpoint_url" {
 }
 variable "ecr_secret_name" {
   type    = string
-  default = "ecr_secret"
+  default = "ECR_SECRET"
 }
 variable "ecr_username" {
   type      = string

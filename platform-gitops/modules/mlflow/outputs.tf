@@ -1,8 +1,8 @@
 output "mlflow_internal_url" {
-  value = local.mlflow_internal_url
+  value = local.mlflow_url.internal
 }
 output "mlflow_external_url" {
-  value = local.mlflow_external_url
+  value = local.mlflow_url.external
 }
 
 output "mlflow_team_workspaces" {

@@ -16,7 +16,8 @@ resource "helm_release" "mlflow" {
   set = [
     { name = "fullnameOverride", value = local.mlflow.host },
     { name = "extraEnvVars.SCRIPT_NAME", value = "/${local.mlflow.host}" },
-    { name = "service.containerPort", value = local.mlflow.port },
+    { name = "service.port", value = local.system_ports.http },
+    { name = "service.containerPort", value = local.mlflow.port.container },
 
     { name = "backendStore.postgres.host", value = local.rds.host },
     { name = "backendStore.postgres.port", value = local.rds.port },
@@ -50,7 +51,7 @@ resource "kubernetes_manifest" "mlflow_middleware" {
     apiVersion = "traefik.io/v1alpha1"
     kind       = "Middleware"
     metadata = {
-      name      = "mlflow-middleware"
+      name      = "MLFLOW_MIDDLEWARE"
       namespace = local.eks.kubernetes.mlflow.namespace
     }
     spec = {
@@ -67,7 +68,7 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
     apiVersion = "traefik.io/v1alpha1"
     kind       = "IngressRoute"
     metadata = {
-      name      = "mlflow-ingress-route"
+      name      = "MLFLOW_INGRESS_ROUTE"
       namespace = local.eks.kubernetes.mlflow.namespace
     }
     spec = {
@@ -84,8 +85,8 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
           ]
           services = [
             {
-              name = local.mlflow.host  # fullnameOverride → Service name
-              port = local.mlflow.port
+              name = local.mlflow.host
+              port = local.system_ports.http
             }
           ]
         }
@@ -101,7 +102,7 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
 # MLFLOW TEAMS' WORKSPACES
 resource "kubernetes_config_map" "create_mlflow_workspace" {
   metadata {
-    name      = "create-mlflow-workspace-script"
+    name      = "CREATE_MLFLOW_WORKSPACE_SCRIPT"
     namespace = local.eks.kubernetes.mlflow.namespace
   }
   data = {
@@ -113,7 +114,7 @@ resource "kubernetes_job" "mlflow_teams" {
   for_each = local.aws.users.mlflow_teams
 
   metadata {
-    name      = "create-mlflow-workspace-${each.value}"
+    name      = "CREATE_${each.value}_MLFLOW_WORKSPACE"
     namespace = local.eks.kubernetes.mlflow.namespace
   }
 
@@ -131,14 +132,14 @@ resource "kubernetes_job" "mlflow_teams" {
         }
 
         container {
-          name  = "create-mlflow-workspace-${each.value}"
+          name  = "CREATE_${each.value}_MLFLOW_WORKSPACE"
           image = "alpine:3"
 
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
 
           env {
             name  = "MLFLOW_INTERNAL_URL"
-            value = local.mlflow_internal_url
+            value = local.mlflow_url.internal
           }
           env {
             name  = "TEAM"
