@@ -1,25 +1,25 @@
 # MWAA
 resource "aws_s3_object" "upload_requirements_for_mwaa" {
-  for_each = local.s3.buckets.mwaa_teams
-  bucket   = each.value.arn
+  for_each = local.s3.buckets.teams_mwaa
+  bucket   = each.value.name
   key      = local.s3_mwaa_requirements_path
   source   = local.local_files.mwaa_requirements.file.path
   etag     = filemd5(local.local_files.mwaa_requirements.file.path)
 }
 resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
-  for_each = local.s3.buckets.mwaa_teams
-  bucket   = each.value.arn
+  for_each = local.s3.buckets.teams_mwaa
+  bucket   = each.value.name
   key      = "${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
   source   = local.local_files.kubeconfig.host.file.path
   etag     = filemd5(local.local_files.kubeconfig.host.file.path)
 }
-resource "aws_mwaa_environment" "mwaa" {
-  for_each           = local.aws.users.mwaa_teams
+resource "aws_mwaa_environment" "teams_mwaa" {
+  for_each           = local.mwaa.users.teams
   name               = "${each.key}_MWAA"
   airflow_version    = "2.10.3"
-  execution_role_arn = each.value.role.arn
+  execution_role_arn = local.iam.users.teams[each.key].role.arn
 
-  source_bucket_arn    = local.s3.buckets.mwaa_teams[each.key].arn
+  source_bucket_arn    = local.s3.buckets.teams_mwaa[each.key].arn
   requirements_s3_path = local.s3_mwaa_requirements_path
   dag_s3_path          = "${local.s3_mwaa_dag_path}/"
 
@@ -29,7 +29,7 @@ resource "aws_mwaa_environment" "mwaa" {
       connections_prefix = "${local.airflow_secrets_backend.connections.prefix}/${each.key}"
       variables_prefix   = "${local.airflow_secrets_backend.variables.prefix}/${each.key}"
       sep                = "/"
-      endpoint_url       = local.secretsmanager.container.endpoint_url
+      endpoint_url       = local.secrets_manager.container.endpoint_url
     })
   }
 
@@ -44,9 +44,9 @@ resource "aws_mwaa_environment" "mwaa" {
   ]
 }
 # MWAA TEAMS' PERMISSIONS
-resource "aws_iam_role_policy" "mwaa_teams" {
-  for_each = local.aws.users.mwaa_teams
-  role     = each.value.role.arn
+resource "aws_iam_role_policy" "teams_mwaa" {
+  for_each = local.mwaa.users.teams
+  role     = local.iam.users.teams[each.key].role.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -55,15 +55,15 @@ resource "aws_iam_role_policy" "mwaa_teams" {
         Effect = "Allow"
         Action = "secretsmanager:*"
         Resource = [
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}-*",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}/",
-          "${local.secretsmanager_airflow.connections.arn}/${each.key}/*",
+          "${local.secrets_manager_airflow.connections.arn}/${each.key}",
+          "${local.secrets_manager_airflow.connections.arn}/${each.key}-*",
+          "${local.secrets_manager_airflow.connections.arn}/${each.key}/",
+          "${local.secrets_manager_airflow.connections.arn}/${each.key}/*",
 
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}-*",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}/",
-          "${local.secretsmanager_airflow.variables.arn}/${each.key}/*",
+          "${local.secrets_manager_airflow.variables.arn}/${each.key}",
+          "${local.secrets_manager_airflow.variables.arn}/${each.key}-*",
+          "${local.secrets_manager_airflow.variables.arn}/${each.key}/",
+          "${local.secrets_manager_airflow.variables.arn}/${each.key}/*",
         ]
       },
       {
@@ -73,8 +73,8 @@ resource "aws_iam_role_policy" "mwaa_teams" {
           "s3:DeleteObjectVersion"
         ]
         Resource = [
-          "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_mwaa_requirements_path}",
-          "${local.s3.buckets.mwaa_teams[each.key].arn}/${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
+          "${local.s3.buckets.teams_mwaa[each.key].arn}/${local.s3_mwaa_requirements_path}",
+          "${local.s3.buckets.teams_mwaa[each.key].arn}/${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
         ]
       }
     ]

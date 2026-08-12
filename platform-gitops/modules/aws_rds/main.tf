@@ -10,7 +10,7 @@ resource "aws_db_instance" "rds" {
   skip_final_snapshot = true
 }
 resource "aws_iam_role_policy" "rds" {
-  role = var.rds.role.arn
+  role = var.rds.role.name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

@@ -1,11 +1,3 @@
-output "mwaa_bucket" {
-  value = {
-    name   = aws_s3_bucket.mwaa.id
-    arn    = aws_s3_bucket.mwaa.arn
-    region = aws_s3_bucket.mwaa.region
-  }
-}
-
 output "rds_bucket" {
   value = {
     name   = aws_s3_bucket.rds.id
@@ -32,9 +24,9 @@ output "teams_buckets" {
   }
 }
 
-output "mwaa_teams_buckets" {
+output "teams_mwaa_buckets" {
   value = {
-    for k, v in aws_s3_bucket.mwaa_teams : k => {
+    for k, v in aws_s3_bucket.teams_mwaa : k => {
       name   = v.id
       arn    = v.arn
       region = v.region

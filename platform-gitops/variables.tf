@@ -1,20 +1,22 @@
 locals {
-  local_files_directory_path = "${path.root}/local_files"
-  scripts_directory_path     = "${path.root}/scripts"
+  ministack_container_name               = "ministack"
+  local_files_directory_path             = "${path.root}/local_files"
+  scripts_directory_path                 = "${path.root}/scripts"
+  secrets_manager_container_endpoint_url = "http://${local.ministack_container_name}:4566"
 }
 data "external" "ministack_ip" {
   program     = ["powershell", "-File", "${local.scripts_directory_path}/get_ministack_network_ip.ps1"]
   working_dir = path.root
   query = {
     ministack_network_name   = "ministack_network"
-    ministack_container_name = "ministack"
+    ministack_container_name = local.ministack_container_name
   }
 }
 locals {
   ministack_ip = data.external.ministack_ip.result.ip
 }
 locals {
-  s3_network_endpoint_url = "${local.ministack_ip}:4566"
+  s3_egress_url = "http://${local.ministack_ip}:4566"
 }
 variable "eks_host_endpoint_url" {
   type    = string
@@ -24,7 +26,7 @@ variable "s3_host_endpoint_url" {
   type    = string
   default = "http://localhost:4566"
 }
-variable "secretsmanager_host_endpoint_url" {
+variable "secrets_manager_host_endpoint_url" {
   type    = string
   default = "http://localhost:4566"
 }
@@ -47,14 +49,6 @@ variable "ecr_secret_name" {
   type    = string
   default = "ECR_SECRET"
 }
-variable "ecr_username" {
-  type      = string
-  sensitive = true
-}
-variable "ecr_password" {
-  type      = string
-  sensitive = true
-}
 
 variable "aws_access_key" {
   type      = string
@@ -67,11 +61,20 @@ variable "aws_secret_key" {
 variable "aws_region" { type = string }
 variable "aws_account_id" { type = string }
 
-variable "rds_db_username" {
+variable "rds_admin_username" {
   type      = string
   sensitive = true
 }
-variable "rds_db_password" {
+variable "rds_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "mlflow_admin_username" {
+  type      = string
+  sensitive = true
+}
+variable "mlflow_admin_password" {
   type      = string
   sensitive = true
 }
@@ -85,22 +88,6 @@ variable "mlflow_postgresql_password" {
   sensitive = true
 }
 variable "mlflow_flask_server_secret_key" {
-  type      = string
-  sensitive = true
-}
-variable "mle_postgresql_username" {
-  type      = string
-  sensitive = true
-}
-variable "mle_postgresql_password" {
-  type      = string
-  sensitive = true
-}
-variable "mle_migrations_postgresql_username" {
-  type      = string
-  sensitive = true
-}
-variable "mle_migrations_postgresql_password" {
   type      = string
   sensitive = true
 }

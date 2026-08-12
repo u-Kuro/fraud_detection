@@ -1,5 +1,6 @@
 # ADMIN
 data "aws_caller_identity" "admin" {}
+data "aws_region" "admin" {}
 resource "aws_iam_role" "admin" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -20,8 +21,8 @@ resource "aws_iam_role_policy_attachment" "admin" {
 }
 # TEAMS
 resource "aws_iam_user" "teams" {
-  for_each = local.aws.users.teams
-  name     = each.value
+  for_each = local.iam.users.teams
+  name     = each.key
 }
 resource "aws_iam_access_key" "teams" {
   for_each = aws_iam_user.teams

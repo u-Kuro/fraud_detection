@@ -1,7 +1,7 @@
-# SECRETMANAGER TEAMS' PERMISSIONS
-resource "aws_iam_role_policy" "secretmanager_teams" {
-  for_each = local.aws.users.secretmanager_teams
-  role     = each.value.role.arn
+# SECRETS MANAGER TEAMS' PERMISSIONS
+resource "aws_iam_role_policy" "secrets_manager_teams" {
+  for_each = local.secrets_manager.users.teams
+  role     = local.iam.users.teams[each.key].role.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -10,10 +10,10 @@ resource "aws_iam_role_policy" "secretmanager_teams" {
         Effect = "Allow"
         Action = "secretsmanager:*"
         Resource = [
-          "${local.secretsmanager.arn}:${each.key}",
-          "${local.secretsmanager.arn}:${each.key}-*",
-          "${local.secretsmanager.arn}:${each.key}/",
-          "${local.secretsmanager.arn}:${each.key}/*",
+          "${local.secrets_manager_arn}:${each.key}",
+          "${local.secrets_manager_arn}:${each.key}-*",
+          "${local.secrets_manager_arn}:${each.key}/",
+          "${local.secrets_manager_arn}:${each.key}/*",
         ]
       }
     ]

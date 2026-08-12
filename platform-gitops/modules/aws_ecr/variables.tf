@@ -1,14 +1,22 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
       admin = object({
         account_id = string
       })
-      ecr_teams = map(object({
+      teams = map(object({
         role = object({
-          arn = string
+          name = string
         })
       }))
+    })
+  })
+}
+
+variable "ecr" {
+  type = object({
+    users = object({
+      teams = set(string)
     })
   })
 }

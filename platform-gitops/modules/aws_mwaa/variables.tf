@@ -1,17 +1,17 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
       admin = object({
         account_id = string
       })
-      mwaa_teams = map(object({
+      teams = map(object({
         role = object({
-          arn = string
+          arn  = string
+          name = string
         })
       }))
     })
   })
-  sensitive = true
 }
 
 variable "local_files" {
@@ -36,8 +36,8 @@ variable "local_files" {
 
 variable "mwaa" {
   type = object({
-    role = object({
-      arn = string
+    users = object({
+      teams = set(string)
     })
   })
 }
@@ -45,14 +45,15 @@ variable "mwaa" {
 variable "s3" {
   type = object({
     buckets = object({
-      mwaa_teams = map(object({
-        arn = string
+      teams_mwaa = map(object({
+        arn  = string
+        name = string
       }))
     })
   })
 }
 
-variable "secretsmanager" {
+variable "secrets_manager" {
   type = object({
     container = object({
       endpoint_url = string

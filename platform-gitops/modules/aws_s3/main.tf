@@ -46,7 +46,7 @@ resource "aws_s3_bucket_public_access_block" "mlflow" {
 }
 # TEAMS
 resource "aws_s3_bucket" "teams" {
-  for_each      = local.aws.users.teams
+  for_each      = local.s3.users.teams
   bucket        = each.key
   force_destroy = true
 }
@@ -72,8 +72,8 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 }
 # TEAMS' PERMISSIONS
 resource "aws_iam_role_policy" "teams" {
-  for_each = local.aws.users.teams
-  role     = each.value.role.arn
+  for_each = local.s3.users.teams
+  role     = local.iam.users.teams[each.key].role.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -98,26 +98,26 @@ resource "aws_iam_role_policy" "teams" {
 
   depends_on = [aws_s3_bucket.teams]
 }
-# MWAA TEAMS
-resource "aws_s3_bucket" "mwaa_teams" {
-  for_each      = local.aws.users.mwaa_teams
+# TEAMS' MWAA
+resource "aws_s3_bucket" "teams_mwaa" {
+  for_each      = local.mwaa.users.teams
   bucket        = "${each.key}_MWAA"
   force_destroy = true
 }
-resource "aws_s3_bucket_versioning" "teams" {
-  for_each = aws_s3_bucket.mwaa_teams
+resource "aws_s3_bucket_versioning" "teams_mwaa" {
+  for_each = aws_s3_bucket.teams_mwaa
   bucket   = each.value.id
 
   versioning_configuration {
     status = "Enabled"
   }
 
-  depends_on = [aws_s3_bucket.mwaa_teams]
+  depends_on = [aws_s3_bucket.teams_mwaa]
 }
-# MWAA TEAMS' PERMISSIONS
-resource "aws_iam_role_policy" "mwaa_teams" {
-  for_each = local.aws.users.mwaa_teams
-  role     = each.value.role.arn
+# TEAMS' MWAA PERMISSIONS
+resource "aws_iam_role_policy" "teams_mwaa" {
+  for_each = local.mwaa.users.teams
+  role     = local.iam.users.teams[each.key].role.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -126,8 +126,8 @@ resource "aws_iam_role_policy" "mwaa_teams" {
         Effect = "Allow"
         Action = "s3:*"
         Resource = [
-          aws_s3_bucket.teams[each.key].arn,
-          "${aws_s3_bucket.teams[each.key].arn}/*"
+          aws_s3_bucket.teams_mwaa[each.key].arn,
+          "${aws_s3_bucket.teams_mwaa[each.key].arn}/*"
         ]
       },
       {
@@ -135,10 +135,10 @@ resource "aws_iam_role_policy" "mwaa_teams" {
         Action = [
           "s3:DeleteBucket"
         ]
-        Resource = aws_s3_bucket.teams[each.key].arn
+        Resource = aws_s3_bucket.teams_mwaa[each.key].arn
       }
     ]
   })
 
-  depends_on = [aws_s3_bucket.mwaa_teams]
+  depends_on = [aws_s3_bucket.teams_mwaa]
 }

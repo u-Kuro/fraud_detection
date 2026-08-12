@@ -1,6 +1,6 @@
 # INPUTS
 locals {
-  aws         = var.aws
+  iam         = var.iam
   ec2         = var.ec2
   ecr         = var.ecr
   eks         = var.eks

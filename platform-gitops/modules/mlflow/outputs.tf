@@ -7,7 +7,7 @@ output "mlflow_external_url" {
 
 output "mlflow_team_workspaces" {
   value = {
-    for v in local.aws.users.mlflow_teams : v => {
+    for v in local.mlflow.users.teams : v => {
       namespace = v
       username  = v
       password  = v # team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)

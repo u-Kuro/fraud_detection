@@ -1,7 +1,7 @@
 # INPUTS
 locals {
-  aws    = var.aws
-  lb     = var.lb
+  iam    = var.iam
+  elb    = var.elb
   mlflow = var.mlflow
   rds    = var.rds
   s3     = var.s3
@@ -24,7 +24,7 @@ locals {
   # MLFLOW
   mlflow_url = {
     internal = "http://${local.mlflow.host}"
-    external = "http://${local.lb.dns_name}/${local.mlflow.host}"
+    external = "http://${local.elb.alb.dns_name}/${local.mlflow.host}"
   }
   # SCRIPTS
   scripts_relative_path                             = "scripts"

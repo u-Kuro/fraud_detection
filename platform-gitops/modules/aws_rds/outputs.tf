@@ -1,4 +1,4 @@
-output "rds" {
+output "postgres" {
   value = {
     identifier = aws_db_instance.rds.identifier
     host       = aws_db_instance.rds.address

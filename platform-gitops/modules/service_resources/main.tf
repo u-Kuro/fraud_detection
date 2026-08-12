@@ -1,4 +1,3 @@
-# TODO - 11/08/2026 - Continue here...
 # ingress
 # - MWAA to mlflow-pod (real aws use alb/elb) so try to create one
 # egress
@@ -35,7 +34,7 @@ resource "kubernetes_config_map" "eks_teams" {
     PGPORT     = local.rds.postgresql.port
     PGDATABASE = local.rds.postgresql.db_name
     # S3 / MWAA
-    AWS_DEFAULT_REGION = local.aws.users.admin.region
+    AWS_DEFAULT_REGION = local.iam.users.admin.region
     # MWAA
     AWS_ENDPOINT_URL_MWAA = local.mwaa.url.egress
     MWAA_ENVIRONMENT_NAME = local.mwaa.users.teams[each.key].environment.name # Not Fixed
@@ -60,8 +59,8 @@ resource "kubernetes_secret" "eks_teams" {
     PGUSER     = local.rds.postgresql.users.teams[each.key].username
     PGPASSWORD = local.rds.postgresql.users.teams[each.key].password
     # S3 / MWAA
-    AWS_ACCESS_KEY_ID     = local.aws.users.teams[each.key].username
-    AWS_SECRET_ACCESS_KEY = local.aws.users.teams[each.key].password
+    AWS_ACCESS_KEY_ID     = local.iam.users.teams[each.key].username
+    AWS_SECRET_ACCESS_KEY = local.iam.users.teams[each.key].password
     # MLFLOW
     MLFLOW_TRACKING_USERNAME = local.mlflow.users.teams[each.key].username
     MLFLOW_TRACKING_PASSWORD = local.mlflow.users.teams[each.key].password
@@ -101,10 +100,10 @@ resource "aws_secretsmanager_secret_version" "s3_connection" {
 
   secret_string = jsonencode({
     conn_type = "aws",
-    login     = local.aws.users.teams[each.key].username,
-    password  = local.aws.users.teams[each.key].password,
+    login     = local.iam.users.teams[each.key].username,
+    password  = local.iam.users.teams[each.key].password,
     extra = {
-      region_name = local.aws.users.admin.region
+      region_name = local.iam.users.admin.region
     }
   })
 

@@ -1,7 +1,7 @@
 variable "rds" {
   type = object({
     role = object({
-      arn = string
+      name = string
     })
     password = string
     username = string

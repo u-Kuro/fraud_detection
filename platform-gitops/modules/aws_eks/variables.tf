@@ -1,16 +1,13 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
       admin = object({
-        arn        = string
-        access_key = string
-        region     = string
-        secret_key = string
+        arn      = string
+        username = string
+        region   = string
+        password = string
       })
-      eks_teams = map(object({
-        kubernetes = object({
-          namespace = string
-        })
+      teams = map(object({
         role = object({
           arn = string
         })
@@ -52,6 +49,13 @@ variable "eks" {
     role = object({
       arn  = string
       name = string
+    })
+    users = object({
+      teams = map(object({
+        kubernetes = object({
+          namespace = string
+        })
+      }))
     })
   })
 }

@@ -23,8 +23,8 @@ resource "helm_release" "mlflow" {
     { name = "backendStore.postgres.port", value = local.rds.port },
     { name = "backendStore.postgres.database", value = local.rds.db_name },
 
-    { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = local.s3.network.endpoint_url },
-    { name = "extraEnvVars.AWS_DEFAULT_REGION", value = local.aws.users.admin.region },
+    { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = local.s3.url.egress },
+    { name = "extraEnvVars.AWS_DEFAULT_REGION", value = local.iam.users.admin.region },
     { name = "artifactRoot.s3.bucket", value = local.s3.buckets.mlflow.name },
 
     { name = "auth.postgres.host", value = local.rds.host },
@@ -36,8 +36,8 @@ resource "helm_release" "mlflow" {
     { name = "backendStore.postgres.user", value = local.rds.users.mlflow.username },
     { name = "backendStore.postgres.password", value = local.rds.users.mlflow.password },
 
-    { name = "artifactRoot.s3.awsAccessKeyId", value = local.aws.users.admin.access_key },
-    { name = "artifactRoot.s3.awsSecretAccessKey", value = local.aws.users.admin.secret_key },
+    { name = "artifactRoot.s3.awsAccessKeyId", value = local.iam.users.admin.username },
+    { name = "artifactRoot.s3.awsSecretAccessKey", value = local.iam.users.admin.password },
 
     { name = "auth.adminUsername", value = local.mlflow.users.admin.username },
     { name = "auth.adminPassword", value = local.mlflow.users.admin.password },
@@ -111,10 +111,10 @@ resource "kubernetes_config_map" "create_mlflow_workspace" {
   immutable = true
 }
 resource "kubernetes_job" "mlflow_teams" {
-  for_each = local.aws.users.mlflow_teams
+  for_each = local.mlflow.users.teams
 
   metadata {
-    name      = "CREATE_${each.value}_MLFLOW_WORKSPACE"
+    name      = "CREATE_${each.key}_MLFLOW_WORKSPACE"
     namespace = local.eks.kubernetes.mlflow.namespace
   }
 
@@ -132,7 +132,7 @@ resource "kubernetes_job" "mlflow_teams" {
         }
 
         container {
-          name  = "CREATE_${each.value}_MLFLOW_WORKSPACE"
+          name  = "CREATE_${each.key}_MLFLOW_WORKSPACE"
           image = "alpine:3"
 
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
@@ -143,11 +143,11 @@ resource "kubernetes_job" "mlflow_teams" {
           }
           env {
             name  = "TEAM"
-            value = each.value
+            value = each.key
           }
           env {
             name  = "PASSWORD"
-            value = each.value # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
+            value = each.key # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
           }
           env {
             name  = "ADMIN"

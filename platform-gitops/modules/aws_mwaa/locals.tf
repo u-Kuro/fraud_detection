@@ -1,10 +1,10 @@
 # INPUTS
 locals {
-  aws            = var.aws
-  local_files    = var.local_files
-  mwaa           = var.mwaa
-  s3             = var.s3
-  secretsmanager = var.secretsmanager
+  iam             = var.iam
+  local_files     = var.local_files
+  mwaa            = var.mwaa
+  s3              = var.s3
+  secrets_manager = var.secrets_manager
 }
 # COMPUTED
 locals {
@@ -22,13 +22,13 @@ locals {
       prefix = "airflow/variables"
     }
   }
-  _secretsmanager_base_arn_ = "arn:aws:secretsmanager:*:${local.aws.users.admin.account_id}:secret"
-  secretsmanager_airflow = {
+  _secrets_manager_base_arn_ = "arn:aws:secretsmanager:*:${local.iam.users.admin.account_id}:secret"
+  secrets_manager_airflow = {
     connections = {
-      arn = "${local._secretsmanager_base_arn_}:${local.airflow_secrets_backend.connections.prefix}"
+      arn = "${local._secrets_manager_base_arn_}:${local.airflow_secrets_backend.connections.prefix}"
     }
     variables = {
-      arn = "${local._secretsmanager_base_arn_}:${local.airflow_secrets_backend.variables.prefix}"
+      arn = "${local._secrets_manager_base_arn_}:${local.airflow_secrets_backend.variables.prefix}"
     }
   }
 }

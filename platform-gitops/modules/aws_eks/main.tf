@@ -61,34 +61,31 @@ resource "aws_eks_node_group" "node" {
 # ADMIN CLUSTER PERMISSION
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = local.aws.users.admin.arn
+  principal_arn = local.iam.users.admin.arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
 resource "aws_eks_access_policy_association" "admin" {
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = local.aws.users.admin.arn
+  principal_arn = local.iam.users.admin.arn
   policy_arn    = local.cluster_access_policy_arns.cluster_admin
 
   access_scope { type = "cluster" }
 
-  depends_on = [
-    aws_eks_cluster.eks,
-    aws_eks_access_entry.admin
-  ]
+  depends_on = [aws_eks_cluster.eks]
 }
 # EKS TEAMS' CLUSTER PERMISSIONS
 resource "aws_eks_access_entry" "eks_teams" {
-  for_each      = local.aws.users.eks_teams
+  for_each      = local.eks.users.teams
   cluster_name  = aws_eks_cluster.eks.id
-  principal_arn = each.value.role.arn
+  principal_arn = local.iam.users.teams[each.key].arn
   type          = "STANDARD"
 
   depends_on = [aws_eks_cluster.eks]
 }
 resource "kubernetes_role_binding" "eks_teams" {
-  for_each = local.aws.users.eks_teams
+  for_each = local.eks.users.teams
 
   metadata {
     name      = "${each.key}_ROLE_BINDING"
@@ -107,10 +104,7 @@ resource "kubernetes_role_binding" "eks_teams" {
     name      = "${each.key}:team"
   }
 
-  depends_on = [
-    aws_eks_cluster.eks,
-    aws_eks_access_entry.eks_teams
-  ]
+  depends_on = [aws_eks_cluster.eks]
 }
 # ADDITIONAL SETUP FOR MINISTACK EKS
 resource "local_sensitive_file" "kubeconfig_container" {
@@ -150,9 +144,9 @@ resource "terraform_data" "additional_setup_for_ministack_eks" {
     command = join(" ", [
       "& '${path.module}/scripts/additional_setup_for_ministack_eks.ps1'",
 
-      "-aws_admin_access_key (ConvertTo-SecureString '${local.aws.users.admin.access_key}' -AsPlainText -Force)",
-      "-aws_admin_secret_key (ConvertTo-SecureString '${local.aws.users.admin.secret_key}' -AsPlainText -Force)",
-      "-aws_admin_region '${local.aws.users.admin.region}'",
+      "-aws_admin_access_key (ConvertTo-SecureString '${local.iam.users.admin.username}' -AsPlainText -Force)",
+      "-aws_admin_secret_key (ConvertTo-SecureString '${local.iam.users.admin.password}' -AsPlainText -Force)",
+      "-aws_admin_region '${local.iam.users.admin.region}'",
 
       "-eks_host_endpoint_url '${local.eks.host.endpoint_url}'",
       "-eks_cluster_name '${aws_eks_cluster.eks.id}'",

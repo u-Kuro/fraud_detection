@@ -1,6 +1,7 @@
 # INPUTS
 locals {
-  aws = var.aws
+  iam = var.iam
+  ecr = var.ecr
 }
 # COMPUTED
 locals {}

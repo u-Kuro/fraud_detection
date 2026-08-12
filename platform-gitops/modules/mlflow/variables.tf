@@ -1,20 +1,21 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
       admin = object({
-        access_key = string
-        region     = string
-        secret_key = string
+        password = string
+        region   = string
+        username = string
       })
-      mlflow_teams = set(string)
     })
   })
   sensitive = true
 }
 
-variable "lb" {
+variable "elb" {
   type = object({
-    dns_name = string
+    alb = object({
+      dns_name = string
+    })
   })
 }
 
@@ -30,6 +31,7 @@ variable "mlflow" {
         password = string
         username = string
       })
+      teams = set(string)
     })
   })
   sensitive = true
@@ -58,8 +60,8 @@ variable "s3" {
         name = string
       })
     })
-    network = object({
-      endpoint_url = string
+    url = object({
+      egress = string
     })
   })
 }

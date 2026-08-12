@@ -1,4 +1,4 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
       admin = object({

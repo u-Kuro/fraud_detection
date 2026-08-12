@@ -8,31 +8,31 @@ output "mlflow_access_key" {
 }
 
 output "aws_ecr_repository_urls" {
-  value = module.ecr_repository.team_repository_urls
+  value = module.ecr.team_repository_urls
 }
 
 output "aws_eks_cluster_name" {
-  value = module.eks_cluster.name
+  value = module.eks.name
 }
 output "aws_eks_cluster_endpoint" {
-  value = module.eks_cluster.endpoint
+  value = module.eks.endpoint
 }
 output "aws_eks_ecr_secret" {
-  value = module.eks_cluster.ecr_secret_name
+  value = module.eks.ecr_secret_name
 }
 
 output "aws_mwaa_environment_name" {
-  value = module.aws_mwaa_environment.name
+  value = module.mwaa.name
 }
 output "aws_mwaa_environment_webserver_url" {
-  value = module.aws_mwaa_environment.webserver_url
+  value = module.mwaa.webserver_url
 }
 
 output "aws_rds_db_identifier" {
-  value = module.rds_db.identifier
+  value = module.rds.identifier
 }
 output "aws_rds_db_address" {
-  value = module.rds_db.address
+  value = module.rds.address
 }
 
 output "aws_s3_mlflow_bucket_name" {

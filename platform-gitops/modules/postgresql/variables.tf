@@ -7,15 +7,8 @@ variable "rds" {
         password = string
         username = string
       })
+      teams = set(string)
     })
   })
   sensitive = true
-}
-
-variable "aws" {
-  type = object({
-    users = object({
-      postgresql_teams = set(string)
-    })
-  })
 }

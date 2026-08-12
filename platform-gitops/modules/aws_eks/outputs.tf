@@ -1,13 +1,18 @@
-output "name" {
-  value = aws_eks_cluster.eks.name
-}
-output "endpoint" {
-  value = aws_eks_cluster.eks.endpoint
-}
-output "ip" {
-  value = regex("https://([^:]+):", aws_eks_cluster.eks.endpoint)[0]
+output "cluster" {
+  value = {
+    endpoint = aws_eks_cluster.eks.endpoint
+    ip       = regex("https://([^:]+):", aws_eks_cluster.eks.endpoint)[0]
+    name     = aws_eks_cluster.eks.name
+  }
 }
 
-output "kubeconfig_container_file_path" {
-  value = local_sensitive_file.kubeconfig_container.filename
+output "local_files" {
+  value = {
+    kubeconfig_container = {
+      path = local_sensitive_file.kubeconfig_container.filename
+    }
+    ecr_registries = {
+      path = local_sensitive_file.ecr_registries.filename
+    }
+  }
 }

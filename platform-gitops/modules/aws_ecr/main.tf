@@ -1,7 +1,7 @@
 # ECR TEAMS' PERMISSIONS
 resource "aws_iam_role_policy" "ecr_teams" {
-  for_each = local.aws.users.ecr_teams
-  role     = each.value.role.arn
+  for_each = local.ecr.users.teams
+  role     = local.iam.users.teams[each.key].role.name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -14,8 +14,8 @@ resource "aws_iam_role_policy" "ecr_teams" {
         Effect = "Allow"
         Action = "ecr:*"
         Resource = [
-          "arn:aws:ecr:*:${local.aws.users.admin.account_id}:repository/${each.key}",
-          "arn:aws:ecr:*:${local.aws.users.admin.account_id}:repository/${each.key}/*"
+          "arn:aws:ecr:*:${local.iam.users.admin.account_id}:repository/${each.key}",
+          "arn:aws:ecr:*:${local.iam.users.admin.account_id}:repository/${each.key}/*"
         ]
       },
     ]

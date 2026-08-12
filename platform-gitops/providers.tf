@@ -13,7 +13,7 @@ provider "aws" {
     mwaa           = "http://localhost:4566"
     rds            = "http://localhost:4566"
     s3             = var.s3_host_endpoint_url
-    secretsmanager = var.secretsmanager_host_endpoint_url
+    secretsmanager = var.secrets_manager_host_endpoint_url
     sts            = "http://localhost:4566"
   }
 
@@ -29,19 +29,15 @@ provider "aws" {
 }
 
 provider "postgresql" {
-  host             = module.rds_db.address
-  port             = module.rds_db.port
-  database         = module.rds_db.name
-  username         = module.rds_db.username
-  password         = module.rds_db.password
+  host             = module.rds.address
+  port             = module.rds.port
+  database         = module.rds.name
+  username         = module.rds.username
+  password         = module.rds.password
   sslmode          = "require"
   expected_version = "15"
 }
 
-resource "local_sensitive_file" "kubeconfig_host" {
-  filename        = "${local.local_files_directory_path}/kubeconfig_host.yaml"
-  file_permission = "0600"
-}
 provider "kubernetes" {
   config_path = local_sensitive_file.kubeconfig_host.filename
 }

@@ -1,6 +1,6 @@
 # INPUTS
 locals {
-  aws    = var.aws
+  iam    = var.iam
   ecr    = var.ecr
   eks    = var.eks
   mlflow = var.mlflow
@@ -15,7 +15,7 @@ locals {
     postgres_id = "POSTGRES"
     s3_id       = "S3"
   }
-  # For secretsmanager variables (Prefixed with AIRFLOW_VAR_ so Fixed won't work)
+  # For secrets manager variables (Prefixed with AIRFLOW_VAR_ so Fixed won't work)
   mwaa_variables = {
     connection_ids = {
       # GITHUB (TEAM CREATED)

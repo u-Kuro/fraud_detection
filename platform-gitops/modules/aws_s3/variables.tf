@@ -1,12 +1,27 @@
-variable "aws" {
+variable "iam" {
   type = object({
     users = object({
-      mwaa_teams = set(string)
       teams = map(object({
         role = object({
-          arn = string
+          name = string
         })
       }))
+    })
+  })
+}
+
+variable "mwaa" {
+  type = object({
+    users = object({
+      teams = set(string)
+    })
+  })
+}
+
+variable "s3" {
+  type = object({
+    users = object({
+      teams = set(string)
     })
   })
 }

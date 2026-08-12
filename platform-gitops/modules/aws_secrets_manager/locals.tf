@@ -1,11 +1,10 @@
 # INPUTS
 locals {
-  aws = var.aws
+  iam             = var.iam
+  secrets_manager = var.secrets_manager
 }
 # COMPUTED
 locals {
   # SECRETS MANAGER
-  secretsmanager = {
-    arn = "arn:aws:secretsmanager:*:${local.aws.users.admin.account_id}:secret"
-  }
+  secrets_manager_arn = "arn:aws:secretsmanager:*:${local.iam.users.admin.account_id}:secret"
 }
