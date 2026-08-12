@@ -392,6 +392,13 @@ module "mlflow" {
       egress = local.s3_egress_url
     }
   }
+
+  depends_on = [
+    module.iam,
+    module.elb,
+    module.rds,
+    module.s3
+  ]
 }
 
 # TODO - 12/08/2026 - Continue here...
