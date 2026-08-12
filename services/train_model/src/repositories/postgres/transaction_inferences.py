@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import pandas as pd
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 
 from services.shared.modules.configs.dataset import DatasetConfig
 from services.shared.modules.configs.postgres import PostgresConfig
@@ -42,11 +42,18 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
                 TransactionInferences.v25, TransactionInferences.v26,
                 TransactionInferences.v27, TransactionInferences.v28,
             )
+            .distinct(TransactionInferences.transaction_id)
             .where(
-                TransactionInferences.transaction_timestamp > cutoff_subquery,
+                or_(
+                    TransactionInferences.transaction_timestamp > cutoff_subquery,
+                    cutoff_subquery.is_(None)
+                ),
                 TransactionInferences.is_fraud.is_not(None),
             )
-            .order_by(func.random())
+            .order_by(
+                TransactionInferences.transaction_id,
+                func.random()
+            )
             .limit(DatasetConfig.maximum_dataset_rows),
             session.connection()
         )
@@ -54,8 +61,17 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
         if len(df) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
+        # Convert bool to integer
+        df[TransactionInferences.is_fraud.key] = df[TransactionInferences.is_fraud.key].astype(int)
         # Convert datetime64[ns, UTC] to seconds
-        df[TransactionInferences.transaction_timestamp.key] = df[TransactionInferences.transaction_timestamp.key].astype("int64") // 10 ** 9
+        df_current[TransactionInferences.transaction_timestamp.key] = (
+            pd.to_datetime(
+                df_current[TransactionInferences.transaction_timestamp.key],
+                utc=True
+            )
+            .astype("datetime64[s, UTC]")
+            .astype("int64")
+        )
 
         return TransactionInferencesDatasetNow(
             dataset=df,

@@ -96,7 +96,7 @@ def approve_retraining(
         )
 
 @slack_app.action("reject_retraining")
-def reject_training(
+def reject_retraining(
     ack,
     body,
     action,
@@ -174,5 +174,5 @@ def start_socket_mode() -> None:
     threading.Thread(
         target=handler.start,
         daemon=True,
-        name="slack-socket-mode"
+        name="slack_socket_mode"
     ).start()
