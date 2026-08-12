@@ -9,6 +9,7 @@ from services.drift_check.src.modules.configs.evidently import evidently_config
 from services.drift_check.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
+from services.shared.modules.configs.dataset import DatasetConfig
 from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
@@ -33,11 +34,15 @@ def run_drift_report(
         data=df_current,
         data_definition=data_definition
     )
+
+    # Only include ClassificationPreset if there's enough labeled data
+    # Fraud labels arrive earlier which skews concept drift
+    metrics: list[DataDriftPreset | ClassificationPreset] = [DataDriftPreset()]
+    if df_current[TransactionInferences.is_fraud.key].count() >= DatasetConfig.minimum_rows:
+        metrics.append(ClassificationPreset())
+
     report = Report(
-        metrics=[
-            DataDriftPreset(),
-            ClassificationPreset()
-        ]
+        metrics=metrics
     )
     result = report.run(
         reference_data=reference_dataset,
@@ -70,11 +75,11 @@ def extract_drift_summary(
                 if info.get("drift_detected", False) and feature_name in feature_names
             ]
             data_drift = {
-                evidently_config.DRIFTED_KEY: result.get("dataset_drift", False),
                 "share_drifted_features": result.get("share_drifted_features", 0.0),
                 "number_of_drifted_features": result.get("number_of_drifted_features", 0),
                 "total_features": result.get("number_of_columns", len(feature_names)),
                 "drifted_feature_names": drifted_feature_names,
+                evidently_config.DRIFTED_KEY: result.get("dataset_drift", False),
             }
 
         # Concept / model performance drift — P(Y|X) degradation

@@ -36,12 +36,13 @@ def load_current_dataset(
             )
             .distinct(TransactionInferences.transaction_id)
             .where(
-                TransactionInferences.transaction_timestamp > current_dataset_cutoff
+                TransactionInferences.transaction_timestamp > current_dataset_cutoff,
+                TransactionInferences.is_fraud_prediction.is_not(None),
+                TransactionInferences.is_fraud_probability.is_not(None)
             )
             .order_by(
-                TransactionInferences.transaction_id.desc(),
-                TransactionInferences.transaction_timestamp.desc(),
-                TransactionInferences.created_at.desc(),
+                TransactionInferences.transaction_id,
+                TransactionInferences.created_at.desc()
             )
             .subquery()
         )
@@ -55,10 +56,11 @@ def load_current_dataset(
         if len(df_current) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
-        # Convert bool to integer
-        df_current[TransactionInferences.is_fraud.key] = df_current[TransactionInferences.is_fraud.key].astype(int)
-        df_current[TransactionInferences.is_fraud_prediction.key] = df_current[TransactionInferences.is_fraud_prediction.key].astype(int)
-        # Convert datetime64[ns, UTC] to seconds
+        # Convert bool to float64 (int64 is non-nullable)
+        df_current[TransactionInferences.is_fraud.key] = df_current[TransactionInferences.is_fraud.key].astype("float64")
+        # Convert bool to int64
+        df_current[TransactionInferences.is_fraud_prediction.key] = df_current[TransactionInferences.is_fraud_prediction.key].astype("int64")
+        # Convert datetime64[ns, UTC] to seconds (int64)
         df_current[TransactionInferences.transaction_timestamp.key] = (
             pd.to_datetime(
                 df_current[TransactionInferences.transaction_timestamp.key],

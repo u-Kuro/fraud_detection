@@ -61,12 +61,12 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
         if len(df) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
-        # Convert bool to integer
-        df[TransactionInferences.is_fraud.key] = df[TransactionInferences.is_fraud.key].astype(int)
-        # Convert datetime64[ns, UTC] to seconds
-        df_current[TransactionInferences.transaction_timestamp.key] = (
+        # Convert bool to int64
+        df[TransactionInferences.is_fraud.key] = df[TransactionInferences.is_fraud.key].astype("int64")
+        # Convert datetime64[ns, UTC] to seconds (int64)
+        df[TransactionInferences.transaction_timestamp.key] = (
             pd.to_datetime(
-                df_current[TransactionInferences.transaction_timestamp.key],
+                df[TransactionInferences.transaction_timestamp.key],
                 utc=True
             )
             .astype("datetime64[s, UTC]")

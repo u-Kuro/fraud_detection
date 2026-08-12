@@ -88,12 +88,26 @@ def build_training_approval_blocks_initializing(
         data_drift = drift_summary.get("data_drift", {})
         concept_drift = drift_summary.get("concept_drift", {})
 
-        features_drift_text = (
-            f"{data_drift.get('share_drifted_features', 0.0):.1%}"
-            f" {data_drift.get('number_of_drifted_features', 0)}"
-            f" / {data_drift.get('total_features', 0)}"
-        )
-        concept_drift_text = f"{concept_drift.get('f1_delta', 'n/a')} F1 Δ"
+        share_drifted_features = data_drift.get("share_drifted_features")
+        number_of_drifted_features = data_drift.get("number_of_drifted_features")
+        total_features = data_drift.get("total_features")
+
+        # Data Drift
+        if (
+            share_drifted_features is not None
+            and number_of_drifted_features is not None
+            and total_features is not None
+        ):
+            features_drift_text = f"{share_drifted_features:.1%} ({number_of_drifted_features} / {total_features})"
+        else:
+            features_drift_text = "N/A"
+
+        # Concept Drift
+        f1_delta = concept_drift.get("f1_delta")
+        if f1_delta is not None:
+            concept_drift_text = f"{f1_delta:+.4f} F1 Δ"
+        else:
+            concept_drift_text = "N/A"
 
         return create_blocks(
             title="⚠️ Model Retraining Required",
