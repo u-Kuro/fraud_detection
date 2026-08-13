@@ -62,7 +62,7 @@ jobs:
         run: |
           if [ -n "$IMAGE_TAG" ]; then
             helm upgrade --install fraud-detection \
-              ./platform-gitops/helm/fraud_detection \
+              ./infrastructure/helm/fraud_detection \
               --namespace default \
               --set image.tag=$IMAGE_TAG \
               --set image.repository=$ECR_REPO \

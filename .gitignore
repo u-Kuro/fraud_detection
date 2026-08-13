@@ -11,13 +11,13 @@
 **/secret.yaml
 
 # Terraform
-platform-gitops/local_files
-platform-gitops/.terraform
-platform-gitops/.terraform.lock.hcl
-platform-gitops/*.tfstate
-platform-gitops/*.tfstate.backup
-platform-gitops/.terraform.tfstate.lock.info
-platform-gitops/terraform.tfvars
+infrastructure/local_files
+infrastructure/.terraform
+infrastructure/.terraform.lock.hcl
+infrastructure/*.tfstate
+infrastructure/*.tfstate.backup
+infrastructure/.terraform.tfstate.lock.info
+infrastructure/terraform.tfvars
 
 # Python dependencies
 .venv/
@@ -37,5 +37,5 @@ __pycache__
 /*.md
 delete
 my_current_codes.zip
-platform-gitops/terraform.zip
-platform-gitops.zip
+infrastructure/terraform.zip
+infrastructure.zip

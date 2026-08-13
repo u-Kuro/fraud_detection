@@ -5,10 +5,10 @@ AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
 POSTGRES_CONNECTION_URI=postgresql://mle_migrations:mle_migrations@<rds_address>:port/main?sslmode=disable
-KUBECONFIG_B64=<base64 of ./platform-gitops/kubeconfig/k3s.yaml>
+KUBECONFIG_B64=<base64 of ./infrastructure/kubeconfig/k3s.yaml>
 
 # Generate KUBECONFIG_B64 (PowerShell):
-$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes(".\platform-gitops\kubeconfig\k3s.yaml"))
+$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes(".\infrastructure\kubeconfig\k3s.yaml"))
 Add-Content .secrets "KUBECONFIG_B64=$b64"
 
 # ── Run CI workflows (build image, lint) ────────────────────────────────────
