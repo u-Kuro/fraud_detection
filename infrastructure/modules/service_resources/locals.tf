@@ -1,3 +1,14 @@
+# URLs
+# url - http://[$container_ip]:[$port|4566]
+# ingress_url - http://[alb-dns]/[deployment-path] or http://[$container_ip]:[node-port]
+# egress_url - http://[$gateway_ip]:[$port|4566]
+# intra_url (same-namespace) - http://[service-name]:[port]
+# inter_url (cross-namespace) - http://[service-name].[namespace].svc.cluster.local:[port]
+
+# URIs
+# s3_egress - aws --endpoint-url http://[$gateway_ip]:[$port|4566] s3 cp s3://my-bucket/file
+# postgres_egress - psql postgresql://admin:password@[$gateway_ip]:[$rds_host_port|15432]/mydb
+
 # INPUTS
 locals {
   iam    = var.iam

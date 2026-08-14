@@ -1,22 +1,16 @@
-variable "rds" {
-  type = object({
-    postgres = object({
-      password = string
-      username = string
-    })
-    role = object({
-      name = string
-    })
-  })
+# RDS
+# /service
+variable "rds_role_name" {type = string}
+# /postgres
+variable "rds_postgres_username" {
+  type = string
+  sensitive = true
+}
+variable "rds_postgres_password" {
+  type = string
   sensitive = true
 }
 
-variable "s3" {
-  type = object({
-    buckets = object({
-      postgres = object({
-        arn = string
-      })
-    })
-  })
-}
+# S3
+# /postgres
+variable "s3_postgres_bucket_arn" {type = string}

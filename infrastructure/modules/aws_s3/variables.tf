@@ -1,27 +1,11 @@
-variable "iam" {
-  type = object({
-    users = object({
-      teams = map(object({
-        role = object({
-          name = string
-        })
-      }))
-    })
-  })
-}
+# IAM
+# /teams
+variable "iam_teams_names" {type = map(string)}
 
-variable "mwaa" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
+# MWAA
+# /teams
+variable "mwaa_teams" { type = set(string)}
 
-variable "s3" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
+# S3
+# /teams
+variable "s3_teams" { type = set(string)}

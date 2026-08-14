@@ -11,7 +11,7 @@ variable "iam_admin_password" {
   sensitive = true
 }
 # /teams
-variable "iam_teams_role_arn" { type = map(string) }
+variable "iam_teams_role_arns" { type = map(string) }
 
 # EC2
 # /service
@@ -41,14 +41,13 @@ variable "eks_role_name" { type = string }
 variable "eks_host_endpoint_url" { type = string }
 # /teams
 variable "eks_teams" { type = set(string) }
-variable "eks_teams_namespace" { type = map(string) }
+variable "eks_teams_namespaces" { type = map(string) }
 
 # Local Files
-# /path
-variable "local_files_kubeconfig_file_path" { type = string }
+# /paths
+variable "local_files_kubeconfig_host_file_path" { type = string }
 variable "local_files_directory_path" { type = string }
 
 # SSM Parameter
 # /teams
-variable "ssm_parameter_teams" { type = set(string) }
-variable "ssm_parameter_teams_parameter_path" { type = map(string) }
+variable "ssm_teams_parameter_path" { type = map(string) }

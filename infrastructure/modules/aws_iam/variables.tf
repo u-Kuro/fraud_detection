@@ -1,7 +1,3 @@
-variable "iam" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
+# IAM
+# /teams
+variable "iam_teams" { type = set(string) }

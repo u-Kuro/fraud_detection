@@ -25,8 +25,8 @@ module "iam" {
   }
 }
 
-module "ssm_parameter" {
-  source = "./modules/aws_ssm_parameter"
+module "ssm" {
+  source = "modules/aws_ssm"
 
   iam = {
     users = {

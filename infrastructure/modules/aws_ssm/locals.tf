@@ -1,8 +1,4 @@
-# INPUTS
-locals {
-  iam           = var.iam
-  ssm_parameter = var.ssm_parameter
-}
+
 # COMPUTED
 locals {
   # SSM PARAMETER

@@ -1,3 +1,5 @@
+# MWAA / Nektos /
+
 # EKS TEAMS' CONFIG MAPS
 resource "kubernetes_config_map" "eks_teams_base_config_map" {
   for_each = local.eks.users.teams
@@ -9,16 +11,17 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
 
   data = {
     # POSTGRES
-    PGHOST     = local.rds.postgres.host
-    PGPORT     = local.rds.postgres.port
+    PGHOST     = var.rds_postgres_egress_host # [$gateway_ip]
+    PGPORT     = var.rds_postgres_egress_port # [$rds_host_port|15432]
     PGDATABASE = local.rds.postgres.db_name
     # S3 / MWAA
+    AWS_ENDPOINT_URL = var.s3_egress_url # http://[$gateway_ip]:[$port|4566] - For all stuff in boto e.g. s3 or dynamodb
     AWS_DEFAULT_REGION = local.iam.users.admin.region
     # MWAA
-    AWS_ENDPOINT_URL_MWAA = local.mwaa.url.egress
+    AWS_ENDPOINT_URL_MWAA = var.mwaa_egress_url
     MWAA_ENVIRONMENT_NAME = local.mwaa.users.teams[each.key].environment.name # Not Fixed
     # MLFLOW
-    MLFLOW_TRACKING_URI = local.mlflow.url.internal
+    MLFLOW_TRACKING_URI = var.mlflow_inter_url
     # SLACK (TEAM CREATED)
     # SLACK_CHANNEL_ID = ""
   }
@@ -210,7 +213,7 @@ resource "aws_secretsmanager_secret_version" "mlflow_tracking_uri" {
   for_each  = aws_secretsmanager_secret.mlflow_tracking_uri
   secret_id = each.value.id
 
-  secret_string = local.mlflow.url.ingress
+  secret_string = var.mlflow_ingress_url
 
   depends_on = [aws_secretsmanager_secret.mlflow_tracking_uri]
 }

@@ -1,72 +1,44 @@
-variable "iam" {
-  type = object({
-    users = object({
-      admin = object({
-        account_id = string
-      })
-      teams = map(object({
-        role = object({
-          arn  = string
-          name = string
-        })
-      }))
-    })
-  })
+# IAM
+# /admin
+variable "iam_admin_account_id" { type = string }
+# /teams
+variable "iam_teams_names" { type = map(string) }
+variable "iam_teams_role_arns" { type = map(string) }
+
+# Local Files
+# /paths
+variable "local_files_mwaa_requirements_file_path" { type = string }
+variable "local_files_kubeconfig_container_file_path" { type = string }
+
+# Ministack
+variable "ministack_ip" { type = string }
+variable "ministack_port" { type = number }
+
+# MWAA
+# /teams
+variable "mwaa_teams" { type = set(string) }
+
+# S3
+# /mwaa
+variable "s3_teams_mwaa_bucket_name" { type = string }
+variable "s3_teams_mwaa_bucket_arn" { type = string }
+variable "s3_teams_mwaa_requirements_file_path" {
+  type    = string
+  default = "requirements.txt"
+}
+variable "s3_teams_mwaa_dag_path" {
+  type    = string
+  default = "DAG"
+}
+variable "s3_teams_mwaa_kubeconfig_file_path" {
+  type    = string
+  default = "kubeconfig.yaml" # /usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]
 }
 
-variable "local_files" {
-  type = object({
-    directory = object({
-      path = string
-    })
-    mwaa_requirements = object({
-      file = object({
-        path = string
-      })
-    })
-    kubeconfig = object({
-      container = object({
-        file = object({
-          path = string
-        })
-      })
-    })
-  })
-}
+# Secrets Manager
+# /urls
+variable "secrets_manager_container_endpoint_url" { type = string }
 
-variable "mwaa" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
-
-variable "s3" {
-  type = object({
-    buckets = object({
-      teams_mwaa = map(object({
-        arn  = string
-        name = string
-      }))
-    })
-  })
-}
-
-variable "secrets_manager" {
-  type = object({
-    container = object({
-      endpoint_url = string
-    })
-  })
-}
-
-variable "ssm_parameter" {
-  type = object({
-    users = object({
-      teams = map(object({
-        path = string
-      }))
-    })
-  })
-}
+# SSM Parameter
+# /teams
+variable "ssm_teams_parameter_path" { type = map(string) }

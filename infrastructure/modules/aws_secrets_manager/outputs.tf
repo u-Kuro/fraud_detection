@@ -1,10 +1,1 @@
-output "users" {
-  value = {
-    teams = {
-      for k, v in local.secrets_manager_users.teams : k => {
-        path = v.path
-      }
-    }
-  }
-}
-
+output "teams_secret_path" {value = local.secrets_manager_teams_secret_paths}

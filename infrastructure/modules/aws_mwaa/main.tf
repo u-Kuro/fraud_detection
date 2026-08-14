@@ -1,35 +1,41 @@
-# MWAA
+# Set Python package requirements for MWAA environments
 resource "aws_s3_object" "upload_requirements_for_mwaa" {
-  for_each = local.s3.buckets.teams_mwaa
-  bucket   = each.value.name
-  key      = local.s3_mwaa_requirements_path
-  source   = local.local_files.mwaa_requirements.file.path
-  etag     = filemd5(local.local_files.mwaa_requirements.file.path)
+  for_each = var.mwaa_teams
+  bucket   = var.s3_teams_mwaa_bucket_name[each.key]
+  key      = var.s3_teams_mwaa_requirements_file_path
+  source   = var.local_files_mwaa_requirements_file_path
+  etag     = filemd5(var.local_files_mwaa_requirements_file_path)
 }
+# Upload K8s cluster credential file in MWAA environments for authentication
 resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
-  for_each = local.s3.buckets.teams_mwaa
-  bucket   = each.value.name
-  key      = "${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
-  source   = local.local_files.kubeconfig.host.file.path
-  etag     = filemd5(local.local_files.kubeconfig.host.file.path)
+  for_each = var.mwaa_teams
+  bucket   = var.s3_teams_mwaa_bucket_name[each.key]
+  key      = "${var.s3_teams_mwaa_dag_path}/${var.s3_teams_mwaa_kubeconfig_file_path}"
+  source   = var.local_files_kubeconfig_container_file_path
+  etag     = filemd5(var.local_files_kubeconfig_container_file_path)
+}
+# Create MWAA environments for each team
+locals {
+  mwaa_teams_airflow_secrets_backend_connections_prefixes = { for v in var.mwaa_teams : k => "airflow/connections/${v}" }
+  mwaa_teams_airflow_secrets_backend_variables_prefixes   = { for v in var.mwaa_teams : k => "airflow/variables/${v}" }
 }
 resource "aws_mwaa_environment" "teams" {
-  for_each           = local.mwaa.users.teams
+  for_each           = var.mwaa_teams
   name               = each.key
   airflow_version    = "2.10.3"
-  execution_role_arn = local.iam.users.teams[each.key].role.arn
+  execution_role_arn = var.iam_teams_role_arns[each.key]
 
-  source_bucket_arn    = local.s3.buckets.teams_mwaa[each.key].arn
-  requirements_s3_path = local.s3_mwaa_requirements_path
-  dag_s3_path          = "${local.s3_mwaa_dag_path}/"
+  source_bucket_arn    = var.s3_teams_mwaa_bucket_arn[each.key]
+  requirements_s3_path = var.s3_teams_mwaa_requirements_file_path
+  dag_s3_path          = "${var.s3_teams_mwaa_dag_path}/"
 
   airflow_configuration_options = {
     "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
     "secrets.backend_kwargs" = jsonencode({
-      connections_prefix = "${local.airflow_secrets_backend.connections.prefix}/${each.key}"
-      variables_prefix   = "${local.airflow_secrets_backend.variables.prefix}/${each.key}"
+      connections_prefix = local.mwaa_teams_airflow_secrets_backend_connections_prefixes[each.key]
+      variables_prefix   = local.mwaa_teams_airflow_secrets_backend_variables_prefixes[each.key]
       sep                = "/"
-      endpoint_url       = local.secrets_manager.container.endpoint_url
+      endpoint_url       = var.secrets_manager_container_endpoint_url
     })
   }
 
@@ -43,10 +49,19 @@ resource "aws_mwaa_environment" "teams" {
     aws_s3_object.upload_kubeconfig_for_mwaa,
   ]
 }
-# MWAA TEAMS' PERMISSIONS
-resource "aws_iam_role_policy" "teams_mwaa" {
-  for_each = local.mwaa.users.teams
-  role     = local.iam.users.teams[each.key].role.name
+# Allow teams to manage attached repositories in their MWAA environments
+locals {
+  secrets_manager_base_arn = "arn:aws:secretsmanager:*:${var.iam_admin_account_id}:secret"
+  secrets_manager_mwaa_teams_airflow_secrets_backend_connections_arns = {
+    for k, v in local.mwaa_teams_airflow_secrets_backend_connections_prefixes : k => "${local.secrets_manager_base_arn}:${v}"
+  }
+  secrets_manager_mwaa_teams_airflow_secrets_backend_variables_arns = {
+    for k, v in local.mwaa_teams_airflow_secrets_backend_variables_prefixes : k => "${local.secrets_manager_base_arn}:${v}"
+  }
+}
+resource "aws_iam_user_policy" "teams" {
+  for_each = var.mwaa_teams
+  user     = var.iam_teams_names[each.key]
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -55,11 +70,12 @@ resource "aws_iam_role_policy" "teams_mwaa" {
         Effect = "Allow"
         Action = "secretsmanager:*"
         Resource = [
-          "${local.secrets_manager_airflow.connections.arn}/${each.key}/",
-          "${local.secrets_manager_airflow.connections.arn}/${each.key}/*",
-
-          "${local.secrets_manager_airflow.variables.arn}/${each.key}/",
-          "${local.secrets_manager_airflow.variables.arn}/${each.key}/*",
+          # connections
+          "${local.secrets_manager_mwaa_teams_airflow_secrets_backend_connections_arns[each.key]}/",
+          "${local.secrets_manager_mwaa_teams_airflow_secrets_backend_connections_arns[each.key]}/*",
+          # variables
+          "${local.secrets_manager_mwaa_teams_airflow_secrets_backend_variables_arns[each.key]}/",
+          "${local.secrets_manager_mwaa_teams_airflow_secrets_backend_variables_arns[each.key]}/*",
         ]
       },
       {
@@ -69,8 +85,8 @@ resource "aws_iam_role_policy" "teams_mwaa" {
           "s3:DeleteObjectVersion"
         ]
         Resource = [
-          "${local.s3.buckets.teams_mwaa[each.key].arn}/${local.s3_mwaa_requirements_path}",
-          "${local.s3.buckets.teams_mwaa[each.key].arn}/${local.s3_mwaa_dag_path}/${local.s3_kubeconfig_file_path_for_mwaa}"
+          aws_s3_object.upload_requirements_for_mwaa[each.key].arn,
+          aws_s3_object.upload_kubeconfig_for_mwaa[each.key].arn
         ]
       }
     ]

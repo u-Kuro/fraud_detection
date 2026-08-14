@@ -2,7 +2,7 @@
 # /admin
 variable "iam_admin_account_id" { type = string }
 # /teams
-variable "iam_teams_role_name" { type = map(string) }
+variable "iam_teams_names" { type = map(string) }
 
 # ECR
 # /teams

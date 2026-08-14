@@ -1,5 +1,3 @@
-output "alb" {
-  value = {
-    dns_name = aws_lb.alb.dns_name
-  }
-}
+# ELB
+# /alb
+output "alb_dns_name" { value = aws_lb.alb.dns_name }

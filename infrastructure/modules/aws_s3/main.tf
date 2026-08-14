@@ -1,6 +1,6 @@
-# POSTGRES
+# Create bucket for RDS Postgres
 resource "aws_s3_bucket" "postgres" {
-  bucket        = "PostgreSQL"
+  bucket        = "Postgres"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "postgres" {
@@ -21,7 +21,7 @@ resource "aws_s3_bucket_public_access_block" "postgres" {
 
   depends_on = [aws_s3_bucket.postgres]
 }
-# MLFLOW
+# Create bucket for MLflow
 resource "aws_s3_bucket" "mlflow" {
   bucket        = "MLflow"
   force_destroy = true
@@ -44,10 +44,10 @@ resource "aws_s3_bucket_public_access_block" "mlflow" {
 
   depends_on = [aws_s3_bucket.mlflow]
 }
-# TEAMS
+# Create buckets for each team
 resource "aws_s3_bucket" "teams" {
-  for_each      = local.s3.users.teams
-  bucket        = each.key
+  for_each      = var.s3_teams
+  bucket        = each.value
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "teams" {
@@ -70,10 +70,10 @@ resource "aws_s3_bucket_public_access_block" "teams" {
 
   depends_on = [aws_s3_bucket.teams]
 }
-# TEAMS' PERMISSIONS
-resource "aws_iam_role_policy" "teams" {
-  for_each = local.s3.users.teams
-  role     = local.iam.users.teams[each.key].role.name
+# Allow teams to manage their own bucket
+resource "aws_iam_user_policy" "teams" {
+  for_each = aws_s3_bucket.teams
+  user     = var.iam_teams_names[each.key]
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -82,8 +82,8 @@ resource "aws_iam_role_policy" "teams" {
         Effect = "Allow"
         Action = "s3:*"
         Resource = [
-          aws_s3_bucket.teams[each.key].arn,
-          "${aws_s3_bucket.teams[each.key].arn}/*"
+          each.value.arn,
+          "${each.value.arn}/*"
         ]
       },
       {
@@ -91,16 +91,16 @@ resource "aws_iam_role_policy" "teams" {
         Action = [
           "s3:DeleteBucket"
         ]
-        Resource = aws_s3_bucket.teams[each.key].arn
+        Resource = each.value.arn
       }
     ]
   })
 
   depends_on = [aws_s3_bucket.teams]
 }
-# TEAMS' MWAA
+# Create buckets for each team with MWAA
 resource "aws_s3_bucket" "teams_mwaa" {
-  for_each      = local.mwaa.users.teams
+  for_each      = var.mwaa_teams
   bucket        = "${each.key}_MWAA"
   force_destroy = true
 }
@@ -114,10 +114,10 @@ resource "aws_s3_bucket_versioning" "teams_mwaa" {
 
   depends_on = [aws_s3_bucket.teams_mwaa]
 }
-# TEAMS' MWAA PERMISSIONS
-resource "aws_iam_role_policy" "teams_mwaa" {
-  for_each = local.mwaa.users.teams
-  role     = local.iam.users.teams[each.key].role.name
+# Allow teams to manage their own buckets used in MWAA
+resource "aws_iam_user_policy" "teams_mwaa" {
+  for_each = aws_s3_bucket.teams_mwaa
+  user     = var.iam_teams_names[each.key]
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -126,8 +126,8 @@ resource "aws_iam_role_policy" "teams_mwaa" {
         Effect = "Allow"
         Action = "s3:*"
         Resource = [
-          aws_s3_bucket.teams_mwaa[each.key].arn,
-          "${aws_s3_bucket.teams_mwaa[each.key].arn}/*"
+          each.value.arn,
+          "${each.value.arn}/*"
         ]
       },
       {
@@ -135,7 +135,7 @@ resource "aws_iam_role_policy" "teams_mwaa" {
         Action = [
           "s3:DeleteBucket"
         ]
-        Resource = aws_s3_bucket.teams_mwaa[each.key].arn
+        Resource = each.value.arn
       }
     ]
   })

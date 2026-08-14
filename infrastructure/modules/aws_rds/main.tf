@@ -1,16 +1,17 @@
-# RDS
+# Create Postgres in RDS
 resource "aws_db_instance" "postgres" {
   identifier          = "RDS"
   engine              = "postgres"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
-  username            = local.rds.postgres.username
-  password            = local.rds.postgres.password
-  db_name             = "MAIN"
+  username            = var.rds_postgres_username
+  password            = var.rds_postgres_password
+  db_name             = "main"
   skip_final_snapshot = true
 }
-resource "aws_iam_role_policy" "postgres_s3" {
-  role = local.rds.role.name
+# Allow snapshots/backup in RDS
+resource "aws_iam_role_policy" "rds" {
+  role = var.rds_role_name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -18,8 +19,8 @@ resource "aws_iam_role_policy" "postgres_s3" {
         Effect = "Allow"
         Action = "s3:*"
         Resource = [
-          local.s3.buckets.postgres.arn,
-          "${local.s3.buckets.postgres.arn}/*"
+          var.s3_postgres_bucket_arn,
+          "${var.s3_postgres_bucket_arn}/*"
         ]
       }
     ]

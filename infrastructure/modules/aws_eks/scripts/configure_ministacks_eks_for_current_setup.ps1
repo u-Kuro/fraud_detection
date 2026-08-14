@@ -1,4 +1,4 @@
-param(
+w1param(
     [Parameter(Mandatory)][securestring]$aws_admin_access_key,
     [Parameter(Mandatory)][securestring]$aws_admin_secret_key,
     [Parameter(Mandatory)][string]$aws_admin_region,
@@ -11,7 +11,7 @@ param(
     [Parameter(Mandatory)][string]$kubeconfig_host_file_path,
 
     # containerd registry config that redirects image pulls to MiniStack's ECR
-    [Parameter(Mandatory)][string]$registries_host_file_path
+    [Parameter(Mandatory)][string]$registries_file_path
 )
 
 Set-StrictMode -Version Latest
@@ -105,7 +105,7 @@ Write-Host "[EKS] k3s API is ready."
 # k3s uses containerd (not the Docker daemon), so docker login has no effect.
 # Copy registries.yaml into the container so containerd can find MiniStack's
 # ECR, then restart k3s to pick up the config.
-docker cp $registries_host_file_path "${eks_container_name}:${k3s_config_directory_path}/registries.yaml"
+docker cp $registries_file_path "${eks_container_name}:${k3s_config_directory_path}/registries.yaml"
 docker restart $eks_container_name
 Write-Host "[EKS] Registry config applied, waiting for k3s to recover after restart..."
 $max_recovery_wait = 120; $recovery_waited = 0; $api_recovered = $false

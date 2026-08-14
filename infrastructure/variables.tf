@@ -7,10 +7,6 @@ locals {
 data "external" "ministack_ip" {
   program     = ["powershell", "-File", "${local.scripts_directory_path}/get_ministack_network_ip.ps1"]
   working_dir = path.root
-  query = {
-    ministack_network_name   = "ministack_network"
-    ministack_container_name = local.ministack_container_name
-  }
 }
 locals {
   ministack_ip = data.external.ministack_ip.result.ip
