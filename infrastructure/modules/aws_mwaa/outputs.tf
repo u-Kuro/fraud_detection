@@ -1,6 +1,6 @@
 output "url" {
   value = {
-    egress = "http://${var.ministack.ip}:4566"
+    egress = "http://${local.ministack.ip}:4566"
   }
 }
 

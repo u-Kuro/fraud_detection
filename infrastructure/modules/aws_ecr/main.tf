@@ -1,7 +1,8 @@
-# TEAMS' ECR PERMISSIONS
-resource "aws_iam_role_policy" "teams_ecr" {
-  for_each = local.ecr.users.teams
-  role     = local.iam.users.teams[each.key].role.name
+# Authorize Teams to their ECR repository
+locals { ecr_repository_arn = "arn:aws:ecr:*:${var.iam_admin_account_id}:repository" }
+resource "aws_iam_role_policy" "ecr_teams" {
+  for_each = var.ecr_teams
+  role     = var.iam_teams_role_name[each.key]
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -14,8 +15,8 @@ resource "aws_iam_role_policy" "teams_ecr" {
         Effect = "Allow"
         Action = "ecr:*"
         Resource = [
-          "arn:aws:ecr:*:${local.iam.users.admin.account_id}:repository/${each.key}",
-          "arn:aws:ecr:*:${local.iam.users.admin.account_id}:repository/${each.key}/*"
+          "${local.ecr_repository_arn}/${each.key}",
+          "${local.ecr_repository_arn}/${each.key}/*"
         ]
       }
     ]

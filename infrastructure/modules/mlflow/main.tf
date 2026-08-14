@@ -19,30 +19,30 @@ resource "helm_release" "mlflow" {
     { name = "service.port", value = local.system_ports.http },
     { name = "service.containerPort", value = local.mlflow.port.container },
 
-    { name = "backendStore.postgres.host", value = local.rds.host },
-    { name = "backendStore.postgres.port", value = local.rds.port },
-    { name = "backendStore.postgres.database", value = local.rds.db_name },
+    { name = "backendStore.postgres.host", value = local.rds.postgres.host },
+    { name = "backendStore.postgres.port", value = local.rds.postgres.port },
+    { name = "backendStore.postgres.database", value = local.rds.postgres.db_name },
 
     { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = local.s3.url.egress },
     { name = "extraEnvVars.AWS_DEFAULT_REGION", value = local.iam.users.admin.region },
     { name = "artifactRoot.s3.bucket", value = local.s3.buckets.mlflow.name },
 
-    { name = "auth.postgres.host", value = local.rds.host },
-    { name = "auth.postgres.port", value = local.rds.port },
-    { name = "auth.postgres.database", value = local.rds.db_name },
+    { name = "auth.postgres.host", value = local.rds.postgres.host },
+    { name = "auth.postgres.port", value = local.rds.postgres.port },
+    { name = "auth.postgres.database", value = local.rds.postgres.db_name },
   ]
 
   set_sensitive = [
-    { name = "backendStore.postgres.user", value = local.rds.users.mlflow.username },
-    { name = "backendStore.postgres.password", value = local.rds.users.mlflow.password },
+    { name = "backendStore.postgres.user", value = local.rds.postgres.users.mlflow.username },
+    { name = "backendStore.postgres.password", value = local.rds.postgres.users.mlflow.password },
 
     { name = "artifactRoot.s3.awsAccessKeyId", value = local.iam.users.admin.username },
     { name = "artifactRoot.s3.awsSecretAccessKey", value = local.iam.users.admin.password },
 
     { name = "auth.adminUsername", value = local.mlflow.users.admin.username },
     { name = "auth.adminPassword", value = local.mlflow.users.admin.password },
-    { name = "auth.postgres.user", value = local.rds.users.mlflow.username },
-    { name = "auth.postgres.password", value = local.rds.users.mlflow.password },
+    { name = "auth.postgres.user", value = local.rds.postgres.users.mlflow.username },
+    { name = "auth.postgres.password", value = local.rds.postgres.users.mlflow.password },
     { name = "flaskServerSecretKey", value = local.mlflow.flask_server_secret_key },
   ]
 }
@@ -114,7 +114,7 @@ resource "kubernetes_job" "mlflow_teams" {
   for_each = local.mlflow.users.teams
 
   metadata {
-    name      = "CREATE_${each.key}_MLFLOW_WORKSPACE"
+    name      = "CREATE_MLFLOW_WORKSPACE_FOR_${each.key}"
     namespace = local.eks.kubernetes.mlflow.namespace
   }
 
@@ -132,7 +132,7 @@ resource "kubernetes_job" "mlflow_teams" {
         }
 
         container {
-          name  = "CREATE_${each.key}_MLFLOW_WORKSPACE"
+          name  = "CREATE_MLFLOW_WORKSPACE_FOR_${each.key}"
           image = "alpine:3"
 
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
@@ -142,7 +142,11 @@ resource "kubernetes_job" "mlflow_teams" {
             value = local.mlflow_url.internal
           }
           env {
-            name  = "TEAM"
+            name  = "WORKSPACE_NAME"
+            value = each.key
+          }
+          env {
+            name  = "USERNAME"
             value = each.key
           }
           env {

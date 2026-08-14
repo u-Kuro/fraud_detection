@@ -1,86 +1,54 @@
-variable "iam" {
-  type = object({
-    users = object({
-      admin = object({
-        arn      = string
-        username = string
-        region   = string
-        password = string
-      })
-      teams = map(object({
-        role = object({
-          arn = string
-        })
-      }))
-    })
-  })
+# IAM
+# /admin
+variable "iam_admin_role_arn" { type = string }
+variable "iam_admin_region" { type = string }
+variable "iam_admin_username" {
+  type      = string
   sensitive = true
 }
-
-variable "ec2" {
-  type = object({
-    role = object({
-      arn  = string
-      name = string
-    })
-  })
-}
-
-variable "ecr" {
-  type = object({
-    container = object({
-      endpoint     = string
-      endpoint_url = string
-    })
-    aws = object({
-      endpoint = string
-    })
-    password = string
-    username = string
-  })
+variable "iam_admin_password" {
+  type      = string
   sensitive = true
 }
+# /teams
+variable "iam_teams_role_arn" { type = map(string) }
 
-variable "eks" {
-  type = object({
-    host = object({
-      endpoint_url = string
-    })
-    role = object({
-      arn  = string
-      name = string
-    })
-    users = object({
-      teams = map(object({
-        kubernetes = object({
-          namespace = string
-        })
-      }))
-    })
-  })
-}
+# EC2
+# /service
+variable "ec2_role_arn" { type = string }
+variable "ec2_role_name" { type = string }
 
-variable "local_files" {
-  type = object({
-    kubeconfig = object({
-      host = object({
-        file = object({
-          path = string
-        })
-      })
-    })
-    directory = object({
-      path = string
-    })
-  })
+# ECR
+# /credentials
+variable "ecr_username" {
+  type      = string
+  sensitive = true
 }
+variable "ecr_password" {
+  type      = string
+  sensitive = true
+}
+# /urls
+variable "ecr_aws_endpoint" { type = string }
+variable "ecr_container_endpoint" { type = string }
+variable "ecr_container_endpoint_url" { type = string }
 
-variable "ssm_parameter" {
-  type = object({
-    users = object({
-      teams = map(object({
-        path = string
-      }))
-    })
-  })
-}
+# EKS
+# /service
+variable "eks_role_arn" { type = string }
+variable "eks_role_name" { type = string }
+# /urls
+variable "eks_host_endpoint_url" { type = string }
+# /teams
+variable "eks_teams" { type = set(string) }
+variable "eks_teams_namespace" { type = map(string) }
+
+# Local Files
+# /path
+variable "local_files_kubeconfig_file_path" { type = string }
+variable "local_files_directory_path" { type = string }
+
+# SSM Parameter
+# /teams
+variable "ssm_parameter_teams" { type = set(string) }
+variable "ssm_parameter_teams_parameter_path" { type = map(string) }

@@ -10,8 +10,6 @@ resource "aws_iam_role_policy" "teams_secrets_manager" {
         Effect = "Allow"
         Action = "secretsmanager:*"
         Resource = [
-          "${local.secrets_manager_arn}:${local.secrets_manager_users.teams[each.key].path}",
-          "${local.secrets_manager_arn}:${local.secrets_manager_users.teams[each.key].path}-*",
           "${local.secrets_manager_arn}:${local.secrets_manager_users.teams[each.key].path}/",
           "${local.secrets_manager_arn}:${local.secrets_manager_users.teams[each.key].path}/*",
         ]

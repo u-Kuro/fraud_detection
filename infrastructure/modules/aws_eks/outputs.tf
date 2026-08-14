@@ -1,27 +1,13 @@
-output "cluster" {
-  value = {
-    endpoint = aws_eks_cluster.main.endpoint
-    ip       = regex("https://([^:]+):", aws_eks_cluster.main.endpoint)[0]
-    name     = aws_eks_cluster.main.name
-    users = {
-      teams = {
-        for k, v in local.eks.users.teams : k => {
-          kubernetes = {
-            namespace = local.eks_users.teams[k].kubernetes.namespace
-          }
-        }
-      }
-    }
-  }
-}
+# EKS
+# /cluster
+output "cluster_name" { value = aws_eks_cluster.main.name }
+# /urls
+output "cluster_endpoint" { value = aws_eks_cluster.main.endpoint }
+output "cluster_ip" { value = regex("https://([^:]+):", aws_eks_cluster.main.endpoint)[0] }
+# /teams
+output "cluster_teams" { value = var.eks_teams }
+output "cluster_teams_namespace" { value = var.eks_teams_namespace }
 
-output "local_files" {
-  value = {
-    kubeconfig_container = {
-      path = local_sensitive_file.kubeconfig_container.filename
-    }
-    ecr_registries = {
-      path = local_sensitive_file.ecr_registries.filename
-    }
-  }
-}
+# Local Files
+output "local_files_kubeconfig_container_path" { value = local_sensitive_file.kubeconfig_container.filename }
+output "local_files_ecr_registries_path" { value = local_sensitive_file.ecr_registries.filename }

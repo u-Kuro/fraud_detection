@@ -7,22 +7,21 @@ apk add --no-cache curl jq > /dev/null 2>&1
 # Create user if not exists
 USER_STATUS=$( \
   curl -s -o /dev/null -w "%{http_code}" \
-  "${MLFLOW_INTERNAL_URL}/api/2.0/mlflow/users/get?username=${TEAM}" \
+  "${MLFLOW_INTERNAL_URL}/api/2.0/mlflow/users/get?username=${USERNAME}" \
   -u "${ADMIN}" \
 )
 
 if [ "$USER_STATUS" != "200" ]; then
-  echo "Creating user: ${TEAM}"
+  echo "Creating user: ${USERNAME}"
   curl -sf -X POST "${MLFLOW_INTERNAL_URL}/api/2.0/mlflow/users/create" \
     -u "${ADMIN}" \
     -H "Content-Type: application/json" \
-    -d "{\"username\": \"${TEAM}\", \"password\": \"${PASSWORD}\"}"
+    -d "{\"username\": \"${USERNAME}\", \"password\": \"${PASSWORD}\"}"
 else
-  echo "User ${TEAM} already exists, skipping."
+  echo "User ${USERNAME} already exists, skipping."
 fi
 
 # Create workspace if not exists
-WORKSPACE_NAME="${TEAM}_workspace"
 WORKSPACE_ID=$( \
   curl -sf "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces" \
   -u "${ADMIN}" | \
@@ -45,14 +44,14 @@ fi
 PERMISSION=$( \
   curl -sf "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
   -u "${ADMIN}" | \
-  jq -r ".permissions[] | select(.username == \"${TEAM}\") | .permission // empty" \
+  jq -r ".permissions[] | select(.username == \"${USERNAME}\") | .permission // empty" \
 )
 if [ "$PERMISSION" != "EDIT" ]; then
-  echo "Granting permission to ${TEAM} on workspace ${WORKSPACE_ID}"
+  echo "Granting permission to ${USERNAME} on workspace ${WORKSPACE_ID}"
   curl -sf -X POST "${MLFLOW_INTERNAL_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
     -u "${ADMIN}" \
     -H "Content-Type: application/json" \
-    -d "{\"username\": \"${TEAM}\", \"permission\": \"EDIT\"}"
+    -d "{\"username\": \"${USERNAME}\", \"permission\": \"EDIT\"}"
 else
   echo "User is already permitted, skipping."
 fi

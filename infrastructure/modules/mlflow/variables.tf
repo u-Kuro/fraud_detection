@@ -39,13 +39,15 @@ variable "mlflow" {
 
 variable "rds" {
   type = object({
-    db_name = string
-    host    = string
-    port    = number
-    users = object({
-      mlflow = object({
-        password = string
-        username = string
+    postgres = object({
+      db_name = string
+      host    = string
+      port    = number
+      users = object({
+        mlflow = object({
+          password = string
+          username = string
+        })
       })
     })
   })

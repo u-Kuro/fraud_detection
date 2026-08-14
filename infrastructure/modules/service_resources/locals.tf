@@ -67,7 +67,7 @@ locals {
         base = "KUBERNETES_CONFIG_MAP_BASE_NAME"
       }
       secret = {
-        base = "KUBERNETES_SECRET_BASE_NAME"
+        base               = "KUBERNETES_SECRET_BASE_NAME"
         docker_config_json = "KUBERNETES_SECRET_DOCKER_CONFIG_JSON_NAME"
       }
     }

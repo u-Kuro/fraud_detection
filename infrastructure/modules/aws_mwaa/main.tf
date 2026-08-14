@@ -15,7 +15,7 @@ resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
 }
 resource "aws_mwaa_environment" "teams" {
   for_each           = local.mwaa.users.teams
-  name               = "${each.key}_MWAA"
+  name               = each.key
   airflow_version    = "2.10.3"
   execution_role_arn = local.iam.users.teams[each.key].role.arn
 
@@ -55,13 +55,9 @@ resource "aws_iam_role_policy" "teams_mwaa" {
         Effect = "Allow"
         Action = "secretsmanager:*"
         Resource = [
-          "${local.secrets_manager_airflow.connections.arn}/${each.key}",
-          "${local.secrets_manager_airflow.connections.arn}/${each.key}-*",
           "${local.secrets_manager_airflow.connections.arn}/${each.key}/",
           "${local.secrets_manager_airflow.connections.arn}/${each.key}/*",
 
-          "${local.secrets_manager_airflow.variables.arn}/${each.key}",
-          "${local.secrets_manager_airflow.variables.arn}/${each.key}-*",
           "${local.secrets_manager_airflow.variables.arn}/${each.key}/",
           "${local.secrets_manager_airflow.variables.arn}/${each.key}/*",
         ]

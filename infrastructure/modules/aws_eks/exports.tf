@@ -1,6 +1,7 @@
+# TEAMS' CLUSTER
 resource "aws_ssm_parameter" "teams_eks_cluster_namespace" {
-  for_each = local.eks.users.teams
-  name  = "/${local.ssm_parameter.users.teams[each.key].path}/EKS/cluster/namespace"
-  type  = "String"
-  value = local.eks_users.teams[each.key].kubernetes.namespace
+  for_each = var.eks_teams
+  name     = "/${var.ssm_parameter_teams_parameter_path[each.key]}/EKS/cluster/namespace"
+  type     = "String"
+  value    = var.eks_teams_namespace[each.key]
 }

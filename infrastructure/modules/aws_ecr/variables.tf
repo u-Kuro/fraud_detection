@@ -1,22 +1,9 @@
-variable "iam" {
-  type = object({
-    users = object({
-      admin = object({
-        account_id = string
-      })
-      teams = map(object({
-        role = object({
-          name = string
-        })
-      }))
-    })
-  })
-}
+# IAM
+# /admin
+variable "iam_admin_account_id" { type = string }
+# /teams
+variable "iam_teams_role_name" { type = map(string) }
 
-variable "ecr" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
+# ECR
+# /teams
+variable "ecr_teams" { type = set(string) }

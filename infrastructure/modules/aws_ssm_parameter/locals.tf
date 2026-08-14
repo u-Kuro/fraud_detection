@@ -1,6 +1,6 @@
 # INPUTS
 locals {
-  iam = var.iam
+  iam           = var.iam
   ssm_parameter = var.ssm_parameter
 }
 # COMPUTED

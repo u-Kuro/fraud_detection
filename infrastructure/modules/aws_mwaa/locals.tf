@@ -5,7 +5,7 @@ locals {
   mwaa            = var.mwaa
   s3              = var.s3
   secrets_manager = var.secrets_manager
-  ssm_parameter = var.ssm_parameter
+  ssm_parameter   = var.ssm_parameter
 }
 # COMPUTED
 locals {

@@ -7,7 +7,7 @@ locals {
         MWAA            = true
         S3              = true
         SECRETS_MANAGER = true
-        SSM_PARAMETER = true
+        SSM_PARAMETER   = true
         MLFLOW          = true
         POSTGRESQL      = true
       }
@@ -285,9 +285,7 @@ module "eks" {
 module "elb" {
   source = "modules/aws_elb"
 
-  eks = {
-    ip = module.eks.cluster.ip
-  }
+  eks_ip = module.eks.cluster_ip
 
   depends_on = [module.eks]
 }
@@ -401,13 +399,15 @@ module "mlflow" {
   }
 
   rds = {
-    db_name = module.rds.postgres.db_name
-    host    = module.rds.postgres.host
-    port    = module.rds.postgres.port
-    users = {
-      mlflow = {
-        password = var.mlflow_postgresql_password
-        username = var.mlflow_postgresql_username
+    postgres = {
+      db_name = module.rds.postgres.db_name
+      host    = module.rds.postgres.host
+      port    = module.rds.postgres.port
+      users = {
+        mlflow = {
+          password = var.mlflow_postgresql_password
+          username = var.mlflow_postgresql_username
+        }
       }
     }
   }
@@ -435,7 +435,7 @@ module "mlflow" {
 module "service_resources" {
   source = "modules/service_resources"
 
-  iam    = {
+  iam = {
     users = {
       admin = {
         region = module.iam.users.admin.region
@@ -449,13 +449,13 @@ module "service_resources" {
     }
   }
 
-  ecr    = {
+  ecr = {
     aws = {
       endpoint = local.ecr_aws_endpoint
       token = {
         authorization_token = local.ecr_authorization_token
-        password = local.ecr_password
-        username = local.ecr_username
+        password            = local.ecr_password
+        username            = local.ecr_username
       }
     }
   }
@@ -474,7 +474,7 @@ module "service_resources" {
 
   mlflow = {
     url = {
-      egress = module.mlflow.mlflow_internal_url
+      egress   = module.mlflow.mlflow_internal_url
       internal = module.mlflow.mlflow_ingress_url
     }
     users = {
@@ -487,7 +487,7 @@ module "service_resources" {
     }
   }
 
-  mwaa   = {
+  mwaa = {
     url = {
       egress = module.mwaa.url.egress
     }
@@ -508,10 +508,10 @@ module "service_resources" {
     }
   }
 
-  rds    = {
+  rds = {
     postgres = {
-      host = module.rds.postgres.host
-      port = module.rds.postgres.port
+      host    = module.rds.postgres.host
+      port    = module.rds.postgres.port
       db_name = module.rds.postgres.db_name
       users = {
         teams = {

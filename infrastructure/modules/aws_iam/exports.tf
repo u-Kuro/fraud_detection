@@ -1,7 +1,7 @@
-# TEAMS CREDENTIAL
+# TEAMS' CREDENTIAL
 resource "aws_secretsmanager_secret" "teams_iam_credential" {
   for_each                = local.iam.users.teams
-  name                    = "IAM/teams/${each.key}/credential"
+  name                    = "admin/IAM/users/teams/${each.key}/credential"
   recovery_window_in_days = 0
 }
 resource "aws_secretsmanager_secret_version" "teams_iam_credential" {
