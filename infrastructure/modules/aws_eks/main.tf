@@ -95,7 +95,7 @@ resource "kubernetes_role_binding" "teams" {
 
   metadata {
     name      = "${each.key}_ROLE_BINDING"
-    namespace = var.eks_teams_namespaces[each.key]
+    namespace = local.eks_teams_namespaces[each.key]
   }
 
   role_ref {

@@ -1,16 +1,3 @@
-variable "iam" {
-  type = object({
-    users = object({
-      admin = object({
-        password = string
-        region   = string
-        username = string
-      })
-    })
-  })
-  sensitive = true
-}
-
 # IAM
 # /admin
 variable "iam_admin_username" {

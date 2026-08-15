@@ -1,5 +1,4 @@
-# TODO - 14/08/2026 - Continue here...
-# MLFLOW
+# Create MLflow release
 resource "helm_release" "mlflow" {
   name             = var.mlflow_host
   repository       = "https://community-charts.github.io/helm-charts"
@@ -47,6 +46,7 @@ resource "helm_release" "mlflow" {
     { name = "flaskServerSecretKey", value = var.mlflow_flask_server_secret_key },
   ]
 }
+# Strip prefix in url from reroutes
 resource "kubernetes_manifest" "mlflow_middleware" {
   manifest = {
     apiVersion = "traefik.io/v1alpha1"
@@ -73,7 +73,7 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
       namespace = var.eks_mlflow_namespace
     }
     spec = {
-      entryPoints = ["web", "websecure"] # http 80 / https 443
+      entryPoints = ["web"] # http 80
       routes = [
         {
           match = "PathPrefix(`/${var.mlflow_host}`)"
@@ -111,6 +111,9 @@ resource "kubernetes_config_map" "create_mlflow_workspace" {
   }
   immutable = true
 }
+locals {
+  mlflow_intra_url = "http://${var.mlflow_host}:${var.eks_traefik_http_port}"
+}
 resource "kubernetes_job" "mlflow_teams" {
   for_each = var.mlflow_teams
 
@@ -139,8 +142,8 @@ resource "kubernetes_job" "mlflow_teams" {
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
 
           env {
-            name  = "MLFLOW_INTERNAL_URL"
-            value = local.mlflow_url.internal
+            name  = "MLFLOW_URL"
+            value = local.mlflow_intra_url
           }
           env {
             name  = "WORKSPACE_NAME"

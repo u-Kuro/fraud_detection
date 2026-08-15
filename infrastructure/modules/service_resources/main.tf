@@ -21,7 +21,7 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
     AWS_ENDPOINT_URL_MWAA = var.mwaa_egress_url
     MWAA_ENVIRONMENT_NAME = local.mwaa.users.teams[each.key].environment.name # Not Fixed
     # MLFLOW
-    MLFLOW_TRACKING_URI = var.mlflow_inter_url
+    MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
     # SLACK (TEAM CREATED)
     # SLACK_CHANNEL_ID = ""
   }

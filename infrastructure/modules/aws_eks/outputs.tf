@@ -6,7 +6,7 @@ output "cluster_endpoint" { value = aws_eks_cluster.main.endpoint }
 output "cluster_ip" { value = regex("https://([^:]+):", aws_eks_cluster.main.endpoint)[0] }
 # /teams
 output "cluster_teams" { value = var.eks_teams }
-output "cluster_teams_namespaces" { value = var.eks_teams_namespaces }
+output "cluster_teams_namespaces" { value = local.eks_teams_namespaces }
 
 # Local Files
 output "local_files_kubeconfig_container_path" { value = local_sensitive_file.kubeconfig_container.filename }
