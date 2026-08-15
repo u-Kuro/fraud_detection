@@ -1,100 +1,81 @@
-variable "iam" {
-  type = object({
-    users = object({
-      admin = object({
-        region = string
-      })
-      teams = map(object({
-        password = string
-        username = string
-      }))
-    })
-  })
+# IAM
+# /admin
+variable "iam_admin_region" {type = string}
+# /teams
+variable "iam_teams_usernames" {
+  type = map(string)
+  sensitive = true
+}
+variable "iam_teams_passwords" {
+  type = map(string)
   sensitive = true
 }
 
-variable "ecr" {
-  type = object({
-    aws = object({
-      endpoint = string
-      token = object({
-        authorization_token = string
-        password            = string
-        username            = string
-      })
-    })
-  })
+# ECR
+# /aws
+variable "ecr_aws_endpoint" {type = string}
+variable "ecr_aws_authorization_token" {
+  type = string
+  sensitive = true
+}
+variable "ecr_aws_authorization_token_username" {
+  type = string
+  sensitive = true
+}
+variable "ecr_aws_authorization_token_password" {
+  type = string
   sensitive = true
 }
 
-variable "eks" {
-  type = object({
-    users = object({
-      teams = map(object({
-        kubernetes = object({
-          namespace = string
-        })
-      }))
-    })
-  })
+# EKS
+# /teams
+variable "eks_teams" {type = set(string)}
+variable "eks_teams_kubernetes_namespaces" {type = map(string)}
+
+# MLflow
+# /urls
+variable "mlflow_ingress_url" {type = string}
+variable "mlflow_inter_url" {type = string}
+# /teams
+variable "mlflow_teams" {type = set(string)}
+variable "mlflow_teams_usernames" {
+  type = map(string)
+  sensitive = true
+}
+variable "mlflow_teams_passwords" {
+  type = map(string)
+  sensitive = true
 }
 
-variable "mlflow" {
-  type = object({
-    url = object({
-      ingress  = string
-      internal = string
-    })
-    users = object({
-      teams = map(object({
-        password = string
-        username = string
-      }))
-    })
-  })
+# MWAA
+# /urls
+variable "mwaa_egress_url" {type = string}
+# /teams
+variable "mwaa_teams" {type = set(string)}
+variable "mwaa_teams_environment_names" {type = map(string)}
+variable "mwaa_teams_connections_prefixes" {type = map(string)}
+variable "mwaa_teams_variables_prefixes" {type = map(string)}
+
+# RDS
+# /postgres
+variable "rds_postgres_host" {type = string}
+variable "rds_postgres_port" {type = number}
+variable "rds_postgres_egress_host" {type = string}
+variable "rds_postgres_egress_port" {type = number}
+variable "rds_postgres_db_name" {type = string}
+# /teams
+variable "rds_postgres_teams" {type = set(string)}
+variable "rds_postgres_teams_usernames" {
+  type = map(string)
+  sensitive = true
+}
+variable "rds_postgres_teams_passwords" {
+  type = map(string)
+  sensitive = true
 }
 
-variable "mwaa" {
-  type = object({
-    url = object({
-      egress = string
-    })
-    users = object({
-      teams = map(object({
-        environment = object({
-          name = string
-        })
-        connections = object({
-          prefix = string
-        })
-        variables = object({
-          prefix = string
-        })
-      }))
-    })
-  })
-}
-
-variable "rds" {
-  type = object({
-    postgres = object({
-      host    = string
-      port    = number
-      db_name = string
-      users = object({
-        teams = map(object({
-          username = string
-          password = string
-        }))
-      })
-    })
-  })
-}
-
-variable "s3" {
-  type = object({
-    users = object({
-      teams = set(string)
-    })
-  })
-}
+# S3
+# /urls
+variable "s3_egress_url" {type = string}
+# /teams
+variable "s3_teams" {type = set(string)}

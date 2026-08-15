@@ -16,3 +16,11 @@ variable "rds_postgres_mlflow_password" {
 }
 # /teams
 variable "rds_postgres_teams" { type = set(string) }
+
+# Secrets Manager
+# /teams
+variable "secrets_manager_teams_secret_paths" { type = map(string) }
+
+# SSM
+# /teams
+variable "ssm_teams_parameter_paths" { type = map(string) }

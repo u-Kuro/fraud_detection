@@ -61,161 +61,161 @@ resource "postgresql_grant" "mlflow_sequence" {
 }
 # TODO - NEEDS TO SAVE CREDENTIALS TO SECRETSMANAGER (only teams not migration for k8s since atlas does not run there)
 # Create teams schemas
-resource "postgresql_schema" "postgresql_teams" {
+resource "postgresql_schema" "teams" {
   for_each = var.rds_postgres_teams
   name     = local.rds_postgres_teams_schemas[each.key]
   owner    = var.rds_postgres_username
 }
 # Create Postgres roles for each teams' schema
-resource "postgresql_role" "postgresql_teams" {
+resource "postgresql_role" "teams" {
   for_each            = var.rds_postgres_teams
   name                = local.rds_postgres_teams_usernames[each.key]
   password            = local.rds_postgres_teams_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
   login               = true
   skip_reassign_owned = true
-  search_path         = postgresql_schema.postgresql_teams[each.key].name
+  search_path         = postgresql_schema.teams[each.key].name
 
-  depends_on = [postgresql_schema.postgresql_teams]
+  depends_on = [postgresql_schema.teams]
 }
 # Grant teams permissions to connect to the database
-resource "postgresql_grant" "postgresql_teams_database" {
-  for_each    = postgresql_role.postgresql_teams
+resource "postgresql_grant" "teams_database" {
+  for_each    = postgresql_role.teams
   database    = var.rds_postgres_db_name
   role        = each.value.name
   object_type = "database"
   privileges  = ["CONNECT"]
 
-  depends_on = [postgresql_role.postgresql_teams]
+  depends_on = [postgresql_role.teams]
 }
 # Grant teams permissions to use objects in their schema
-resource "postgresql_grant" "postgresql_teams_schema" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_schema" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams[each.key].name
+  role        = postgresql_role.teams[each.key].name
   object_type = "schema"
   privileges  = ["USAGE"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams
+    postgresql_schema.teams,
+    postgresql_role.teams
   ]
 }
-resource "postgresql_grant" "postgresql_teams_table" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_table" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams[each.key].name
+  role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams
+    postgresql_schema.teams,
+    postgresql_role.teams
   ]
 }
-resource "postgresql_grant" "postgresql_teams_sequence" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_sequence" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams[each.key].name
+  role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams
+    postgresql_schema.teams,
+    postgresql_role.teams
   ]
 }
 # Create Postgres roles for each teams' schema for migration
-resource "postgresql_role" "postgresql_teams_migration" {
+resource "postgresql_role" "teams_migration" {
   for_each            = var.rds_postgres_teams
   name                = local.rds_postgres_teams_migration_usernames[each.key]
   password            = local.rds_postgres_teams_migration_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
   login               = true
   skip_reassign_owned = true
-  search_path         = postgresql_schema.postgresql_teams[each.key].name
+  search_path         = postgresql_schema.teams[each.key].name
 
-  depends_on = [postgresql_schema.postgresql_teams]
+  depends_on = [postgresql_schema.teams]
 }
 # Grant teams' migration roles permissions to connect to the database
-resource "postgresql_grant" "postgresql_teams_migration_database" {
-  for_each    = postgresql_role.postgresql_teams_migration
+resource "postgresql_grant" "teams_migration_database" {
+  for_each    = postgresql_role.teams_migration
   database    = var.rds_postgres_db_name
   role        = each.value.name
   object_type = "database"
   privileges  = ["CONNECT"]
 
-  depends_on = [postgresql_role.postgresql_teams_migration]
+  depends_on = [postgresql_role.teams_migration]
 }
 # Grant teams permissions to manage objects in their schema
-resource "postgresql_grant" "postgresql_teams_migration_schema" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_migration_schema" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams_migration[each.key].name
+  role        = postgresql_role.teams_migration[each.key].name
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams_migration
+    postgresql_schema.teams,
+    postgresql_role.teams_migration
   ]
 }
-resource "postgresql_grant" "postgresql_teams_migration_table" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_migration_table" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams_migration[each.key].name
+  role        = postgresql_role.teams_migration[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams_migration
+    postgresql_schema.teams,
+    postgresql_role.teams_migration
   ]
 }
-resource "postgresql_grant" "postgresql_teams_migration_sequence" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_grant" "teams_migration_sequence" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  role        = postgresql_role.postgresql_teams_migration[each.key].name
+  role        = postgresql_role.teams_migration[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT", "UPDATE"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams_migration
+    postgresql_schema.teams,
+    postgresql_role.teams_migration
   ]
 }
 # Grant teams permissions for future objects in their schema
-resource "postgresql_default_privileges" "postgresql_teams_future_tables" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_default_privileges" "teams_future_tables" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  owner       = postgresql_role.postgresql_teams_migration[each.key].name
-  role        = postgresql_role.postgresql_teams[each.key].name
+  owner       = postgresql_role.teams_migration[each.key].name
+  role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams_migration,
-    postgresql_role.postgresql_teams
+    postgresql_schema.teams,
+    postgresql_role.teams_migration,
+    postgresql_role.teams
   ]
 }
-resource "postgresql_default_privileges" "postgresql_teams_future_sequences" {
-  for_each    = postgresql_schema.postgresql_teams
+resource "postgresql_default_privileges" "teams_future_sequences" {
+  for_each    = postgresql_schema.teams
   database    = var.rds_postgres_db_name
   schema      = each.value.name
-  owner       = postgresql_role.postgresql_teams_migration[each.key].name
-  role        = postgresql_role.postgresql_teams[each.key].name
+  owner       = postgresql_role.teams_migration[each.key].name
+  role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
 
   depends_on = [
-    postgresql_schema.postgresql_teams,
-    postgresql_role.postgresql_teams_migration,
-    postgresql_role.postgresql_teams
+    postgresql_schema.teams,
+    postgresql_role.teams_migration,
+    postgresql_role.teams
   ]
 }

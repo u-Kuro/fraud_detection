@@ -1,3 +1,5 @@
+# RDS (Postgres)
+# /mlflow
 output "mlflow_username" {
   value     = postgresql_role.mlflow.name
   sensitive = true
@@ -6,22 +8,20 @@ output "mlflow_password" {
   value     = postgresql_role.mlflow.password
   sensitive = true
 }
-
-output "users" {
-  value = {
-    teams = {
-      for k, v in postgresql_role.postgresql_teams : k => {
-        password = v.password
-        username = v.name
-      }
-    }
-  }
+# /teams
+output "teams_usernames" {
+  value = local.rds_postgres_teams_usernames
   sensitive = true
 }
-output "teams_migration_credentials" {
-  value = {
-    for k, v in random_password.teams_migration
-    : k => v.result
-  }
+output "teams_passwords" {
+  value = local.rds_postgres_teams_passwords
+  sensitive = true
+}
+output "teams_migration_usernames" {
+  value = local.rds_postgres_teams_migration_usernames
+  sensitive = true
+}
+output "teams_migration_passwords" {
+  value = local.rds_postgres_teams_migration_passwords
   sensitive = true
 }

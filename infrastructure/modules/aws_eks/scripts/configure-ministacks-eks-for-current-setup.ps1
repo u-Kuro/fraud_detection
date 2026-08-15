@@ -1,4 +1,4 @@
-w1param(
+param(
     [Parameter(Mandatory)][securestring]$aws_admin_access_key,
     [Parameter(Mandatory)][securestring]$aws_admin_secret_key,
     [Parameter(Mandatory)][string]$aws_admin_region,
@@ -29,10 +29,11 @@ Write-Host "`n[EKS] Waiting for cluster '$eks_cluster_name' to become ACTIVE..."
 $max_wait = 120; $waited = 0
 do {
     Start-Sleep -Seconds 5; $waited += 5
-    $status = aws --endpoint-url "${eks_host_endpoint_url}" eks describe-cluster `
-                --name "${eks_cluster_name}" `
-                --query "cluster.status" `
-                --output text 2>$null
+    $status = (`
+        aws --endpoint-url "${eks_host_endpoint_url}" eks describe-cluster `
+            --name "${eks_cluster_name}" `
+            | ConvertFrom-Json`
+    ).cluster.status
     Write-Host "[EKS] Status: '$status' (${waited}s / ${max_wait}s)"
 } while ($status -ne "ACTIVE" -and $waited -lt $max_wait)
 

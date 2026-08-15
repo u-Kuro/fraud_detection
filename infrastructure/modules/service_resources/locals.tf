@@ -9,17 +9,6 @@
 # s3_egress - aws --endpoint-url http://[$gateway_ip]:[$port|4566] s3 cp s3://my-bucket/file
 # postgres_egress - psql postgresql://admin:password@[$gateway_ip]:[$rds_host_port|15432]/mydb
 
-# INPUTS
-locals {
-  iam    = var.iam
-  ecr    = var.ecr
-  eks    = var.eks
-  mlflow = var.mlflow
-  mwaa   = var.mwaa
-  rds    = var.rds
-  s3     = var.s3
-}
-# COMPUTED
 locals {
   # KUBERNETES RESOURCES
   kubernetes_resources = {
