@@ -1,6 +1,6 @@
 # Create bucket for RDS Postgres
 resource "aws_s3_bucket" "postgres" {
-  bucket        = "Postgres"
+  bucket        = "postgres"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "postgres" {
@@ -23,7 +23,7 @@ resource "aws_s3_bucket_public_access_block" "postgres" {
 }
 # Create bucket for MLflow
 resource "aws_s3_bucket" "mlflow" {
-  bucket        = "MLflow"
+  bucket        = "mlflow"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "mlflow" {
@@ -101,7 +101,7 @@ resource "aws_iam_user_policy" "teams" {
 # Create buckets for each team with MWAA
 resource "aws_s3_bucket" "teams_mwaa" {
   for_each      = var.mwaa_teams
-  bucket        = "${each.key}_MWAA"
+  bucket        = "${each.key}-mwaa"
   force_destroy = true
 }
 resource "aws_s3_bucket_versioning" "teams_mwaa" {

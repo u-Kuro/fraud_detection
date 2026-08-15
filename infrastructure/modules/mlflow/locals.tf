@@ -1,9 +1,12 @@
-# COMPUTED
 locals {
   # Scripts
-  # /file-name
-  create_mlflow_workspace_script_file_name          = "create_mlflow_workspace.sh"
   # /path
-  scripts_relative_path                             = "scripts"
-  create_mlflow_workspace_script_file_relative_path = "${local.scripts_relative_path}/${local.create_mlflow_workspace_script_file_name}"
+  scripts_relative_path = "scripts"
+
+  # Teams
+  # /workspace-names
+  mlflow_teams_workspace_names = { for v in var.mlflow_teams : v => v }
+  # /credentials
+  mlflow_teams_usernames = { for v in var.mlflow_teams : v => v }
+  mlflow_teams_passwords = { for v in var.mlflow_teams : v => v }
 }

@@ -28,7 +28,7 @@ variable "s3_teams_mwaa_requirements_file_path" {
 }
 variable "s3_teams_mwaa_dag_path" {
   type    = string
-  default = "DAG"
+  default = "dag"
 }
 variable "s3_teams_mwaa_kubeconfig_file_path" {
   type    = string

@@ -1,1 +1,1 @@
-output "teams_parameter_path" {value = local.ssm_teams_parameter_paths}
+output "teams_parameter_path" { value = local.ssm_teams_parameter_paths }

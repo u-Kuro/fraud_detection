@@ -1,14 +1,18 @@
-variable "rds" {
-  type = object({
-    db_name  = string
-    username = string
-    users = object({
-      mlflow = object({
-        password = string
-        username = string
-      })
-      teams = set(string)
-    })
-  })
+# RDS
+# /postgres
+variable "rds_postgres_username" {
+  type      = string
   sensitive = true
 }
+variable "rds_postgres_db_name" { type = string }
+# /mlflow-schema
+variable "rds_postgres_mlflow_username" {
+  type      = string
+  sensitive = true
+}
+variable "rds_postgres_mlflow_password" {
+  type      = string
+  sensitive = true
+}
+# /teams
+variable "rds_postgres_teams" { type = set(string) }

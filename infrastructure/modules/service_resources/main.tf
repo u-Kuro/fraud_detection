@@ -15,7 +15,7 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
     PGPORT     = var.rds_postgres_egress_port # [$rds_host_port|15432]
     PGDATABASE = local.rds.postgres.db_name
     # S3 / MWAA
-    AWS_ENDPOINT_URL = var.s3_egress_url # http://[$gateway_ip]:[$port|4566] - For all stuff in boto e.g. s3 or dynamodb
+    AWS_ENDPOINT_URL   = var.s3_egress_url # http://[$gateway_ip]:[$port|4566] - For all stuff in boto e.g. s3 or dynamodb
     AWS_DEFAULT_REGION = local.iam.users.admin.region
     # MWAA
     AWS_ENDPOINT_URL_MWAA = var.mwaa_egress_url
@@ -249,13 +249,13 @@ resource "kubernetes_manifest" "platform_resources_protection" {
     apiVersion = "kyverno.io/v1"
     kind       = "Policy"
     metadata = {
-      name      = "${each.key}_PLATFORM_RESOURCES_PROTECTION"
+      name      = "${each.key}-platform-resources-protection"
       namespace = each.value.kubernetes.namespace
     }
     spec = {
       rules = [
         {
-          name = "PLATFORM_CONFIG_MAP_PROTECTION"
+          name = "platform-config-map-protection"
           match = {
             any = [{
               resources = {
@@ -276,7 +276,7 @@ resource "kubernetes_manifest" "platform_resources_protection" {
           }
         },
         {
-          name = "PLATFORM_SECRET_PROTECTION"
+          name = "platform-secret-protection"
           match = {
             any = [{
               resources = {

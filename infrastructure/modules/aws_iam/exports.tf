@@ -1,8 +1,10 @@
 # Allow admin to see teams' IAM credentials
 resource "aws_secretsmanager_secret" "teams_iam_credentials" {
   for_each                = var.iam_teams
-  name                    = "admin/IAM/users/${each.key}/credential"
+  name                    = "admin/iam/users/${each.key}/credential"
   recovery_window_in_days = 0
+
+  depends_on = [aws_iam_access_key.teams]
 }
 resource "aws_secretsmanager_secret_version" "teams_iam_credentials" {
   for_each  = aws_secretsmanager_secret.teams_iam_credentials
@@ -14,8 +16,5 @@ resource "aws_secretsmanager_secret_version" "teams_iam_credentials" {
   })
   secret_string_wo_version = 1
 
-  depends_on = [
-    aws_iam_access_key.teams,
-    aws_secretsmanager_secret.teams_iam_credentials
-  ]
+  depends_on = [aws_secretsmanager_secret.teams_iam_credentials]
 }

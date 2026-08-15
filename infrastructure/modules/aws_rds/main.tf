@@ -1,6 +1,6 @@
 # Create Postgres in RDS
 resource "aws_db_instance" "postgres" {
-  identifier          = "RDS"
+  identifier          = "rds"
   engine              = "postgres"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20

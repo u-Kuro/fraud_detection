@@ -1,19 +1,19 @@
 # IAM
 # /admin
 variable "iam_admin_username" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "iam_admin_password" {
-  type = string
+  type      = string
   sensitive = true
 }
-variable "iam_admin_region" {type = string}
+variable "iam_admin_region" { type = string }
 
 # EKS
 # /mlflow
 variable "eks_mlflow_namespace" {
-  type = string
+  type    = string
   default = "mlflow"
 }
 # /traefik
@@ -24,50 +24,58 @@ variable "eks_traefik_http_port" {
 
 # ELB
 # /alb
-variable "elb_alb_dns_name" {type = string}
+variable "elb_alb_dns_name" { type = string }
 
 # MLflow
 # /deployment
 variable "mlflow_host" {
-  type = string
+  type    = string
   default = "mlflow"
 }
 variable "mlflow_container_port" {
-  type = number
+  type    = number
   default = 8080
 }
 variable "mlflow_flask_server_secret_key" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "mlflow_admin_username" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "mlflow_admin_password" {
-  type = string
+  type      = string
   sensitive = true
 }
 # /teams
-variable "mlflow_teams" {type = set(string)}
+variable "mlflow_teams" { type = set(string) }
 
 # RDS
 # /postgres
-variable "rds_postgres_db_name" {type = string}
-variable "rds_postgres_host" {type = string}
-variable "rds_postgres_port" {type = number}
+variable "rds_postgres_db_name" { type = string }
+variable "rds_postgres_host" { type = string }
+variable "rds_postgres_port" { type = number }
 # /mlflow-schema
 variable "rds_postgres_mlflow_username" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "rds_postgres_mlflow_password" {
-  type = string
+  type      = string
   sensitive = true
 }
 
 # S3
 # /urls
-variable "s3_egress_url" {type = string}
-variable "s3_mlflow_bucket_name" {type = string}
-variable "s3_mlflow_bucket_arn" {type = string}
+variable "s3_egress_url" { type = string }
+variable "s3_mlflow_bucket_name" { type = string }
+variable "s3_mlflow_bucket_arn" { type = string }
+
+# Secrets Manager
+# /teams
+variable "secrets_manager_teams_secret_paths" { type = map(string) }
+
+# SSM
+# /teams
+variable "ssm_teams_parameter_paths" { type = map(string) }

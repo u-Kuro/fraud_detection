@@ -1,15 +1,15 @@
 locals {
   teams = {
-    MLE = {
+    mle = {
       includes = {
-        ECR             = true
-        EKS             = true
-        MWAA            = true
-        S3              = true
-        SECRETS_MANAGER = true
-        SSM_PARAMETER   = true
-        MLFLOW          = true
-        POSTGRESQL      = true
+        ecr             = true
+        eks             = true
+        mwaa            = true
+        s3              = true
+        secrets_manager = true
+        ssm             = true
+        mlflow          = true
+        postgresql      = true
       }
     }
   }
@@ -47,7 +47,7 @@ module "ssm" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.SSM_PARAMETER
+        if v.includes.ssm
       ]
     }
   }
@@ -74,7 +74,7 @@ module "s3" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.MWAA
+        if v.includes.mwaa
       ]
     }
   }
@@ -83,7 +83,7 @@ module "s3" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.S3
+        if v.includes.s3
       ]
     }
   }
@@ -129,7 +129,7 @@ module "postgresql" {
       }
       teams = [
         for k, v in local.teams : k
-        if v.includes.POSTGRESQL
+        if v.includes.postgresql
       ]
     }
   }
@@ -161,7 +161,7 @@ module "secrets_manager" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.SECRETS_MANAGER
+        if v.includes.secrets_manager
       ]
     }
   }
@@ -191,7 +191,7 @@ module "ecr" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.ECR
+        if v.includes.ecr
       ]
     }
   }
@@ -258,7 +258,7 @@ module "eks" {
             namespace = k
           }
         }
-        if team.includes.EKS
+        if team.includes.eks
       }
     }
   }
@@ -335,7 +335,7 @@ module "mwaa" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.MWAA
+        if v.includes.mwaa
       ]
     }
   }
@@ -393,7 +393,7 @@ module "mlflow" {
       }
       teams = [
         for k, v in local.teams : k
-        if v.includes.MLFLOW
+        if v.includes.mlflow
       ]
     }
   }
@@ -528,7 +528,7 @@ module "service_resources" {
     users = {
       teams = [
         for k, v in local.teams : k
-        if v.includes.S3
+        if v.includes.s3
       ]
     }
   }

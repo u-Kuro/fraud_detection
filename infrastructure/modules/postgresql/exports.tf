@@ -1,3 +1,4 @@
+# TODO - 15/08/2026 - Continue here...
 # Allow teams to see info of their MLflow workspace
 resource "aws_ssm_parameter" "teams_mlflow_workspace" {
   for_each = kubernetes_job.teams
@@ -8,7 +9,7 @@ resource "aws_ssm_parameter" "teams_mlflow_workspace" {
   depends_on = [kubernetes_job.teams]
 }
 # Allow teams to see their credentials for their MLflow workspace
-locals { secrets_manager_teams_mlflow_credentials_path = "eks/cluster/mlflow/credential" }
+locals { secrets_manager_teams_mlflow_credentials_path = "/eks/cluster/mlflow/credential" }
 resource "aws_secretsmanager_secret" "teams_mlflow_credentials" {
   for_each                = kubernetes_job.teams
   name                    = "${var.secrets_manager_teams_secret_paths[each.key]}/${local.secrets_manager_teams_mlflow_credentials_path}"
@@ -37,3 +38,4 @@ resource "aws_ssm_parameter" "teams_mlflow_credentials" {
 
   depends_on = [aws_secretsmanager_secret_version.teams_mlflow_credentials]
 }
+

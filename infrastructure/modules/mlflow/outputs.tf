@@ -7,7 +7,7 @@ output "mlflow_intra_url" {
   value = local.mlflow_intra_url
 }
 # /teams
-output "mlflow_teams_workspace_names" { value = {for v in local.mlflow.users.teams : v =>  }
+output "mlflow_teams_workspace_names" { value = { for v in local.mlflow.users.teams : v => v } }
 output "mlflow_team_workspaces" {
   value = {
     for v in local.mlflow.users.teams : v => {

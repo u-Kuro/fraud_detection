@@ -5,7 +5,7 @@ locals {
   secrets_manager_container_endpoint_url = "http://${local.ministack_container_name}:4566"
 }
 data "external" "ministack_ip" {
-  program     = ["powershell", "-File", "${local.scripts_directory_path}/get_ministack_network_ip.ps1"]
+  program     = ["powershell", "-File", "${local.scripts_directory_path}/get-ministack-network-ip.ps1"]
   working_dir = path.root
 }
 locals {
@@ -43,7 +43,7 @@ variable "ecr_container_endpoint_url" {
 }
 variable "ecr_secret_name" {
   type    = string
-  default = "ECR_SECRET"
+  default = "ecr-secret"
 }
 
 variable "aws_access_key" {

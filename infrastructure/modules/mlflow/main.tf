@@ -46,13 +46,13 @@ resource "helm_release" "mlflow" {
     { name = "flaskServerSecretKey", value = var.mlflow_flask_server_secret_key },
   ]
 }
-# Strip prefix in url from reroutes
-resource "kubernetes_manifest" "mlflow_middleware" {
+# Strip url prefixes in Traefik from reroutes
+resource "kubernetes_manifest" "middleware" {
   manifest = {
     apiVersion = "traefik.io/v1alpha1"
     kind       = "Middleware"
     metadata = {
-      name      = "MLFLOW_MIDDLEWARE"
+      name      = "${var.mlflow_host}-middleware"
       namespace = var.eks_mlflow_namespace
     }
     spec = {
@@ -64,12 +64,13 @@ resource "kubernetes_manifest" "mlflow_middleware" {
 
   depends_on = [helm_release.mlflow]
 }
-resource "kubernetes_manifest" "mlflow_ingress_route" {
+# Adds ingress route in Traefik for MLflow
+resource "kubernetes_manifest" "ingress_route" {
   manifest = {
     apiVersion = "traefik.io/v1alpha1"
     kind       = "IngressRoute"
     metadata = {
-      name      = "MLFLOW_INGRESS_ROUTE"
+      name      = "${var.mlflow_host}-ingress-route"
       namespace = var.eks_mlflow_namespace
     }
     spec = {
@@ -80,7 +81,7 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
           kind  = "Rule"
           middlewares = [
             {
-              name      = kubernetes_manifest.mlflow_middleware.manifest.metadata.name
+              name      = kubernetes_manifest.middleware.manifest.metadata.name
               namespace = var.eks_mlflow_namespace
             }
           ]
@@ -97,13 +98,18 @@ resource "kubernetes_manifest" "mlflow_ingress_route" {
 
   depends_on = [
     helm_release.mlflow,
-    kubernetes_manifest.mlflow_middleware,
+    kubernetes_manifest.middleware,
   ]
 }
-# MLFLOW TEAMS' WORKSPACES
+# Create script in cluster for creating MLflow workspace
+locals {
+  create_mlflow_workspace_script_file_resource_name = "create-mlflow-workspace-script"
+  create_mlflow_workspace_script_file_name          = "create-mlflow-workspace.sh"
+  create_mlflow_workspace_script_file_relative_path = "${local.scripts_relative_path}/${local.create_mlflow_workspace_script_file_name}"
+}
 resource "kubernetes_config_map" "create_mlflow_workspace" {
   metadata {
-    name      = "CREATE_MLFLOW_WORKSPACE_SCRIPT"
+    name      = local.create_mlflow_workspace_script_file_resource_name
     namespace = var.eks_mlflow_namespace
   }
   data = {
@@ -114,11 +120,13 @@ resource "kubernetes_config_map" "create_mlflow_workspace" {
 locals {
   mlflow_intra_url = "http://${var.mlflow_host}:${var.eks_traefik_http_port}"
 }
-resource "kubernetes_job" "mlflow_teams" {
-  for_each = var.mlflow_teams
+# Runs the job to create MLflow workspaces for each team
+resource "kubernetes_job" "teams" {
+  for_each            = var.mlflow_teams
+  wait_for_completion = true
 
   metadata {
-    name      = "CREATE_MLFLOW_WORKSPACE_FOR_${each.key}"
+    name      = "create-mlflow-workspace-for-${each.key}"
     namespace = var.eks_mlflow_namespace
   }
 
@@ -128,15 +136,15 @@ resource "kubernetes_job" "mlflow_teams" {
         restart_policy = "OnFailure"
 
         volume {
-          name = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
+          name = local.create_mlflow_workspace_script_file_resource_name
           config_map {
-            name         = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
+            name         = local.create_mlflow_workspace_script_file_resource_name
             default_mode = "0755" # rwx r-x r-x
           }
         }
 
         container {
-          name  = "CREATE_MLFLOW_WORKSPACE_FOR_${each.key}"
+          name  = "create-mlflow-workspace-for-${each.key}"
           image = "alpine:3"
 
           command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
@@ -147,15 +155,15 @@ resource "kubernetes_job" "mlflow_teams" {
           }
           env {
             name  = "WORKSPACE_NAME"
-            value = each.key
+            value = local.mlflow_teams_workspace_names[each.key]
           }
           env {
             name  = "USERNAME"
-            value = each.key
+            value = local.mlflow_teams_usernames[each.key]
           }
           env {
             name  = "PASSWORD"
-            value = each.key # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
+            value = local.mlflow_teams_passwords[each.key] # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
           }
           env {
             name  = "ADMIN"
@@ -163,7 +171,7 @@ resource "kubernetes_job" "mlflow_teams" {
           }
 
           volume_mount {
-            name       = kubernetes_config_map.create_mlflow_workspace.metadata[0].name
+            name       = local.create_mlflow_workspace_script_file_resource_name
             mount_path = "/${local.scripts_relative_path}"
           }
         }

@@ -21,13 +21,13 @@ locals {
 }
 resource "aws_mwaa_environment" "teams" {
   for_each           = var.mwaa_teams
-  name               = each.key
-  airflow_version    = "2.10.3"
+  name               = local.mwaa_teams_environment_names[each.key]
+  airflow_version    = "2.10.4"
   execution_role_arn = var.iam_teams_role_arns[each.key]
 
   source_bucket_arn    = var.s3_teams_mwaa_bucket_arn[each.key]
   requirements_s3_path = var.s3_teams_mwaa_requirements_file_path
-  dag_s3_path          = "${var.s3_teams_mwaa_dag_path}/"
+  dag_s3_path          = local.mwaa_teams_environment_dag_s3_paths[each.key]
 
   airflow_configuration_options = {
     "secrets.backend" = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
@@ -40,8 +40,8 @@ resource "aws_mwaa_environment" "teams" {
   }
 
   network_configuration {
-    security_group_ids = ["sg-00000000000000001"]
-    subnet_ids         = ["subnet-00000000000000001", "subnet-00000000000000002"]
+    security_group_ids = ["sg-00000000000000000", "sg-00000000000000001"]
+    subnet_ids         = ["subnet-00000000000000000", "subnet-00000000000000001"]
   }
 
   depends_on = [
@@ -51,7 +51,6 @@ resource "aws_mwaa_environment" "teams" {
 }
 # Allow teams to manage attached repositories in their MWAA environments
 locals {
-  secrets_manager_base_arn = "arn:aws:secretsmanager:*:${var.iam_admin_account_id}:secret"
   secrets_manager_mwaa_teams_airflow_secrets_backend_connections_arns = {
     for k, v in local.mwaa_teams_airflow_secrets_backend_connections_prefixes : k => "${local.secrets_manager_base_arn}:${v}"
   }

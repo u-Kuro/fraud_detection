@@ -32,7 +32,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 }
 # Initialize EKS
 resource "aws_eks_cluster" "main" {
-  name     = "EKS"
+  name     = "eks"
   version  = "1.32"
   role_arn = var.eks_role_arn
 
@@ -94,7 +94,7 @@ resource "kubernetes_role_binding" "teams" {
   for_each = var.eks_teams
 
   metadata {
-    name      = "${each.key}_ROLE_BINDING"
+    name      = "${each.key}-role-binding"
     namespace = local.eks_teams_namespaces[each.key]
   }
 
@@ -150,7 +150,7 @@ resource "terraform_data" "configure_ministacks_eks_for_current_setup" {
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command = join(" ", [
-      "& '${path.module}/scripts/configure_ministacks_eks_for_current_setup.ps1'",
+      "& '${path.module}/scripts/configure-ministacks-eks-for-current-setup.ps1'",
 
       "-aws_admin_access_key (ConvertTo-SecureString '${var.iam_admin_username}' -AsPlainText -Force)",
       "-aws_admin_secret_key (ConvertTo-SecureString '${var.iam_admin_password}' -AsPlainText -Force)",

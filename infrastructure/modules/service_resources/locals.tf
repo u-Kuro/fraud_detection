@@ -25,15 +25,15 @@ locals {
   kubernetes_resources = {
     config_map = {
       base = {
-        name = "BASE"
+        name = "base"
       }
     }
     secret = {
       base = {
-        name = "BASE"
+        name = "base"
       }
       docker_config_json = {
-        name = "DOCKER_CONFIG_JSON"
+        name = "docker-config-json"
       }
     }
   }

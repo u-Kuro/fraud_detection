@@ -1,5 +1,4 @@
 # Allow teams to manage their ECR repository
-locals { ecr_repository_base_arn = "arn:aws:ecr:*:${var.iam_admin_account_id}:repository" }
 resource "aws_iam_user_policy" "teams" {
   for_each = var.ecr_teams
   user     = var.iam_teams_names[each.key]
