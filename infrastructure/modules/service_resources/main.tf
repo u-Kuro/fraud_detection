@@ -1,4 +1,4 @@
-# TODO - 15/08/2026 - Continue here...
+# TODO - 15/08/2026 - Continue here... recheck each value
 # MWAA / Nektos /
 
 # EKS TEAMS' CONFIG MAPS
@@ -78,12 +78,12 @@ resource "kubernetes_secret" "eks_teams_docker_registry" {
 }
 # MWAA CONNECTIONS
 # > TEAMS' POSTGRES CONNECTION
-resource "aws_secretsmanager_secret" "postgres_connection" {
+resource "aws_secretsmanager_secret" "mwaa_connections_postgres_connection_id" {
   for_each = var.rds_postgres_teams
-  name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_postgres_id}"
+  name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_postgres_connection_id}"
 }
-resource "aws_secretsmanager_secret_version" "postgres_connection" {
-  for_each  = aws_secretsmanager_secret.postgres_connection
+resource "aws_secretsmanager_secret_version" "mwaa_connections_postgres_connection_id" {
+  for_each  = aws_secretsmanager_secret.mwaa_connections_postgres_connection_id
   secret_id = each.value.id
 
   secret_string = jsonencode({
@@ -95,15 +95,15 @@ resource "aws_secretsmanager_secret_version" "postgres_connection" {
     schema    = var.rds_postgres_db_name
   })
 
-  depends_on = [aws_secretsmanager_secret.postgres_connection]
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_postgres_connection_id]
 }
 # > TEAMS' S3 CONNECTION
-resource "aws_secretsmanager_secret" "s3_connection" {
+resource "aws_secretsmanager_secret" "mwaa_connections_s3_connection_id" {
   for_each = var.s3_teams
-  name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_s3_id}"
+  name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_s3_connection_id}"
 }
-resource "aws_secretsmanager_secret_version" "s3_connection" {
-  for_each  = aws_secretsmanager_secret.s3_connection
+resource "aws_secretsmanager_secret_version" "mwaa_connections_s3_connection_id" {
+  for_each  = aws_secretsmanager_secret.mwaa_connections_s3_connection_id
   secret_id = each.value.id
 
   secret_string = jsonencode({
@@ -115,132 +115,132 @@ resource "aws_secretsmanager_secret_version" "s3_connection" {
     }
   })
 
-  depends_on = [aws_secretsmanager_secret.s3_connection]
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_s3_connection_id]
 }
 # MWAA VARIABLES
 # > EKS TEAMS' KUBERNETES RESOURCE NAMES
-resource "aws_secretsmanager_secret" "eks_teams_base_config_map" {
+resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_config_map_name" {
   for_each = kubernetes_config_map.eks_teams_base_config_map
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_config_map_name}"
 
   depends_on = [kubernetes_config_map.eks_teams_base_config_map]
 }
-resource "aws_secretsmanager_secret_version" "eks_teams_base_config_map" {
-  for_each  = aws_secretsmanager_secret.eks_teams_base_config_map
+resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_config_map_name" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_base_config_map_name
   secret_id = each.value.id
 
   secret_string = local.eks_k8s_base_config_map_name
 
   depends_on = [
     kubernetes_config_map.eks_teams_base_config_map,
-    aws_secretsmanager_secret.eks_teams_base_config_map
+    aws_secretsmanager_secret.mwaa_variables_k8s_base_config_map_name
   ]
 }
-resource "aws_secretsmanager_secret" "eks_teams_base_secret" {
+resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_secret_name" {
   for_each = kubernetes_secret.eks_teams_base_secret
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_secret_name}"
 
   depends_on = [kubernetes_secret.eks_teams_base_secret]
 }
-resource "aws_secretsmanager_secret_version" "eks_teams_base_secret" {
-  for_each  = aws_secretsmanager_secret.eks_teams_base_secret
+resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_secret_name" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_base_secret_name
   secret_id = each.value.id
 
   secret_string = local.eks_k8s_base_secret_name
 
   depends_on = [
     kubernetes_secret.eks_teams_base_secret,
-    aws_secretsmanager_secret.eks_teams_base_secret
+    aws_secretsmanager_secret.mwaa_variables_k8s_base_secret_name
   ]
 }
-resource "aws_secretsmanager_secret" "eks_teams_docker_registry" {
+resource "aws_secretsmanager_secret" "mwaa_variables_k8s_docker_registry_secret_name" {
   for_each = kubernetes_secret.eks_teams_docker_registry
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_docker_registry_secret_name}"
 
   depends_on = [kubernetes_secret.eks_teams_docker_registry]
 }
-resource "aws_secretsmanager_secret_version" "eks_teams_docker_config_json" {
-  for_each  = aws_secretsmanager_secret.eks_teams_docker_registry
+resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_docker_registry_secret_name" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_docker_registry_secret_name
   secret_id = each.value.id
 
   secret_string = local.eks_k8s_docker_registry_secret_name
 
   depends_on = [
     kubernetes_secret.eks_teams_docker_registry,
-    aws_secretsmanager_secret.eks_teams_docker_registry
+    aws_secretsmanager_secret.mwaa_variables_k8s_docker_registry_secret_name
   ]
 }
 # > MWAA TEAMS' CONNECTION IDS
-resource "aws_secretsmanager_secret" "postgres_connection_id" {
-  for_each = aws_secretsmanager_secret.postgres_connection
+resource "aws_secretsmanager_secret" "mwaa_variables_postgres_connection_id" {
+  for_each = aws_secretsmanager_secret.mwaa_connections_postgres_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_postgres_connection_id}"
 
-  depends_on = [aws_secretsmanager_secret.postgres_connection]
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_postgres_connection_id]
 }
-resource "aws_secretsmanager_secret_version" "postgres_connection_id" {
-  for_each  = aws_secretsmanager_secret.postgres_connection_id
+resource "aws_secretsmanager_secret_version" "mwaa_variables_postgres_connection_id" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_postgres_connection_id
   secret_id = each.value.id
 
-  secret_string = local.mwaa_connections_postgres_id
+  secret_string = local.mwaa_connections_postgres_connection_id
 
   depends_on = [
-    aws_secretsmanager_secret.postgres_connection,
-    aws_secretsmanager_secret.postgres_connection_id
+    aws_secretsmanager_secret.mwaa_connections_postgres_connection_id,
+    aws_secretsmanager_secret.mwaa_variables_postgres_connection_id
   ]
 }
-resource "aws_secretsmanager_secret" "s3_connection_id" {
-  for_each = aws_secretsmanager_secret.s3_connection
+resource "aws_secretsmanager_secret" "mwaa_variables_s3_connection_id" {
+  for_each = aws_secretsmanager_secret.mwaa_connections_s3_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_s3_connection_id}"
 
-  depends_on = [aws_secretsmanager_secret.s3_connection]
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_s3_connection_id]
 }
-resource "aws_secretsmanager_secret_version" "s3_connection_id" {
-  for_each  = aws_secretsmanager_secret.s3_connection_id
+resource "aws_secretsmanager_secret_version" "mwaa_variables_s3_connection_id" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_s3_connection_id
   secret_id = each.value.id
 
-  secret_string = local.mwaa_connections_s3_id
+  secret_string = local.mwaa_connections_s3_connection_id
 
   depends_on = [
-    aws_secretsmanager_secret.s3_connection,
-    aws_secretsmanager_secret.s3_connection_id
+    aws_secretsmanager_secret.mwaa_connections_s3_connection_id,
+    aws_secretsmanager_secret.mwaa_variables_s3_connection_id
   ]
 }
 # > MLFLOW TEAMS
-resource "aws_secretsmanager_secret" "mlflow_tracking_uri" {
+resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_uri" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_uri}"
 }
-resource "aws_secretsmanager_secret_version" "mlflow_tracking_uri" {
-  for_each  = aws_secretsmanager_secret.mlflow_tracking_uri
+resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_uri" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_uri
   secret_id = each.value.id
 
   secret_string = var.mlflow_ingress_url
 
-  depends_on = [aws_secretsmanager_secret.mlflow_tracking_uri]
+  depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_uri]
 }
-resource "aws_secretsmanager_secret" "mlflow_tracking_username" {
+resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_username" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_username}"
 }
-resource "aws_secretsmanager_secret_version" "mlflow_tracking_username" {
-  for_each  = aws_secretsmanager_secret.mlflow_tracking_username
+resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_username" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_username
   secret_id = each.value.id
 
   secret_string = var.mlflow_teams_usernames[each.key]
 
-  depends_on = [aws_secretsmanager_secret.mlflow_tracking_username]
+  depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_username]
 }
-resource "aws_secretsmanager_secret" "mlflow_tracking_password" {
+resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_password" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_password}"
 }
-resource "aws_secretsmanager_secret_version" "mlflow_tracking_password" {
-  for_each  = aws_secretsmanager_secret.mlflow_tracking_password
+resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_password" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_password
   secret_id = each.value.id
 
   secret_string = var.mlflow_teams_passwords[each.key]
 
-  depends_on = [aws_secretsmanager_secret.mlflow_tracking_password]
+  depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_password]
 }
 # PLATFORM RESOURCES PROTECTION
 resource "kubernetes_manifest" "platform_resources_protection" {

@@ -18,8 +18,8 @@ locals {
 
   # MWAA
   # /connections
-  mwaa_connections_postgres_id = "postgres"
-  mwaa_connections_s3_id       = "s3"
+  mwaa_connections_postgres_connection_id = "postgres"
+  mwaa_connections_s3_connection_id       = "s3"
   # /variables (Prefixed with AIRFLOW_VAR_ so Fixed won't work)
   mwaa_variables_postgres_connection_id = "POSTGRES_CONNECTION_ID"
   mwaa_variables_s3_connection_id       = "S3_CONNECTION_ID"
