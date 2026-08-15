@@ -10,8 +10,8 @@ resource "aws_secretsmanager_secret_version" "mlflow_credentials" {
   secret_id = each.value.id
 
   secret_string_wo = jsonencode({
-    username      = postgresql_role.mlflow.name
-    password      = postgresql_role.mlflow.password
+    username = postgresql_role.mlflow.name
+    password = postgresql_role.mlflow.password
   })
   secret_string_wo_version = 1
 

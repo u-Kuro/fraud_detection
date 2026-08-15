@@ -9,10 +9,10 @@ output "intra_url" {
 # /teams
 output "teams_workspace_names" { value = local.mlflow_teams_workspace_names }
 output "teams_usernames" {
-  value = local.mlflow_teams_usernames
+  value     = local.mlflow_teams_usernames
   sensitive = true
 }
 output "teams_passwords" {
-  value = local.mlflow_teams_passwords
+  value     = local.mlflow_teams_passwords
   sensitive = true
 }
