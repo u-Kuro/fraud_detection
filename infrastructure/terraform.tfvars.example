@@ -1,3 +1,276 @@
+# TODO - 16/08/2026 - Continue here...
+fix unexpected bugs (rewriting powershell script). not what failed because of the setup.
+
+if none. then share what succeeded.
+
+```
+PS C:\Users\MSI Laptop> # clean up any previous partial LBC install first
+PS C:\Users\MSI Laptop> helm uninstall aws-load-balancer-controller -n kube-system 2>$null
+release "aws-load-balancer-controller" uninstalled
+PS C:\Users\MSI Laptop> Start-Sleep 3
+PS C:\Users\MSI Laptop> kubectl delete mutatingwebhookconfiguration aws-load-balancer-mutating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> kubectl delete validatingwebhookconfiguration aws-load-balancer-validating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> Start-Sleep 2
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> $ep     = "http://localhost:4566"
+PS C:\Users\MSI Laptop> $region = "us-east-1"
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> # Bug fix: LBC chart templates env as a map (name: value), not a list of {name, value} objects
+PS C:\Users\MSI Laptop> $lbcValues = @"
+>> clusterName: cluster-test
+>> serviceAccount:
+>>   create: true
+>>   annotations:
+>>     "eks.amazonaws.com/role-arn": "arn:aws:iam::000000000000:role/lbc-role"
+>> region: $region
+>> vpcId: vpc-00000001
+>> env:
+>>   AWS_ENDPOINT_URL: "$ep"
+>>   AWS_ENDPOINT_URL_ELASTIC_LOAD_BALANCING: "$ep"
+>> "@
+PS C:\Users\MSI Laptop> $lbcValues | Out-File -FilePath "$env:TEMP\lbc-values.yaml" -Encoding utf8
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller `
+>>     --namespace kube-system `
+>>     -f "$env:TEMP\lbc-values.yaml" `
+>>     --wait --timeout 120s
+Release "aws-load-balancer-controller" does not exist. Installing it now.
+NAME: aws-load-balancer-controller
+LAST DEPLOYED: Sun Aug 16 23:06:49 2026
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+AWS Load Balancer controller installed!
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl -n kube-system get pod -l app.kubernetes.io/name=aws-load-balancer-controller
+NAME                                            READY   STATUS    RESTARTS   AGE
+aws-load-balancer-controller-76cb58f96b-9vf4c   1/1     Running   0          21s
+aws-load-balancer-controller-76cb58f96b-spw9w   1/1     Running   0          21s
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> @"
+>> apiVersion: networking.k8s.io/v1
+>> kind: Ingress
+>> metadata:
+>>   name: fastapi-alb-ingress-lbc
+>>   annotations:
+>>     alb.ingress.kubernetes.io/scheme: internet-facing
+>>     alb.ingress.kubernetes.io/target-type: ip
+>>     alb.ingress.kubernetes.io/healthcheck-path: /health
+>> spec:
+>>   ingressClassName: alb
+>>   rules:
+>>     - http:
+>>         paths:
+>>           - path: /
+>>             pathType: Prefix
+>>             backend:
+>>               service:
+>>                 name: fastapi-svc
+>>                 port:
+>>                   number: 80
+>> "@ | kubectl apply -f -
+ingress.networking.k8s.io/fastapi-alb-ingress-lbc created
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl get ingress fastapi-alb-ingress-lbc
+NAME                      CLASS   HOSTS   ADDRESS   PORTS   AGE
+fastapi-alb-ingress-lbc   alb     *                 80      6s
+PS C:\Users\MSI Laptop> # Bug fix: re-clean webhooks — S1's partial install re-created them
+PS C:\Users\MSI Laptop> helm uninstall aws-load-balancer-controller -n kube-system 2>$null
+release "aws-load-balancer-controller" uninstalled
+PS C:\Users\MSI Laptop> Start-Sleep 3
+PS C:\Users\MSI Laptop> kubectl delete mutatingwebhookconfiguration aws-load-balancer-mutating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> kubectl delete validatingwebhookconfiguration aws-load-balancer-validating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> Start-Sleep 2
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> $cluster      = "cluster-test"
+PS C:\Users\MSI Laptop> $network      = "ministack_network"
+PS C:\Users\MSI Laptop> $k3sContainer = "ministack-eks-$cluster"
+PS C:\Users\MSI Laptop> $k3sIp = (docker inspect $k3sContainer | ConvertFrom-Json)[0].NetworkSettings.Networks.$network.IPAddress
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl delete namespace traefik --ignore-not-found=true; Start-Sleep 5
+namespace "traefik" deleted
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> # Bug fix: use values file for externalIPs — --set "service.externalIPs[0]=x"
+PS C:\Users\MSI Laptop> # uses array-index syntax that Helm handles inconsistently across versions
+PS C:\Users\MSI Laptop> $traefikValues = @"
+>> service:
+>>   type: LoadBalancer
+>>   externalIPs:
+>>     - "$k3sIp"
+>> ingressRoute:
+>>   dashboard:
+>>     enabled: false
+>> providers:
+>>   kubernetesCRD:
+>>     enabled: true
+>> "@
+PS C:\Users\MSI Laptop> $traefikValues | Out-File -FilePath "$env:TEMP\traefik-s3-values.yaml" -Encoding utf8
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> helm upgrade --install traefik traefik/traefik `
+>>     --namespace traefik `
+>>     --create-namespace `
+>>     -f "$env:TEMP\traefik-s3-values.yaml" `
+>>     --wait --timeout 120s
+Release "traefik" does not exist. Installing it now.
+NAME: traefik
+LAST DEPLOYED: Sun Aug 16 23:08:07 2026
+NAMESPACE: traefik
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+traefik with docker.io/traefik:v3.7.10 has been deployed successfully on traefik namespace!
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl -n traefik get svc traefik
+NAME      TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+traefik   LoadBalancer   10.43.204.248   <pending>     80:30707/TCP,443:31568/TCP   11s
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> $traefikGroup = if (kubectl get crd ingressroutes.traefik.io 2>$null) `
+>>     { "traefik.io" } else { "traefik.containo.us" }
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> @"
+>> apiVersion: ${traefikGroup}/v1alpha1
+>> kind: IngressRoute
+>> metadata:
+>>   name: fastapi-alb-route
+>> spec:
+>>   entryPoints:
+>>     - web
+>>   routes:
+>>     - match: PathPrefix(``/``)
+>>       kind: Rule
+>>       services:
+>>         - name: fastapi-svc
+>>           port: 80
+>> "@ | kubectl apply -f -
+ingressroute.traefik.io/fastapi-alb-route unchanged
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> Write-Host "[S3] /health"; docker run --rm --network $network curlimages/curl:latest -sf --show-error "http://${k3sIp}/health"
+[S3] /health
+curl: (7) Failed to connect to 172.19.0.4:80 after 0 ms: Could not connect to server
+
+What's next:
+    Debug this container error with Gordon → docker ai "help me fix this container error"
+PS C:\Users\MSI Laptop> Write-Host "[S3] /db";     docker run --rm --network $network curlimages/curl:latest -sf --show-error "http://${k3sIp}/db"
+[S3] /db
+curl: (7) Failed to connect to 172.19.0.4:80 after 0 ms: Could not connect to server
+
+What's next:
+    Debug this container error with Gordon → docker ai "help me fix this container error"
+PS C:\Users\MSI Laptop> Write-Host "[S3] /echo";   docker run --rm --network $network curlimages/curl:latest -sf --show-error "http://${k3sIp}/echo/strategy3-lb"
+[S3] /echo
+curl: (7) Failed to connect to 172.19.0.4:80 after 0 ms: Could not connect to server
+
+What's next:
+    Debug this container error with Gordon → docker ai "help me fix this container error"
+PS C:\Users\MSI Laptop> # Bug fix: re-clean webhooks for same reason as S3
+PS C:\Users\MSI Laptop> helm uninstall aws-load-balancer-controller -n kube-system 2>$null
+PS C:\Users\MSI Laptop> Start-Sleep 3
+PS C:\Users\MSI Laptop> kubectl delete mutatingwebhookconfiguration aws-load-balancer-mutating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> kubectl delete validatingwebhookconfiguration aws-load-balancer-validating-webhook --ignore-not-found=true
+PS C:\Users\MSI Laptop> Start-Sleep 2
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> $cluster      = "cluster-test"
+PS C:\Users\MSI Laptop> $network      = "ministack_network"
+PS C:\Users\MSI Laptop> $k3sContainer = "ministack-eks-$cluster"
+PS C:\Users\MSI Laptop> $traefikPort  = 30180
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl delete namespace traefik --ignore-not-found=true; Start-Sleep 5
+namespace "traefik" deleted
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> helm upgrade --install traefik traefik/traefik `
+>>     --namespace traefik `
+>>     --create-namespace `
+>>     --set service.type=NodePort `
+>>     --set "ports.web.nodePort=$traefikPort" `
+>>     --set ports.websecure.nodePort=30543 `
+>>     --set "providers.kubernetesGateway.enabled=true" `
+>>     --set ingressRoute.dashboard.enabled=false `
+>>     --wait `
+>>     --timeout 120s
+Release "traefik" does not exist. Installing it now.
+NAME: traefik
+LAST DEPLOYED: Sun Aug 16 23:08:56 2026
+NAMESPACE: traefik
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+traefik with docker.io/traefik:v3.7.10 has been deployed successfully on traefik namespace!
+
+⚠️ DEPRECATION WARNING: Gateway API CRDs will no longer be shipped with this chart in a future major version.
+You will need to install them yourself before deploying Traefik v3.7:
+  kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl get gatewayclass
+NAME      CONTROLLER                      ACCEPTED   AGE
+traefik   traefik.io/gateway-controller   Unknown    11s
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> @"
+>> apiVersion: gateway.networking.k8s.io/v1
+>> kind: Gateway
+>> metadata:
+>>   name: traefik-gateway
+>>   namespace: default
+>> spec:
+>>   gatewayClassName: traefik
+>>   listeners:
+>>     - name: web
+>>       port: 80
+>>       protocol: HTTP
+>>       allowedRoutes:
+>>         namespaces:
+>>           from: All
+>> ---
+>> apiVersion: gateway.networking.k8s.io/v1
+>> kind: HTTPRoute
+>> metadata:
+>>   name: fastapi-route
+>>   namespace: default
+>> spec:
+>>   parentRefs:
+>>     - name: traefik-gateway
+>>       namespace: default
+>>   rules:
+>>     - matches:
+>>         - path:
+>>             type: PathPrefix
+>>             value: /
+>>       backendRefs:
+>>         - name: fastapi-svc
+>>           port: 80
+>> "@ | kubectl apply -f -
+gateway.gateway.networking.k8s.io/traefik-gateway unchanged
+httproute.gateway.networking.k8s.io/fastapi-route configured
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> kubectl get gateway,httproute
+NAME                                                CLASS     ADDRESS   PROGRAMMED   AGE
+gateway.gateway.networking.k8s.io/traefik-gateway   traefik             Unknown      19m
+
+NAME                                                HOSTNAMES   AGE
+httproute.gateway.networking.k8s.io/fastapi-route               19m
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> $k3sIp = (docker inspect $k3sContainer | ConvertFrom-Json)[0].NetworkSettings.Networks.$network.IPAddress
+PS C:\Users\MSI Laptop> $url   = "http://${k3sIp}:${traefikPort}"
+PS C:\Users\MSI Laptop>
+PS C:\Users\MSI Laptop> Write-Host "[S4] /health"; docker run --rm --network $network curlimages/curl:latest -sf --show-error "$url/health"
+[S4] /health
+{"status":"ok","node":"690225b626b1"}
+PS C:\Users\MSI Laptop> Write-Host "[S4] /db";     docker run --rm --network $network curlimages/curl:latest -sf --show-error "$url/db"
+[S4] /db
+{"status":"connected","database":"testdb","pg_version":"PostgreSQL 15.18 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit"}
+PS C:\Users\MSI Laptop> Write-Host "[S4] /echo";   docker run --rm --network $network curlimages/curl:latest -sf --show-error "$url/echo/strategy4-gateway"
+[S4] /echo
+{"echo":"strategy4-gateway","path":"ministack_network -> k3s:30080 -> traefik -> pod"}
+PS C:\Users\MSI Laptop>
+```
+
+__________________________________________________________________
 ## MiniStack MWAA Auth Sync — Technical Brief
 
 ---

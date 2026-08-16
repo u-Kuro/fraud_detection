@@ -39,3 +39,4 @@ delete
 my_current_codes.zip
 infrastructure/terraform.zip
 infrastructure.zip
+count-lines.ps1

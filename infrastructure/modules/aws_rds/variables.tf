@@ -1,3 +1,8 @@
+# # Ministack
+# # /network
+# variable "ministack_network_name" { type = string }
+# variable "ministack_network_gateway" { type = string }
+
 # RDS
 # /service
 variable "rds_role_name" { type = string }

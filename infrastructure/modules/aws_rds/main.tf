@@ -26,3 +26,14 @@ resource "aws_iam_role_policy" "rds" {
     ]
   })
 }
+# Get Ministack's Postgres container configurations
+data "external" "postgres_configuration" {
+  depends_on = [aws_db_instance.postgres]
+
+  program = ["powershell", "-File", "${path.module}/scripts/get-postgres-configurations.ps1"]
+
+  query = {
+    ministack_network_name = var.ministack_network_name
+    postgres_endpoint_ip   = aws_db_instance.postgres.address
+  }
+}

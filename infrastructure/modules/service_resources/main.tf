@@ -1,4 +1,4 @@
-# TODO - 15/08/2026 - Continue here... recheck each value
+# TODO - recheck each value
 # MWAA / Nektos /
 
 # EKS TEAMS' CONFIG MAPS

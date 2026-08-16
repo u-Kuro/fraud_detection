@@ -4,15 +4,19 @@ locals {
   scripts_directory_path                 = "${path.root}/scripts"
   secrets_manager_container_endpoint_url = "http://${local.ministack_container_name}:4566"
 }
-data "external" "ministack_ip" {
-  program     = ["powershell", "-File", "${local.scripts_directory_path}/get-ministack-network-ip.ps1"]
+data "external" "ministack_configuration" {
+  program     = ["powershell", "-File", "${local.scripts_directory_path}/get-ministack-configuration.ps1"]
   working_dir = path.root
 }
 locals {
-  ministack_ip = data.external.ministack_ip.result.ip
+  ministack_container_name      = data.external.ministack_configuration.result.ministack_container_name
+  ministack_network_name        = data.external.ministack_configuration.result.ministack_network_name
+  ministack_network_gateway     = data.external.ministack_configuration.result.ministack_network_gateway
+  ministack_container_ip        = data.external.ministack_configuration.result.ministack_container_ip
+  ministack_container_host_port = data.external.ministack_configuration.result.ministack_container_host_port
 }
 locals {
-  s3_egress_url = "http://${local.ministack_ip}:4566"
+  s3_egress_url = "http://${local.ministack_container_ip}:4566"
 }
 variable "eks_host_endpoint_url" {
   type    = string
