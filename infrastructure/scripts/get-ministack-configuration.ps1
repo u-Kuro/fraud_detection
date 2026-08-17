@@ -49,11 +49,6 @@ if (-not $ministack_container_host_port) {
     throw "'$ministack_container_name' port has invalid value of '$ministack_container_host_port'."
 }
 
-## Get rds host port
-#$rds_host_port = docker inspect $ministack_container_name --format '{{range .Config.Env}}{{println .}}{{end}}' |
-#    Where-Object { $_ -match '^RDS_BASE_PORT=' } |
-#    ForEach-Object { $_.Split('=', 2)[1] }
-
 @{
     ministack_container_name      = $ministack_container_name
     ministack_network_name        = $ministack_network_name
