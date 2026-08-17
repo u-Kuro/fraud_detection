@@ -1,5 +1,6 @@
-# TODO - 16/08/2026 - Continue here...
+# TODO - 17/08/2026 - Continue here... Test if we can use NLB dns in ministack without manual injection to spawned containers of ministack services
 docker network rm ministack_network
+Start-Sleep -Seconds 5
 clear
 docker network create ministack_network
 docker run -d `
@@ -12,14 +13,14 @@ docker run -d `
   -v ministack-data:/tmp/ministack-data `
   -v /var/run/docker.sock:/var/run/docker.sock `
   ministackorg/ministack:latest
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
-.\test-eks-lbc-ingress.ps1
+.\test-eks-traefik-ingressroute.ps1
 
 
 ```
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> docker network create ministack_network
-2a69375c97bc449caaeb47d16ae5896c1fee0e76f28bfece4d27b36f9e5a9113
+df7fa56e587616028ce70775cc837aa99cddb99fd9f82a326e6a4fd4a0805f5b
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> docker run -d `
 >>   --name ministack `
 >>   --network ministack_network `
@@ -30,31 +31,32 @@ Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 >>   -v ministack-data:/tmp/ministack-data `
 >>   -v /var/run/docker.sock:/var/run/docker.sock `
 >>   ministackorg/ministack:latest
-7c05038aca67ad943644f786b18c89427755aa61dfa5677255be328c7988b71d
-(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Start-Sleep -Seconds 3
+bdd25b748efe071fcb7021ec3724ce7287172063f4f63cbeaee9a4b5cb46e2ea
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Start-Sleep -Seconds 5
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 
 services
 --------
-@{account=available; acm=available; backup=available; batch=available; apigateway...
+@{account=available; acm=available; backup=available; batch=...
 
 
-(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> .\test-eks-lbc-ingress.ps1
+(fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> .\test-eks-traefik-ingressroute.ps1
 
 ╔═══ PHASE 1 — Prerequisites ═══
-  ✅ docker found
-  ✅ kubectl found
-  ✅ helm found
-  ✅ aws found
+  ✅✅ docker found
+  ✅✅ kubectl found
+  ✅✅ helm found
+  ✅✅ aws found
 
 ╔═══ PHASE 2 — Ministack Container Inspection ═══
   ✅ Ministack container: ministack
   ✅ Docker network: ministack_network
-  ✅ Ministack IP (Docker net)     : 172.19.0.2
-  ✅ Gateway                       : 172.19.0.1
-  ✅ Host port                     : 4566
-  ✅ EP_HOST   (Windows→ministack) : http://localhost:4566
-  ✅ EP_DOCKER (pods→ministack)    : http://172.19.0.2:4566
+  ✅ Ministack IP (Docker net) : 172.19.0.2
+  ✅ Gateway                   : 172.19.0.1
+  ✅ Host port                 : 4566
+  ✅ EP_HOST   (Windows)       : http://localhost:4566
+  ✅ EP_DOCKER (pods direct)   : http://172.19.0.2:4566
+  ✅ EP_GATEWAY (pods via gw)  : http://172.19.0.1:4566
 
 ╔═══ PHASE 3 — Ministack Health ═══
   ✅ Version: 1.3.59   Edition: light
@@ -62,14 +64,14 @@ services
 
 ╔═══ PHASE 4 — Pre-provision AWS Resources (VPC / Subnets / SG / IGW) ═══
   ℹ  Creating VPC (172.20.0.0/16)...
-  ✅ VPC: vpc-ab29261eb65247c39
+  ✅ VPC: vpc-c0b688ebe69fd6838
   ℹ  Creating subnets (two AZs)...
-  ✅ Subnet-A (us-east-1a): subnet-ef14b67e0b49ec9ff
-  ✅ Subnet-B (us-east-1b): subnet-0c756311bbaa0f681
+  ✅ Subnet-A (us-east-1a): subnet-4502d6ac246fc0d82
+  ✅ Subnet-B (us-east-1b): subnet-89805cd8568525b9d
   ℹ  Creating security group...
-  ✅ Security group: sg-d366ebd2cd2519136
+  ✅ Security group: sg-ae3c7053e53072299
   ℹ  Creating + attaching IGW...
-  ✅ IGW: igw-2d049a41777583771
+  ✅ IGW: igw-9f1bf2ef699c17aaf
 
 ╔═══ PHASE 5 — EKS Cluster Creation + Wait for ACTIVE ═══
   ℹ  Ensuring IAM role 'ministack-eks-cluster-role'...
@@ -82,7 +84,7 @@ services
   ✅ Cluster 'my-eks-cluster' is ACTIVE
 
 ╔═══ PHASE 6 — k3s Kubeconfig Setup ═══
-  ℹ  Waiting for k3s container 'ministack-eks-my-eks-cluster' to appear...
+  ℹ  Waiting for k3s container 'ministack-eks-my-eks-cluster'...
   ✅ k3s container running: ministack-eks-my-eks-cluster
   ✅ k3s container IP : 172.19.0.3
   ✅ k3s API host port: 16443
@@ -92,291 +94,287 @@ CoreDNS is running at https://localhost:16443/api/v1/namespaces/kube-system/serv
 
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 NAME           STATUS   ROLES                  AGE   VERSION        INTERNAL-IP   EXTERNAL-IP   OS-IMAGE           KERNEL-VERSION                     CONTAINER-RUNTIME
-c046c9bbaa9c   Ready    control-plane,master   7s    v1.31.4+k3s1   172.19.0.3    <none>        K3s v1.31.4+k3s1   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.23-k3s2
+2ad480032eec   Ready    control-plane,master   7s    v1.31.4+k3s1   172.19.0.3    <none>        K3s v1.31.4+k3s1   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.23-k3s2
 
-╔═══ PHASE 7 — Deploy Test Workload (nginx + NodePort + NLB svc + ALB ingress) ═══
+╔═══ PHASE 7 — Deploy FastAPI Pods ═══
+  ℹ  Deploying fastapi-app in namespace test-app (container port 8765)...
 namespace/test-app created
-deployment.apps/nginx created
-service/nginx-nodeport created
-service/nginx-nlb created
-Warning: annotation "kubernetes.io/ingress.class" is deprecated, please use 'spec.ingressClassName' instead
-ingress.networking.k8s.io/nginx-alb created
-  ℹ  Waiting for nginx pods (timeout 120s)...
-pod/nginx-5d85956bd4-mw6jl condition met
-pod/nginx-5d85956bd4-t5rt4 condition met
-  ✅ Pods ready
-NAME                         READY   STATUS    RESTARTS   AGE   IP          NODE           NOMINATED NODE   READINESS GATES
-pod/nginx-5d85956bd4-mw6jl   1/1     Running   0          19s   10.42.0.4   c046c9bbaa9c   <none>           <none>
-pod/nginx-5d85956bd4-t5rt4   1/1     Running   0          19s   10.42.0.5   c046c9bbaa9c   <none>           <none>
+configmap/fastapi-app-code created
+deployment.apps/fastapi-app created
+service/fastapi-app created
+  ✅ fastapi-app deployed (service ClusterIP:80 -> container:8765)
+  ℹ  Deploying fastapi-app-b in namespace test-app-b (container port 9123)...
+namespace/test-app-b created
+configmap/fastapi-app-b-code created
+deployment.apps/fastapi-app-b created
+service/fastapi-app-b created
+  ✅ fastapi-app-b deployed (service ClusterIP:80 -> container:9123)
+  ℹ  Waiting for fastapi-app pods ready (up to 300s — includes pip install)...
+  ✅ fastapi-app pods ready
+  ℹ  Waiting for fastapi-app-b pods ready (up to 300s)...
+  ✅ fastapi-app-b pods ready
+NAME                         READY   STATUS    RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
+fastapi-app-d4c8cd88-fpm8m   1/1     Running   0          111s   10.42.0.5   2ad480032eec   <none>           <none>
+fastapi-app-d4c8cd88-wktxw   1/1     Running   0          111s   10.42.0.4   2ad480032eec   <none>           <none>
+NAME                             READY   STATUS    RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
+fastapi-app-b-66cdf9b7c9-7gj9w   1/1     Running   0          111s   10.42.0.7   2ad480032eec   <none>           <none>
+fastapi-app-b-66cdf9b7c9-dx89h   1/1     Running   0          111s   10.42.0.6   2ad480032eec   <none>           <none>
 
-NAME                     TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE   SELECTOR
-service/nginx-nlb        LoadBalancer   10.43.114.149   <pending>     80:30425/TCP   18s   app=nginx
-service/nginx-nodeport   NodePort       10.43.195.50    <none>        80:30080/TCP   18s   app=nginx
-
-NAME                                  CLASS    HOSTS   ADDRESS   PORTS   AGE
-ingress.networking.k8s.io/nginx-alb   <none>   *                 80      18s
-
-╔═══ PHASE 8 — Install cert-manager ═══
-Release "cert-manager" does not exist. Installing it now.
-NAME: cert-manager
-LAST DEPLOYED: Mon Aug 17 12:28:26 2026
-NAMESPACE: cert-manager
+╔═══ PHASE 8 — Install Traefik v3 (Helm) ═══
+  ℹ  Adding Traefik Helm repo...
+  ✅ Helm repo ready
+  ℹ  Running helm upgrade/install for Traefik...
+Release "traefik" does not exist. Installing it now.
+NAME: traefik
+LAST DEPLOYED: Mon Aug 17 20:18:40 2026
+NAMESPACE: traefik
 STATUS: deployed
 REVISION: 1
 DESCRIPTION: Install complete
 TEST SUITE: None
 NOTES:
-cert-manager v1.21.1 has been deployed successfully!
+traefik with docker.io/traefik:v3.7.10 has been deployed successfully on traefik namespace!
+  ℹ  Waiting for Traefik pod to exist (timeout 60s)...
+  ℹ  Traefik pod found (traefik-755657f889-xtfcc) — waiting for Ready (timeout 120s)...
+  ✅ Traefik pod Ready
+NAME                       READY   STATUS    RESTARTS   AGE
+traefik-755657f889-xtfcc   1/1     Running   0          21s
+NAME      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   21s
 
-In order to begin issuing certificates, you will need to set up a ClusterIssuer
-or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
+╔═══ PHASE 9 — Middleware + IngressRoute ═══
+  ℹ  Applying Middleware + IngressRoute for fastapi-app (/fastapi-app)...
+middleware.traefik.io/fastapi-app-middleware created
+ingressroute.traefik.io/fastapi-app-ingress-route created
+  ✅ fastapi-app IngressRoute: PathPrefix(/fastapi-app) -> fastapi-app:80
+  ℹ  Applying Middleware + IngressRoute for fastapi-app-b (/fastapi-app-b)...
+middleware.traefik.io/fastapi-app-b-middleware created
+ingressroute.traefik.io/fastapi-app-b-ingress-route created
+  ✅ fastapi-app-b IngressRoute: PathPrefix(/fastapi-app-b) -> fastapi-app-b:80
 
-More information on the different types of issuers and how to configure them
-can be found in our documentation:
+NAME                     AGE
+fastapi-app-middleware   1s
+NAME                       AGE
+fastapi-app-b-middleware   1s
+NAME                        AGE
+fastapi-app-ingress-route   1s
+NAME                          AGE
+fastapi-app-b-ingress-route   0s
 
-https://cert-manager.io/docs/configuration/
-
-For information on how to configure cert-manager to automatically provision
-Certificates for Ingress resources, take a look at the `ingress-shim`
-documentation:
-
-https://cert-manager.io/docs/usage/ingress/
-
-For information on how to configure cert-manager to automatically provision
-Certificates for Gateway API resources, take a look at the `gateway resource`
-documentation:
-
-https://cert-manager.io/docs/usage/gateway/
-pod/cert-manager-6c896f78b7-t2rm8 condition met
-pod/cert-manager-webhook-655d9748f5-flvfs condition met
-pod/cert-manager-cainjector-5d795b6f86-djd46 condition met
-  ✅ cert-manager ready
-
-╔═══ PHASE 9 — Install AWS Load Balancer Controller (chart v1.8.1) ═══
-  ℹ  Running helm upgrade/install for LBC...
-Release "aws-load-balancer-controller" does not exist. Installing it now.
-NAME: aws-load-balancer-controller
-LAST DEPLOYED: Mon Aug 17 12:29:16 2026
-NAMESPACE: kube-system
-STATUS: deployed
-REVISION: 1
-DESCRIPTION: Install complete
-TEST SUITE: None
-NOTES:
-AWS Load Balancer controller installed!
-  ℹ  Polling for LBC pod Ready (timeout 120s)...
-  ⚠  LBC pod not Ready after 120s — proceeding
-NAME                                            READY   STATUS    RESTARTS   AGE
-aws-load-balancer-controller-7d88c55b84-rtccv   1/1     Running   0          2m24s
-  ℹ  Waiting 30s for LBC to reconcile Service and Ingress...
-
-╔═══ PHASE 10 — Manual ELBv2 Registration (NLB + ALB) ═══
+╔═══ PHASE 10 — Manual NLB Registration (TCP:80 -> :32080) ═══
   ℹ  Creating NLB (network / internet-facing)...
-  ✅ NLB: ministack-nlb-v48e4qso.us-east-1.elb.amazonaws.com
-  ℹ  Creating NLB target group (TCP:30080 / instance)...
-  ✅ NLB TG: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/kf4a1h89q2vptjoa
-  ℹ  Registering k3s node as NLB target (172.19.0.3:30080)...
-  ✅ NLB target registered
-  ℹ  Creating NLB listener (TCP:80 → forward)...
-  ✅ NLB listener: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/ministack-nlb/v48e4qso0wqe16um/mk6cwd8u32e2kz8s
-  ℹ  Creating ALB (application / internet-facing)...
-  ✅ ALB: ministack-alb-ysh8mcle.us-east-1.elb.amazonaws.com
-  ℹ  Creating ALB target group (HTTP:30080 / instance)...
-  ✅ ALB TG: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-alb-tg/8oncmzl2wfwtptzi
-  ℹ  Registering k3s node as ALB target (172.19.0.3:30080)...
-  ✅ ALB target registered
-  ℹ  Creating ALB listener (HTTP:80 → forward)...
-  ✅ ALB listener: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/ministack-alb/ysh8mclelynlv18r/b11zi41sg29s1b99
+  ✅ NLB: ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com
+  ℹ  Creating target group (TCP:32080 / instance)...
+  ✅ Target group: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/fsgzmldxh74s5x11
+  ℹ  Registering k3s node as target (172.19.0.3:32080)...
+  ✅ Target registered
+  ℹ  Creating NLB listener (TCP:80 -> forward)...
+  ✅ Listener: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/ministack-nlb/mg1g6v4g6o4q8uk7/hc07nfrn0gsxk9xe
 
-╔═══ PHASE 11 — Verify ELBv2 State ═══
+╔═══ PHASE 11 — ELBv2 Verification ═══
 
   Load Balancers:
+------------------------------------------------------------------
+|                      DescribeLoadBalancers                     |
++--------+-------------------------------------------------------+
+|  DNS   |  ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com   |
+|  Name  |  ministack-nlb                                        |
+|  Scheme|  internet-facing                                      |
+|  State |  active                                               |
+|  Type  |  network                                              |
++--------+-------------------------------------------------------+
 
-LoadBalancerName Type        Scheme          State  DNSName
----------------- ----        ------          -----  -------
-ministack-nlb    network     internet-facing active ministack-nlb-v48e4qso.us-eas...
-ministack-alb    application internet-facing active ministack-alb-ysh8mcle.us-eas...
 
-
-
-  Target Groups:
-
-TargetGroupName  Protocol  Port TargetType
----------------  --------  ---- ----------
-ministack-nlb-tg TCP      30080 instance
-ministack-alb-tg HTTP     30080 instance
-
+  Target Group:
+-------------------------------------------------------
+|                DescribeTargetGroups                 |
++-------------------+--------+-----------+------------+
+|       Name        | Port   | Protocol  |   Type     |
++-------------------+--------+-----------+------------+
+|  ministack-nlb-tg |  32080 |  TCP      |  instance  |
++-------------------+--------+-----------+------------+
 
 
   NLB target health:
-
-Target           State
-------           -----
-172.19.0.3:30080 healthy
-
-
-
-  ALB target health:
-
-Target           State
-------           -----
-172.19.0.3:30080 healthy
+------------------------------------
+|       DescribeTargetHealth       |
++-------+-----------+--------------+
+| Port  |   State   |   Target     |
++-------+-----------+--------------+
+|  32080|  healthy  |  172.19.0.3  |
++-------+-----------+--------------+
 
 
+╔═══ PHASE 12 — Traefik Activity ═══
 
-╔═══ PHASE 12 — LBC Activity (logs + k8s status) ═══
+  Traefik pod: pod/traefik-755657f889-xtfcc
 
-  LBC pod: pod/aws-load-balancer-controller-7d88c55b84-rtccv
+  Traefik logs (last 20 lines):
+2026-08-17T12:18:50Z WRN Traefik can reject some encoded characters in the request path.When your backend is not fully compliant with [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986),it is recommended to set these options to `false` to avoid split-view situation.Refer to the documentation for more details: https://doc.traefik.io/traefik/v3.7/migrate/v3/#encoded-characters-configuration-default-values
+2026-08-17T12:18:50Z INF Traefik version 3.7.10 built on 2026-07-31T12:42:19Z version=3.7.10
+2026-08-17T12:18:50Z INF Version check is enabled.
+2026-08-17T12:18:50Z INF Traefik checks for new releases to notify you if your version is out of date.
+2026-08-17T12:18:50Z INF It also collects usage data during this process.
+2026-08-17T12:18:50Z INF Check the documentation to get more info: https://doc.traefik.io/traefik/contributing/data-collection/
+2026-08-17T12:18:50Z INF
+Stats collection is disabled.
+Help us improve Traefik by turning this feature on :)
+More details on: https://doc.traefik.io/traefik/contributing/data-collection/
 
-  LBC logs (last 30 lines) — look for 'reconciled' or ELBv2 calls:
-{"level":"error","ts":"2026-08-17T04:29:26Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"a903e617-6ced-4c75-8b12-c3b78b133e31","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:26Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"6f725078-ed91-46a7-8d2e-6cdac38014b2","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:26Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"26e5cbbf-bbd0-4a34-8654-b9f2b60db791","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:26Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"fc5e8201-a28a-4f5c-93c8-af33a7e01db1","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:26Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"3fe15fae-a208-4e9d-b6dc-8c634db14a3a","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:27Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"0f4c009b-eb81-443b-adf8-70f31540657a","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:27Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"5c4901a0-c499-48de-9956-4116491c9e67","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:27Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"a6885370-df07-4eac-bc8d-49bca0f41399","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:27Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"c1a4ab87-6a86-4169-a020-c1a0856becd5","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:28Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"06fa5277-e2bf-4845-8a09-5d5bceef8e93","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:28Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"6e9300f7-eb8f-4e85-8e9f-6993e02b36d7","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:29Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"f799ed74-9d1e-4b5f-93e9-3ebc4d3b6d1d","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:29Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"c6a8ba60-9cb7-46c9-a830-551a4c784313","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:30Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"c4f43504-4a56-4256-b123-920ccd6709fb","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:31Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"fee5d8d5-a288-4365-a09a-960627a991d9","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:31Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"a24d6a22-e317-464f-83ef-654ec9503721","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:31Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"cd9a76eb-0f63-4c94-bca7-191b341e9774","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:33Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"8b153125-fca4-48b7-a3b9-fddd7450218a","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:34Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"956ff86b-c287-4b3d-b58e-aaef74c58390","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:36Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"38074e14-f00f-49f3-aa0f-43b8cc6ff8bd","error":"Internal error occurred: failed calling webhook \"vingress.elbv2.k8s.aws\": failed to call webhook: Post \"https://aws-load-balancer-webhook-service.kube-system.svc:443/validate-networking-v1-ingress?timeout=10s\": no endpoints available for service \"aws-load-balancer-webhook-service\""}
-{"level":"error","ts":"2026-08-17T04:29:38Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"3bd1e5dc-5bf0-4af5-9247-29197a183983","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:43Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"040457d6-eec9-4ef4-8cf9-143d9af4be15","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:47Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"1729d784-f631-4276-8e28-28c4248ea367","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:29:54Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"bd9e4bcb-3ecf-499e-9a38-fb4d649039de","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:30:08Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"5826654f-25a1-49dd-917a-b098140fa1dc","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:30:15Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"6ac6d19b-954d-4199-8adc-833dfcc37991","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:30:50Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"314533dc-307b-4c3d-937f-a250595d728c","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:30:57Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"91356945-356d-4abf-8a70-2aedbc86f898","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:32:12Z","msg":"Reconciler error","controller":"ingress","object":{"name":"nginx-alb","namespace":"test-app"},"namespace":"test-app","name":"nginx-alb","reconcileID":"392af968-dff6-45cc-ae6d-4cf11ab1d9f1","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
-{"level":"error","ts":"2026-08-17T04:32:19Z","msg":"Reconciler error","controller":"service","namespace":"test-app","name":"nginx-nlb","reconcileID":"93e98c8d-c526-48cb-8ce5-d7d43537e614","error":"NoCredentialProviders: no valid providers in chain. Deprecated.\n\tFor verbose messaging see aws.Config.CredentialsChainVerboseErrors"}
+2026-08-17T12:18:50Z INF Starting provider aggregator *aggregator.ProviderAggregator
+2026-08-17T12:18:50Z INF Starting provider *traefik.Provider
+2026-08-17T12:18:50Z INF Starting provider *ingress.Provider
+2026-08-17T12:18:50Z INF ingress label selector is: "" providerName=kubernetes
+2026-08-17T12:18:50Z INF Starting provider *acme.ChallengeTLSALPN
+2026-08-17T12:18:50Z INF Creating in-cluster Provider client providerName=kubernetes
+2026-08-17T12:18:50Z INF Starting provider *crd.Provider
+2026-08-17T12:18:50Z INF label selector is: "" providerName=kubernetescrd
+2026-08-17T12:18:50Z INF Creating in-cluster Provider client providerName=kubernetescrd
 
-  nginx-nlb .status.loadBalancer.ingress:
+  IngressRoutes:
+NAMESPACE    NAME                          AGE
+test-app-b   fastapi-app-b-ingress-route   11s
+test-app     fastapi-app-ingress-route     12s
 
+  Middleware:
+NAMESPACE    NAME                       AGE
+test-app-b   fastapi-app-b-middleware   12s
+test-app     fastapi-app-middleware     12s
 
-  nginx-alb Ingress .status.loadBalancer.ingress:
+  Traefik service:
+NAME      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   35s
 
+╔═══ PHASE 13 — Tests ═══
 
-╔═══ PHASE 13 — Connectivity Tests ═══
+  [Test 1] Ingress — docker-network → k3s:32080/fastapi-app → Traefik → fastapi-app
+  ℹ  GET http://172.19.0.3:32080/fastapi-app
+  ✅ Ingress confirmed — FastAPI pod reachable via IngressRoute
+{"hostname":"fastapi-app-d4c8cd88-fpm8m","app":"fastapi-app","ns":"test-app","path":"/","status":"ok"}
 
-  [Test 1] NodePort reachability — http://172.19.0.3:30080
-: not found
-: not found
-  ℹ  Priority-1: no http tool in ministack container — trying kubectl exec
-  ℹ  Priority-2: kubectl exec [wget] on pod/nginx-5d85956bd4-mw6jl
+  [Test 2] Egress (EP_DOCKER) — fastapi-app pod → S3 via http://172.19.0.2:4566
+  ✅ Egress (EP_DOCKER) confirmed — S3 put+get matched via http://172.19.0.2:4566
+{"endpoint": "http://172.19.0.2:4566", "bucket": "egress-47efa3e7", "put": "ministack egress ok via http://172.19.0.2:4566", "got": "ministack egress ok via http://172.19.0.2:4566", "match": true}
 
-  ✅ kubectl exec [wget] on pod/nginx-5d85956bd4-mw6jl
-  ✅   → http://172.19.0.3:30080 → HTTP 200 — nginx pods reachable ✔
+  [Test 3] Egress (Gateway) — fastapi-app pod → S3 via http://172.19.0.1:4566
+  ✅ Egress (Gateway) confirmed — S3 put+get matched via http://172.19.0.1:4566
+{"endpoint": "http://172.19.0.1:4566", "bucket": "egress-2bbc14ca", "put": "ministack egress ok via http://172.19.0.1:4566", "got": "ministack egress ok via http://172.19.0.1:4566", "match": true}
 
-  [Test 2] Response body preview (first 8 lines):
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-html { color-scheme: light dark; }
-body { width: 35em; margin: 0 auto;
-font-family: Tahoma, Verdana, Arial, sans-serif; }
+  [Test 4] Cross-namespace — fastapi-app <-> fastapi-app-b via cluster DNS
+  ℹ  fastapi-app -> fastapi-app-b  (http://fastapi-app-b.test-app-b.svc.cluster.local/)
+  ✅ fastapi-app -> fastapi-app-b cross-namespace call succeeded (HTTP 200)
+{"url": "http://fastapi-app-b.test-app-b.svc.cluster.local/", "status": 200, "body": {"hostname": "fastapi-app-b-66cdf9b7c9-7gj9w", "app": "fastapi-app-b", "ns": "test-app-b", "path": "/", "status": "ok"}}
+  ℹ  fastapi-app-b -> fastapi-app  (http://fastapi-app.test-app.svc.cluster.local:80/)
+  ✅ fastapi-app-b -> fastapi-app cross-namespace call succeeded (HTTP 200)
+{"url": "http://fastapi-app.test-app.svc.cluster.local:80/", "status": 200, "body": {"hostname": "fastapi-app-d4c8cd88-wktxw", "app": "fastapi-app", "ns": "test-app", "path": "/", "status": "ok"}}
 
-  [Test 3] ELBv2 visibility from inside ministack container:
-: not found
-Note: AWS CLI version 2, the latest major version of the AWS CLI, is now stable and recommended for general use. For more information, see the AWS CLI version 2 installation instructions at: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
+  [Test 5] NLB DNS — external container -> ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com -> NLB -> Traefik -> fastapi-app
+  ℹ  GET http://ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com/fastapi-app
+  ⚠  NLB DNS not reachable: http://ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com/fastapi-app
+  ℹ  ministack 'light' edition may not proxy NLB listeners.
+  ℹ  NLB target (172.19.0.3:32080) is healthy (Phase 11)
 
-usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-To see help text, you can run:
+  Workload state:
+NAME                             READY   STATUS    RESTARTS   AGE
+pod/fastapi-app-d4c8cd88-fpm8m   1/1     Running   0          2m35s
+pod/fastapi-app-d4c8cd88-wktxw   1/1     Running   0          2m35s
 
-  aws help
-  aws <command> help
-  aws <command> <subcommand> help
+NAME                  TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+service/fastapi-app   ClusterIP   10.43.67.95   <none>        80/TCP    2m35s
 
-Unknown options:
-sh: --query: not found
-sh: --output: not found
-  ✅ ELBv2 state visible from inside ministack container
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/fastapi-app   2/2     2            2           2m35s
 
-  [Test 4] Ephemeral pod → ministack health (http://172.19.0.2:4566 via k3s NAT):
-  ℹ  Deploying test pod...
-  Result: Pod->ministack HTTP:200
-  ✅ k3s NAT path valid — LBC pods can reach http://172.19.0.2:4566 ✔
+NAME                                   DESIRED   CURRENT   READY   AGE
+replicaset.apps/fastapi-app-d4c8cd88   2         2         2       2m35s
+NAME                                 READY   STATUS    RESTARTS   AGE
+pod/fastapi-app-b-66cdf9b7c9-7gj9w   1/1     Running   0          2m35s
+pod/fastapi-app-b-66cdf9b7c9-dx89h   1/1     Running   0          2m35s
 
-  [Test 5] Docker-network → nginx NodePort (ingress direction):
-  ℹ  docker run [curlimages/curl] on ministack_network → http://172.19.0.3:30080
-  ✅ Docker-network → http://172.19.0.3:30080 → HTTP 200 — ingress direction reachable ✔
+NAME                    TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/fastapi-app-b   ClusterIP   10.43.66.190   <none>        80/TCP    2m35s
 
-  Kubernetes workload state:
-NAME                         READY   STATUS    RESTARTS   AGE
-pod/nginx-5d85956bd4-mw6jl   1/1     Running   0          4m30s
-pod/nginx-5d85956bd4-t5rt4   1/1     Running   0          4m30s
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/fastapi-app-b   2/2     2            2           2m35s
 
-NAME                     TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-service/nginx-nlb        LoadBalancer   10.43.114.149   <pending>     80:30425/TCP   4m29s
-service/nginx-nodeport   NodePort       10.43.195.50    <none>        80:30080/TCP   4m29s
+NAME                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/fastapi-app-b-66cdf9b7c9   2         2         2       2m35s
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/traefik-755657f889-xtfcc   1/1     Running   0          42s
 
-NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/nginx   2/2     2            2           4m30s
+NAME              TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+service/traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   42s
 
-NAME                               DESIRED   CURRENT   READY   AGE
-replicaset.apps/nginx-5d85956bd4   2         2         2       4m30s
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/traefik   1/1     1            1           42s
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/traefik-755657f889   1         1         1       42s
 
 ╔═══ PHASE 14 — Summary ═══
 
   ╔══════════════════════════════════════════════════════════════════════════╗
-  ║  MINISTACK FULL SETUP SUMMARY                                            ║
+  ║  MINISTACK EKS + TRAEFIK INGRESSROUTE SUMMARY                           ║
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  CONTAINERS  (Docker network: ministack_network)
   ║    ministack : ministack  (172.19.0.2)
   ║    k3s       : ministack-eks-my-eks-cluster  (172.19.0.3)
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  ENDPOINTS
-  ║    EP_HOST   : http://localhost:4566   (Windows → ministack)
-  ║    EP_DOCKER : http://172.19.0.2:4566  (k3s pods → ministack via NAT)
-  ║    NodePort  : http://172.19.0.3:30080  (direct HTTP test path)
+  ║    EP_HOST    : http://localhost:4566   (Windows -> ministack)
+  ║    EP_DOCKER  : http://172.19.0.2:4566   (pods -> ministack direct)
+  ║    EP_GATEWAY : http://172.19.0.1:4566   (pods -> host gateway)
+  ║    Traefik    : http://172.19.0.3:32080   (NodePort)
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  EKS CLUSTER
   ║    Name    : my-eks-cluster
   ║    Version : 1.32
   ║    Role    : arn:aws:iam::000000000000:role/ministack-eks-cluster-role
   ╠══════════════════════════════════════════════════════════════════════════╣
-  ║  AWS RESOURCES (ministack)
-  ║    VPC      : vpc-ab29261eb65247c39
-  ║    Subnet-A : subnet-ef14b67e0b49ec9ff  (us-east-1a)
-  ║    Subnet-B : subnet-0c756311bbaa0f681  (us-east-1b)
-  ║    SG       : sg-d366ebd2cd2519136
-  ║    IGW      : igw-2d049a41777583771
+  ║  AWS RESOURCES
+  ║    VPC      : vpc-c0b688ebe69fd6838
+  ║    Subnet-A : subnet-4502d6ac246fc0d82  (us-east-1a)
+  ║    Subnet-B : subnet-89805cd8568525b9d  (us-east-1b)
+  ║    SG       : sg-ae3c7053e53072299
+  ║    IGW      : igw-9f1bf2ef699c17aaf
   ╠══════════════════════════════════════════════════════════════════════════╣
-  ║  LOAD BALANCERS (ministack ELBv2)
-  ║    NLB DNS  : ministack-nlb-v48e4qso.us-east-1.elb.amazonaws.com
-  ║    NLB ARN  : arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/ministack-nlb/v48e4qso0wqe16um
-  ║    NLB TG   : arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/kf4a1h89q2vptjoa
-  ║    ALB DNS  : ministack-alb-ysh8mcle.us-east-1.elb.amazonaws.com
-  ║    ALB ARN  : arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/ministack-alb/ysh8mclelynlv18r
-  ║    ALB TG   : arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-alb-tg/8oncmzl2wfwtptzi
+  ║  NLB
+  ║    DNS      : ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com
+  ║    ARN      : arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/ministack-nlb/mg1g6v4g6o4q8uk7
+  ║    TG       : arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/fsgzmldxh74s5x11
+  ║    Target   : 172.19.0.3:32080   (Traefik NodePort)
+  ╠══════════════════════════════════════════════════════════════════════════╣
+  ║  TRAEFIK v3
+  ║    Namespace  : traefik
+  ║    NodePort   : 32080
+  ║    ExternalIP : 172.19.0.3
+  ╠══════════════════════════════════════════════════════════════════════════╣
+  ║  APPS + INGRESSROUTES
+  ║    fastapi-app  NS=test-app  svc:80->pod:8765  path=/fastapi-app
+  ║    fastapi-app-b  NS=test-app-b  svc:80->pod:9123  path=/fastapi-app-b
+  ╠══════════════════════════════════════════════════════════════════════════╣
+  ║  ROUTING PATH
+  ║    Client -> NLB:80 -> k3s NodePort:32080 -> Traefik
+  ║           -> IngressRoute (PathPrefix match)
+  ║           -> stripPrefix Middleware
+  ║           -> ClusterIP Service:80 -> Pod container port
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  KUBECONFIG : C:\Users\MSILAP~1\AppData\Local\Temp\ministack-kubeconfig.yaml
   ╠══════════════════════════════════════════════════════════════════════════╣
-  ║  KNOWN LIMITATIONS                                                       ║
-  ║    • LBC may log NoCredentialProviders (IRSA unsupported in k3s).        ║
-  ║      extraEnv AWS_* vars override this; ELBv2 calls still succeed.       ║
-  ║    • LBC logs ec2:DescribeInstances errors (k3s nodes ≠ EC2 instances).  ║
-  ║      Phase 10 manual registration is the reliable target path.           ║
-  ║    • Pod IPs (10.42.x.x) unreachable from ministack container.           ║
-  ║      NodePort (172.19.0.3:30080) is always the entry point.
-  ║    • ALB/NLB DNS names are mock — not locally routable.                  ║
+  ║  KNOWN LIMITATIONS
+  ║    NLB DNS names are mock — not locally routable.
+  ║    Test directly via NodePort (see quick tests below).
   ╚══════════════════════════════════════════════════════════════════════════╝
 
-  Quick HTTP test (run anytime):
-    docker run --rm --network ministack_network curlimages/curl curl -s http://172.19.0.3:30080
+  Quick ingress tests (run anytime):
+    docker run --rm --network ministack_network curlimages/curl curl -s http://172.19.0.3:32080/fastapi-app
+    docker run --rm --network ministack_network curlimages/curl curl -s http://172.19.0.3:32080/fastapi-app-b
 
-  ELBv2 check (run anytime):
+  Cross-namespace DNS (run from inside cluster pod):
+    http://fastapi-app.test-app.svc.cluster.local:80/
+    http://fastapi-app-b.test-app-b.svc.cluster.local/
+
+  ELBv2 check:
     aws --endpoint-url http://localhost:4566 elbv2 describe-load-balancers
 
   Set kubeconfig in a new terminal:
