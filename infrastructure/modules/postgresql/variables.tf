@@ -1,6 +1,6 @@
 # RDS
 # /postgres
-variable "rds_postgres_username" {
+variable "rds_postgres_admin_username" {
   type      = string
   sensitive = true
 }

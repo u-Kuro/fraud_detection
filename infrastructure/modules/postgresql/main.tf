@@ -1,7 +1,7 @@
 # Create MLflow schema
 resource "postgresql_schema" "mlflow" {
   name  = "mlflow"
-  owner = var.rds_postgres_username
+  owner = var.rds_postgres_admin_username
 }
 # Create Postgres role for MLflow schema
 resource "postgresql_role" "mlflow" {
@@ -64,7 +64,7 @@ resource "postgresql_grant" "mlflow_sequence" {
 resource "postgresql_schema" "teams" {
   for_each = var.rds_postgres_teams
   name     = local.rds_postgres_teams_schemas[each.key]
-  owner    = var.rds_postgres_username
+  owner    = var.rds_postgres_admin_username
 }
 # Create Postgres roles for each teams' schema
 resource "postgresql_role" "teams" {

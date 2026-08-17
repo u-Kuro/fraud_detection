@@ -49,7 +49,7 @@ variable "mlflow_teams_passwords" {
 
 # MWAA
 # /urls
-variable "mwaa_egress_url" { type = string }
+variable "mwaa_url" { type = string }
 # /teams
 variable "mwaa_teams" { type = set(string) }
 variable "mwaa_teams_environment_names" { type = map(string) }
@@ -60,8 +60,6 @@ variable "mwaa_teams_variables_prefixes" { type = map(string) }
 # /postgres
 variable "rds_postgres_host" { type = string }
 variable "rds_postgres_port" { type = number }
-variable "rds_postgres_egress_host" { type = string }
-variable "rds_postgres_egress_port" { type = number }
 variable "rds_postgres_db_name" { type = string }
 # /teams
 variable "rds_postgres_teams" { type = set(string) }
@@ -76,6 +74,6 @@ variable "rds_postgres_teams_passwords" {
 
 # S3
 # /urls
-variable "s3_egress_url" { type = string }
+variable "s3_url" { type = string }
 # /teams
 variable "s3_teams" { type = set(string) }

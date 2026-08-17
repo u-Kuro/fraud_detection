@@ -23,7 +23,7 @@ resource "helm_release" "mlflow" {
     { name = "backendStore.postgres.port", value = var.rds_postgres_port },
     { name = "backendStore.postgres.database", value = var.rds_postgres_db_name },
 
-    { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = var.s3_egress_url },
+    { name = "extraEnvVars.MLFLOW_S3_ENDPOINT_URL", value = var.s3_url },
     { name = "extraEnvVars.AWS_DEFAULT_REGION", value = var.iam_admin_region },
     { name = "artifactRoot.s3.bucket", value = var.s3_mlflow_bucket_name },
 

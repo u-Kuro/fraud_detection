@@ -9,7 +9,7 @@ locals {
         secrets_manager = true
         ssm             = true
         mlflow          = true
-        postgresql      = true
+        postgres      = true
       }
     }
   }
@@ -18,39 +18,15 @@ locals {
 module "iam" {
   source = "./modules/aws_iam"
 
-  iam = {
-    users = {
-      teams = keys(local.teams)
-    }
-  }
+  iam_teams = keys(local.teams)
 }
 
 module "ssm" {
   source = "modules/aws_ssm"
 
-  iam = {
-    users = {
-      admin = {
-        account_id = module.iam.users.admin.account_id
-      }
-      teams = {
-        for k, v in local.teams : k => {
-          role = {
-            name = module.iam.users.teams[k].role.name
-          }
-        }
-      }
-    }
-  }
-
-  ssm_parameter = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.ssm
-      ]
-    }
-  }
+  iam_admin_account_id = module.iam.admin_account_id
+  iam_teams_names = module.iam.teams_names
+  ssm_teams = local.ssm_teams
 
   depends_on = [module.iam]
 }
@@ -58,35 +34,9 @@ module "ssm" {
 module "s3" {
   source = "./modules/aws_s3"
 
-  iam = {
-    users = {
-      teams = {
-        for k, v in local.teams : k => {
-          role = {
-            name = module.iam.users.teams[k].role.name
-          }
-        }
-      }
-    }
-  }
-
-  mwaa = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.mwaa
-      ]
-    }
-  }
-
-  s3 = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.s3
-      ]
-    }
-  }
+  iam_teams_names = module.iam.teams_names
+  mwaa_teams = local.mwaa_teams
+  s3_teams = local.s3_teams
 
   depends_on = [module.iam]
 }
@@ -94,107 +44,49 @@ module "s3" {
 module "rds" {
   source = "./modules/aws_rds"
 
-  rds = {
-    role = {
-      name = module.iam.services.rds.name
-    }
-    password = var.rds_admin_password
-    username = var.rds_admin_username
-  }
-
-  s3 = {
-    buckets = {
-      postgres = {
-        arn = module.s3.buckets.postgres.arn
-      }
-    }
-  }
+  rds_role_name          = module.iam.rds_role_name
+  rds_postgres_admin_username  = var.rds_postgres_admin_username
+  rds_postgres_admin_password  = var.rds_postgres_admin_password
+  s3_postgres_bucket_arn = module.s3.postgres_bucket_arn
 
   depends_on = [
     module.iam,
     module.s3
   ]
 }
+module "secrets_manager" {
+  source = "./modules/aws_secrets_manager"
 
-module "postgresql" {
+  iam_admin_account_id = module.iam.admin_account_id
+  iam_teams_names = module.iam.teams_names
+  secrets_manager_teams = local.secrets_manager_teams
+
+  depends_on = [module.iam]
+}
+module "postgres" {
   source = "./modules/postgresql"
 
-  rds = {
-    db_name  = module.rds.postgres.db_name
-    username = module.rds.postgres.username
-    users = {
-      mlflow = {
-        password = var.mlflow_postgresql_password
-        username = var.mlflow_postgresql_username
-      }
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.postgresql
-      ]
-    }
-  }
+  rds_postgres_db_name         = module.rds.postgres_db_name
+  rds_postgres_admin_username  = module.rds.postgres_admin_username
+  rds_postgres_mlflow_username = var.rds_postgres_mlflow_username
+  rds_postgres_mlflow_password = var.rds_postgres_mlflow_password
+  rds_postgres_teams = local.rds_postgres_teams
+  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_path
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_path
 
   depends_on = [
     module.rds
   ]
 }
 
-module "secrets_manager" {
-  source = "./modules/aws_secrets_manager"
 
-  iam = {
-    users = {
-      admin = {
-        account_id = module.iam.users.admin.account_id
-      }
-      teams = {
-        for k, v in local.teams : k => {
-          role = {
-            name = module.iam.users.teams[k].role.name
-          }
-        }
-      }
-    }
-  }
-
-  secrets_manager = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.secrets_manager
-      ]
-    }
-  }
-
-  depends_on = [module.iam]
-}
 
 module "ecr" {
   source = "./modules/aws_ecr"
 
-  iam = {
-    users = {
-      admin = {
-        account_id = module.iam.users.admin.account_id
-      }
-      teams = {
-        for k, v in local.teams : k => {
-          role = {
-            name = module.iam.users.teams[k].role.name
-          }
-        }
-      }
-    }
-  }
-
-  ecr = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.ecr
-      ]
-    }
-  }
+  iam_admin_account_id = module.iam.admin_account_id
+  iam_teams_names = module.iam.teams_names
+  ecr_teams = local.ecr_teams
 
   depends_on = [module.iam]
 }
@@ -206,76 +98,26 @@ module "ecr" {
 module "eks" {
   source = "./modules/aws_eks"
 
-  iam = {
-    users = {
-      admin = {
-        arn      = module.iam.users.admin.arn
-        password = var.aws_secret_key
-        region   = module.iam.users.admin.region
-        username = var.aws_access_key
-      }
-      teams = {
-        for k, team in local.teams : k => {
-          role = {
-            arn = module.iam.users.teams[k].role.arn
-          }
-        }
-      }
-    }
-  }
 
-  ec2 = {
-    role = {
-      arn  = module.iam.services.ec2.arn
-      name = module.iam.services.ec2.name
-    }
-  }
-
-  ecr = {
-    container = {
-      endpoint     = var.ecr_container_endpoint
-      endpoint_url = var.ecr_container_endpoint_url
-    }
-    aws = {
-      endpoint = local.ecr_aws_endpoint
-    }
-    password = local.ecr_password
-    username = local.ecr_username
-  }
-
-  eks = {
-    host = {
-      endpoint_url = var.eks_host_endpoint_url
-    }
-    role = {
-      arn  = module.iam.services.eks.arn
-      name = module.iam.services.eks.name
-    }
-    users = {
-      teams = {
-        for k, team in local.teams : k => {
-          kubernetes = {
-            namespace = k
-          }
-        }
-        if team.includes.eks
-      }
-    }
-  }
-
-  local_files = {
-    kubeconfig = {
-      host = {
-        file = {
-          path = local_sensitive_file.kubeconfig_host.filename
-        }
-      }
-    }
-    directory = {
-      path = local.local_files_directory_path
-    }
-  }
-
+  ec2_role_arn                          = module.iam.ec2_role_arn
+  ec2_role_name                         = module.iam.ec2_role_name
+  ecr_aws_endpoint                      = local.ecr_aws_endpoint
+  ecr_container_endpoint                = var.ecr_container_endpoint
+  ecr_container_endpoint_url            = var.ecr_container_endpoint_url
+  ecr_password                          = local.ecr_password
+  ecr_username                          = local.ecr_username
+  eks_host_endpoint_url                 = var.eks_host_endpoint_url
+  eks_role_arn                          = module.iam.eks_role_arn
+  eks_role_name                         = module.iam.ec2_role_name
+  eks_teams = local.eks_teams
+  iam_admin_password                    = var.aws_admin_secret_key
+  iam_admin_region                      = module.iam.admin_region
+  iam_admin_arn                    = module.iam.admin_arn
+  iam_admin_username                    = var.aws_admin_access_key
+  iam_teams_role_arns = module.iam.teams_role_arns
+  local_files_directory_path            = local.local_files_directory_path
+  local_files_kubeconfig_host_file_path = local_sensitive_file.kubeconfig_host.filename
+  ssm_teams_parameter_path = module.ssm.teams_parameter_path
   depends_on = [
     module.iam,
     local_sensitive_file.kubeconfig_host
@@ -297,65 +139,19 @@ module "elb" {
 module "mwaa" {
   source = "./modules/aws_mwaa"
 
-  iam = {
-    users = {
-      admin = {
-        account_id = module.iam.users.admin.account_id
-      }
-      teams = {
-        for k, v in local.teams : k => {
-          role = {
-            arn  = module.iam.users.teams[k].role.arn
-            name = module.iam.users.teams[k].role.name
-          }
-        }
-      }
-    }
-  }
 
-  local_files = {
-    directory = {
-      path = local.local_files_directory_path
-    }
-    mwaa_requirements = {
-      file = {
-        path = local_sensitive_file.mwaa_requirements.filename
-      }
-    }
-    kubeconfig = {
-      container = {
-        file = {
-          path = module.eks.local_files.kubeconfig_container.path
-        }
-      }
-    }
-  }
-
-  mwaa = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.mwaa
-      ]
-    }
-  }
-
-  s3 = {
-    buckets = {
-      teams_mwaa = {
-        for k, bucket in module.s3.buckets.teams_mwaa : k => {
-          arn  = bucket.arn
-          name = bucket.name
-        }
-      }
-    }
-  }
-
-  secrets_manager = {
-    container = {
-      endpoint_url = local.secrets_manager_container_endpoint_url
-    }
-  }
+  iam_admin_account_id                       = module.iam.admin_account_id
+  iam_teams_names = module.iam.teams_names
+  iam_teams_role_arns = module.iam.teams_role_arns
+  local_files_kubeconfig_container_file_path = module.eks.local_files_kubeconfig_container_path
+  local_files_mwaa_requirements_file_path    = local_sensitive_file.mwaa_requirements.filename
+  ministack_ip                               = local.ministack_container_ip
+  ministack_port                             = number(local.ministack_container_host_port)
+  mwaa_teams = local.mwaa_teams
+  s3_teams_mwaa_bucket_arn                   = module.s3.teams_mwaa_bucket_arns
+  s3_teams_mwaa_bucket_name                  = module.s3.teams_mwaa_bucket_names
+  secrets_manager_container_endpoint_url     = local.secrets_manager_container_endpoint_url
+  ssm_teams_parameter_path = module.ssm.teams_parameter_path
 
   depends_on = [
     module.iam,
@@ -368,61 +164,23 @@ module "mwaa" {
 module "mlflow" {
   source = "modules/mlflow"
 
-  iam = {
-    users = {
-      admin = {
-        password = var.aws_secret_key
-        region   = module.iam.users.admin.region
-        username = var.aws_access_key
-      }
-    }
-  }
-
-  elb = {
-    alb = {
-      dns_name = module.elb.alb.dns_name
-    }
-  }
-
-  mlflow = {
-    flask_server_secret_key = var.mlflow_flask_server_secret_key
-    users = {
-      admin = {
-        password = var.mlflow_admin_password
-        username = var.mlflow_admin_username
-      }
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.mlflow
-      ]
-    }
-  }
-
-  rds = {
-    postgres = {
-      db_name = module.rds.postgres.db_name
-      host    = module.rds.postgres.host
-      port    = module.rds.postgres.port
-      users = {
-        mlflow = {
-          password = var.mlflow_postgresql_password
-          username = var.mlflow_postgresql_username
-        }
-      }
-    }
-  }
-
-  s3 = {
-    buckets = {
-      mlflow = {
-        arn  = module.s3.buckets.mlflow.arn
-        name = module.s3.buckets.mlflow.name
-      }
-    }
-    url = {
-      egress = local.s3_egress_url
-    }
-  }
+  elb_alb_dns_name                   = module.elb.alb_dns_name
+  iam_admin_password                 = var.aws_admin_secret_key
+  iam_admin_region                   = module.iam.admin_region
+  iam_admin_username                 = var.aws_admin_access_key
+  mlflow_admin_password              = var.mlflow_admin_password
+  mlflow_admin_username              = var.mlflow_admin_username
+  mlflow_flask_server_secret_key     = var.mlflow_flask_server_secret_key
+  mlflow_teams                       = local.mlflow_teams
+  rds_postgres_db_name               = module.rds.postgres_db_name
+  rds_postgres_host                  = module.rds.postgres_host
+  rds_postgres_mlflow_password       = var.rds_postgres_mlflow_password
+  rds_postgres_mlflow_username       = var.rds_postgres_mlflow_username
+  rds_postgres_port                  = module.rds.postgres_port
+  s3_mlflow_bucket_arn               = module.s3.mlflow_bucket_arn
+  s3_mlflow_bucket_name              = module.s3.mlflow_bucket_name
+  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_path
+  ssm_teams_parameter_paths          = module.ssm.teams_parameter_path
 
   depends_on = [
     module.iam,
@@ -435,103 +193,30 @@ module "mlflow" {
 module "service_resources" {
   source = "modules/service_resources"
 
-  iam = {
-    users = {
-      admin = {
-        region = module.iam.users.admin.region
-      }
-      teams = {
-        for k, team in local.teams : k => {
-          password = module.iam.users.teams[k].password
-          username = module.iam.users.teams[k].username
-        }
-      }
-    }
-  }
-
-  ecr = {
-    aws = {
-      endpoint = local.ecr_aws_endpoint
-      token = {
-        authorization_token = local.ecr_authorization_token
-        password            = local.ecr_password
-        username            = local.ecr_username
-      }
-    }
-  }
-
-  eks = {
-    users = {
-      teams = {
-        for k, v in module.eks.cluster : k => {
-          kubernetes = {
-            namespace = v.users.teams[k].kubernetes.namespace
-          }
-        }
-      }
-    }
-  }
-
-  mlflow = {
-    url = {
-      egress   = module.mlflow.mlflow_internal_url
-      internal = module.mlflow.mlflow_ingress_url
-    }
-    users = {
-      teams = {
-        for k, v in module.mlflow.mlflow_team_workspaces : k => {
-          password = v.password
-          username = v.username
-        }
-      }
-    }
-  }
-
-  mwaa = {
-    url = {
-      egress = module.mwaa.url.egress
-    }
-    users = {
-      teams = {
-        for k, v in module.mwaa.users.teams : k => {
-          environment = {
-            name = v.environment.name
-          }
-          connections = {
-            prefix = v.connections.prefix
-          }
-          variables = {
-            prefix = v.variables.prefix
-          }
-        }
-      }
-    }
-  }
-
-  rds = {
-    postgres = {
-      host    = module.rds.postgres.host
-      port    = module.rds.postgres.port
-      db_name = module.rds.postgres.db_name
-      users = {
-        teams = {
-          for k, v in module.postgresql.users.teams : k => {
-            password = v.password
-            username = v.username
-          }
-        }
-      }
-    }
-  }
-
-  s3 = {
-    users = {
-      teams = [
-        for k, v in local.teams : k
-        if v.includes.s3
-      ]
-    }
-  }
+  ecr_aws_authorization_token          = local.ecr_authorization_token
+  ecr_aws_authorization_token_password = local.ecr_password
+  ecr_aws_authorization_token_username = local.ecr_username
+  ecr_aws_endpoint                     = local.ecr_aws_endpoint
+  eks_teams = module.eks.cluster_teams
+  eks_teams_kubernetes_namespaces = module.eks.cluster_teams_namespaces
+  iam_admin_region                     = module.iam.admin_region
+  iam_teams_passwords = module.iam.teams_passwords
+  iam_teams_usernames = module.iam.teams_usernames
+  mlflow_inter_url                     = module.mlflow.inter_url
+  mlflow_teams = local.mlflow_teams
+  mlflow_teams_passwords = module.mlflow.teams_passwords
+  mlflow_teams_usernames = module.mlflow.teams_usernames
+  mwaa_teams = local.mwaa_teams
+  mwaa_teams_connections_prefixes = module.mwaa.teams_environment_connections_prefixes
+  mwaa_teams_environment_names = module.mwaa.teams_environment_names
+  mwaa_teams_variables_prefixes = module.mwaa.teams_environment_variables_prefixes
+  rds_postgres_db_name                 = module.rds.postgres_db_name
+  rds_postgres_host                    = module.rds.postgres_host
+  rds_postgres_port                    = module.rds.postgres_port
+  rds_postgres_teams = local.rds_postgres_teams
+  rds_postgres_teams_passwords = module.postgres.teams_passwords
+  rds_postgres_teams_usernames = module.postgres.teams_usernames
+  s3_teams = local.s3_teams
 
   depends_on = [
     module.iam

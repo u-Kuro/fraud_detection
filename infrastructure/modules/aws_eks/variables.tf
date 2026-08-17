@@ -1,6 +1,6 @@
 # IAM
 # /admin
-variable "iam_admin_role_arn" { type = string }
+variable "iam_admin_arn" { type = string }
 variable "iam_admin_region" { type = string }
 variable "iam_admin_username" {
   type      = string

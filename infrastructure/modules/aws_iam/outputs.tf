@@ -7,6 +7,8 @@ output "admin_region" { value = data.aws_region.admin.region }
 output "teams" { value = var.iam_teams }
 output "teams_names" { value = { for k, v in aws_iam_user.teams : k => v.name } }
 output "teams_role_arns" { value = { for k, v in aws_iam_user.teams : k => v.arn } }
+output "teams_usernames" { value = { for k, v in aws_iam_access_key.teams : k => v.id } }
+output "teams_passwords" { value = { for k, v in aws_iam_access_key.teams : k => v.secret } }
 # /ec2
 output "ec2_role_name" { value = aws_iam_role.ec2.name }
 output "ec2_role_arn" { value = aws_iam_role.ec2.arn }

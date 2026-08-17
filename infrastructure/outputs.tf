@@ -40,18 +40,18 @@ output "mlflow_tracking_uri" {
 }
 
 output "postgresql_mlflow_username" {
-  value     = module.postgresql.mlflow_username
+  value     = module.postgres.mlflow_username
   sensitive = true
 }
 output "postgresql_mlflow_password" {
-  value     = module.postgresql.mlflow_password
+  value     = module.postgres.mlflow_password
   sensitive = true
 }
 output "teams_credentials" {
-  value     = module.postgresql.teams_credentials
+  value     = module.postgres.teams_credentials
   sensitive = true
 }
 output "teams_migration_credentials" {
-  value     = module.postgresql.teams_migration_credentials
+  value     = module.postgres.teams_migration_credentials
   sensitive = true
 }

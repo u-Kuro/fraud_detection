@@ -1,3 +1,52 @@
+# AWS
+# /admin
+variable "aws_admin_access_key" {
+  type = string
+  sensitive = true
+}
+variable "aws_admin_secret_key" {
+  type = string
+  sensitive = true
+}
+variable "aws_admin_region" { type = string }
+variable "aws_admin_account_id" { type = string }
+
+# RDS
+# /postgres
+variable "rds_postgres_admin_username" {
+  type      = string
+  sensitive = true
+}
+variable "rds_postgres_admin_password" {
+  type      = string
+  sensitive = true
+}
+# /mlflow-schema
+variable "rds_postgres_mlflow_username" {
+  type      = string
+  sensitive = true
+}
+variable "rds_postgres_mlflow_password" {
+  type      = string
+  sensitive = true
+}
+
+# MLflow
+# /admin
+variable "mlflow_admin_username" {
+  type      = string
+  sensitive = true
+}
+variable "mlflow_admin_password" {
+  type      = string
+  sensitive = true
+}
+# /app-secret-key
+variable "mlflow_flask_server_secret_key" {
+  type      = string
+  sensitive = true
+}
+
 locals {
   ministack_container_name               = "ministack"
   local_files_directory_path             = "${path.root}/local_files"
@@ -44,50 +93,4 @@ variable "ecr_container_endpoint" {
 variable "ecr_container_endpoint_url" {
   type    = string
   default = "http://ministack:4566"
-}
-variable "ecr_secret_name" {
-  type    = string
-  default = "ecr-secret"
-}
-
-variable "aws_access_key" {
-  type      = string
-  sensitive = true
-}
-variable "aws_secret_key" {
-  type      = string
-  sensitive = true
-}
-variable "aws_region" { type = string }
-variable "aws_account_id" { type = string }
-
-variable "rds_admin_username" {
-  type      = string
-  sensitive = true
-}
-variable "rds_admin_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "mlflow_admin_username" {
-  type      = string
-  sensitive = true
-}
-variable "mlflow_admin_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "mlflow_postgresql_username" {
-  type      = string
-  sensitive = true
-}
-variable "mlflow_postgresql_password" {
-  type      = string
-  sensitive = true
-}
-variable "mlflow_flask_server_secret_key" {
-  type      = string
-  sensitive = true
 }

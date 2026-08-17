@@ -1,7 +1,4 @@
-# TODO - recheck each value
-# MWAA / Nektos /
-
-# EKS TEAMS' CONFIG MAPS
+# Create base kubernetes config map for pods
 resource "kubernetes_config_map" "eks_teams_base_config_map" {
   for_each = var.eks_teams
 
@@ -12,14 +9,14 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
 
   data = {
     # POSTGRES
-    PGHOST     = var.rds_postgres_egress_host # [$gateway_ip]
-    PGPORT     = var.rds_postgres_egress_port # [$rds_host_port|15432]
+    PGHOST     = var.rds_postgres_host
+    PGPORT     = var.rds_postgres_port
     PGDATABASE = var.rds_postgres_db_name
     # S3 / MWAA
-    AWS_ENDPOINT_URL   = var.s3_egress_url # http://[$gateway_ip]:[$port|4566] - For all stuff in boto e.g. s3 or dynamodb
+    AWS_ENDPOINT_URL   = var.s3_url
     AWS_DEFAULT_REGION = var.iam_admin_region
     # MWAA
-    AWS_ENDPOINT_URL_MWAA = var.mwaa_egress_url
+    AWS_ENDPOINT_URL_MWAA = var.mwaa_url
     MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
     # MLFLOW
     MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
