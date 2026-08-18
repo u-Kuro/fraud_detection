@@ -112,57 +112,17 @@ resource "kubernetes_role_binding" "teams" {
 
   depends_on = [aws_eks_cluster.main]
 }
-# Initialize kubeconfig file from Ministack EKS for internal calls
-resource "local_sensitive_file" "kubeconfig_container" {
-  filename        = "${var.local_files_directory_path}/kubeconfig.yaml"
-  file_permission = "0600"
-}
-# Create registries file to redirect container registry calls to Ministack's ECR
-resource "local_sensitive_file" "registries" {
-  filename        = "${var.local_files_directory_path}/registries.yaml"
-  file_permission = "0600"
-
-  content = yamlencode({
-    mirrors = {
-      (var.ecr_aws_endpoint) = {
-        endpoint = [var.ecr_container_endpoint_url]
-      }
-    }
-    configs = {
-      (var.ecr_container_endpoint) = {
-        auth = {
-          username = var.ecr_username
-          password = var.ecr_password
-        }
-      }
-    }
-  })
-}
-# Configures Ministack's EKS for current setup
-resource "terraform_data" "configure_ministacks_eks_for_current_setup" {
+# Setup and get Ministack's EKS configurations
+data "external" "eks_configuration" {
   depends_on = [aws_eks_cluster.main]
 
-  # Re-run local-exec if cluster id changed
-  triggers_replace = {
-    cluster_id = aws_eks_cluster.main.id
-  }
+  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-eks-configurations.ps1"]
 
-  provisioner "local-exec" {
-    interpreter = ["PowerShell", "-Command"]
-    command = join(" ", [
-      "& '${path.module}/scripts/configure-ministacks-eks-for-current-setup.ps1'",
-
-      "-aws_admin_access_key (ConvertTo-SecureString '${var.iam_admin_username}' -AsPlainText -Force)",
-      "-aws_admin_secret_key (ConvertTo-SecureString '${var.iam_admin_password}' -AsPlainText -Force)",
-      "-aws_admin_region '${var.iam_admin_region}'",
-
-      "-eks_host_endpoint_url '${var.eks_host_endpoint_url}'",
-      "-eks_cluster_name '${aws_eks_cluster.main.id}'",
-
-      "-kubeconfig_container_file_path '${local_sensitive_file.kubeconfig_container.filename}'",
-      "-kubeconfig_host_file_path '${var.local_files_kubeconfig_host_file_path}'",
-
-      "-registries_file_path '${local_sensitive_file.registries.filename}'",
-    ])
+  query = {
+    eks_cluster_host_url               = aws_eks_cluster.main.endpoint
+    ministack_network_name             = var.ministack_network_name
+    kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
+    kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
+    registries_file_path               = var.local_files_directory_path
   }
 }

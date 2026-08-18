@@ -18,21 +18,6 @@ variable "iam_teams_role_arns" { type = map(string) }
 variable "ec2_role_arn" { type = string }
 variable "ec2_role_name" { type = string }
 
-# ECR
-# /credentials
-variable "ecr_username" {
-  type      = string
-  sensitive = true
-}
-variable "ecr_password" {
-  type      = string
-  sensitive = true
-}
-# /urls
-variable "ecr_aws_endpoint" { type = string }
-variable "ecr_container_endpoint" { type = string }
-variable "ecr_container_endpoint_url" { type = string }
-
 # EKS
 # /service
 variable "eks_role_arn" { type = string }
@@ -44,8 +29,14 @@ variable "eks_teams" { type = set(string) }
 
 # Local Files
 # /paths
-variable "local_files_kubeconfig_host_file_path" { type = string }
+variable "local_files_kubeconfig_for_localhost_file_path" { type = string }
+variable "local_files_kubeconfig_for_docker_file_path" {type = string}
+variable "local_files_registries_file_path" {type = string}
 variable "local_files_directory_path" { type = string }
+
+# Ministack
+# /network
+variable "ministack_network_name" {type = string}
 
 # SSM Parameter
 # /teams

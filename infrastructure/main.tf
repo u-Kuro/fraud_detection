@@ -1,32 +1,22 @@
-locals {
-  teams = {
-    mle = {
-      includes = {
-        ecr             = true
-        eks             = true
-        mwaa            = true
-        s3              = true
-        secrets_manager = true
-        ssm             = true
-        mlflow          = true
-        postgres        = true
-      }
-    }
-  }
-}
-
 module "iam" {
   source = "./modules/aws_iam"
 
+  # IAM
+  # /teams
   iam_teams = keys(local.teams)
 }
 
 module "ssm" {
   source = "modules/aws_ssm"
 
+  # SSM
+  # /teams
+  ssm_teams            = local.ssm_teams
+
+  # IAM
+  # /admin
   iam_admin_account_id = module.iam.admin_account_id
   iam_teams_names      = module.iam.teams_names
-  ssm_teams            = local.ssm_teams
 
   depends_on = [module.iam]
 }
@@ -34,9 +24,17 @@ module "ssm" {
 module "s3" {
   source = "./modules/aws_s3"
 
-  iam_teams_names = module.iam.teams_names
-  mwaa_teams      = local.mwaa_teams
+  # S3
+  # /teams
   s3_teams        = local.s3_teams
+
+  # MWAA
+  # /teams
+  mwaa_teams      = local.mwaa_teams
+
+  # IAM
+  # /teams
+  iam_teams_names = module.iam.teams_names
 
   depends_on = [module.iam]
 }
@@ -44,9 +42,15 @@ module "s3" {
 module "rds" {
   source = "./modules/aws_rds"
 
+  # Ministack
+  # /network
   ministack_network_gateway   = local.ministack_network_gateway
   ministack_network_name      = local.ministack_network_name
+
+  # IAM
+  # /rds
   rds_role_name               = module.iam.rds_role_name
+
   rds_postgres_admin_username = var.rds_postgres_admin_username
   rds_postgres_admin_password = var.rds_postgres_admin_password
   s3_postgres_bucket_arn      = module.s3.postgres_bucket_arn
@@ -93,22 +97,12 @@ module "ecr" {
   depends_on = [module.iam]
 }
 
-# Creates local EKS container from local AWS emulator (MiniStack)
-# then Copies its k3s.yaml (kubeconfig)
-# into Other local emulated services (e.g. MWAA)
-# to Allow access to manage cluster resources
 module "eks" {
   source = "./modules/aws_eks"
 
-
   ec2_role_arn                          = module.iam.ec2_role_arn
   ec2_role_name                         = module.iam.ec2_role_name
-  ecr_aws_endpoint                      = local.ecr_aws_endpoint
-  ecr_container_endpoint                = var.ecr_container_endpoint
-  ecr_container_endpoint_url            = var.ecr_container_endpoint_url
-  ecr_password                          = local.ecr_password
-  ecr_username                          = local.ecr_username
-  eks_host_endpoint_url                 = var.eks_host_endpoint_url
+  eks_host_endpoint_url                 = local.eks_host_url
   eks_role_arn                          = module.iam.eks_role_arn
   eks_role_name                         = module.iam.ec2_role_name
   eks_teams                             = local.eks_teams
@@ -118,11 +112,12 @@ module "eks" {
   iam_admin_username                    = var.aws_admin_access_key
   iam_teams_role_arns                   = module.iam.teams_role_arns
   local_files_directory_path            = local.local_files_directory_path
-  local_files_kubeconfig_host_file_path = local_sensitive_file.kubeconfig_host.filename
+  local_files_kubeconfig_for_localhost_file_path = local_sensitive_file.kubeconfig_for_localhost.filename
   ssm_teams_parameter_path              = module.ssm.teams_parameter_path
   depends_on = [
+    terraform_data.configure_aws,
     module.iam,
-    local_sensitive_file.kubeconfig_host
+    local_sensitive_file.kubeconfig_for_localhost
   ]
 }
 
@@ -134,10 +129,6 @@ module "elb" {
   depends_on = [module.eks]
 }
 
-# Creates local MWAA container from local AWS emulator (MiniStack)
-# then Copies kubeconfig (k3s.yaml from local EKS container)
-# into its local container
-# to Allow access to manage cluster resources
 module "mwaa" {
   source = "./modules/aws_mwaa"
 
@@ -152,7 +143,7 @@ module "mwaa" {
   mwaa_teams                                 = local.mwaa_teams
   s3_teams_mwaa_bucket_arn                   = module.s3.teams_mwaa_bucket_arns
   s3_teams_mwaa_bucket_name                  = module.s3.teams_mwaa_bucket_names
-  secrets_manager_container_endpoint_url     = local.secrets_manager_container_endpoint_url
+  secrets_manager_url                        = local.secrets_manager_url
   ssm_teams_parameter_path                   = module.ssm.teams_parameter_path
 
   depends_on = [

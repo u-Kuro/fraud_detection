@@ -1,4 +1,4 @@
-# TODO - 18/08/2026 - Continue here... (also need to update ps1 scripts for eks and mwaa)... Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
+# TODO - 18/08/2026 - Continue here... (also need to update ps1 scripts for mwaa)... Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack_network
 Start-Sleep -Seconds 5
 clear
@@ -20,6 +20,94 @@ Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
 
+
+aws mwaa create-environment --name test --execution-role-arn "arn:aws:iam::000000000000:role/mwaa-role-test" --source-bucket-arn "arn:aws:s3:::airflow-dags-test" --dag-s3-path "dags/" --network-configuration  "SubnetIds=0,1,SecurityGroupIds=0"
+
+{
+    "Environment": {
+        "Name": "test",
+        "Status": "AVAILABLE",
+        "Arn": "arn:aws:airflow:us-east-1:000000000000:environment/test",
+        "CreatedAt": "2026-08-18T18:38:13.843043+08:00",
+        "WebserverUrl": "172.19.0.4:8080", # Has IP and container port (not localhost port)
+        "ExecutionRoleArn": "arn:aws:iam::000000000000:role/mwaa-role-test",
+        "ServiceRoleArn": "arn:aws:iam::000000000000:role/aws-service-role/airflow.amazonaws.com/AWSServiceRoleForAmazonMWAA",
+        "AirflowVersion": "3.0.6",
+        "SourceBucketArn": "arn:aws:s3:::airflow-dags-test",
+        "DagS3Path": "dags/",
+        "AirflowConfigurationOptions": {},
+        "EnvironmentClass": "mw1.small",
+        "MaxWorkers": 5,
+        "NetworkConfiguration": {
+            "SubnetIds": [
+                "0",
+                "1"
+            ],
+            "SecurityGroupIds": [
+                "0"
+            ]
+        },
+        "LoggingConfiguration": {},
+        "LastUpdate": {
+            "Status": "SUCCESS"
+        },
+        "Tags": {},
+        "WebserverAccessMode": "PUBLIC_ONLY",
+        "MinWorkers": 1,
+        "Schedulers": 2,
+        "MinWebservers": 2,
+        "MaxWebservers": 2
+    }
+}
+
+"Containers": {
+    "6143bfadecdc94274170c42cc4816d268600e12bc9883845adeed951f44b0b56": {
+        "Name": "ministack-mwaa-us-east-1-test",
+        "EndpointID": "c971149219550f68e5bf9802cbefbbf7c2fcc56bc7ff2401bf03500959ef6ea1",
+        "MacAddress": "a6:bb:9a:e0:0e:f4",
+        "IPv4Address": "172.19.0.4/16",
+        "IPv6Address": ""
+    }
+},
+# In container port
+"NetworkSettings": {
+    "SandboxID": "93c098e773c6fd8d6cdac2ee1d67c8b3cf5f2813d974b89fcb580780edb2833f",
+    "SandboxKey": "/var/run/docker/netns/93c098e773c6",
+    "Ports": {
+        "8080/tcp": [
+            {
+                "HostIp": "0.0.0.0",
+                "HostPort": "18080"
+            },
+            {
+                "HostIp": "::",
+                "HostPort": "18080"
+            }
+        ]
+    },
+    "Networks": {
+        "ministack_network": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": null,
+            "DriverOpts": null,
+            "GwPriority": 0,
+            "NetworkID": "745297e98ec3bdc5e2b543eca59f374aceb1e4b0be6cbef79362996e1da351bf",
+            "EndpointID": "c971149219550f68e5bf9802cbefbbf7c2fcc56bc7ff2401bf03500959ef6ea1",
+            "Gateway": "172.19.0.1",
+            "IPAddress": "172.19.0.4",
+            "MacAddress": "a6:bb:9a:e0:0e:f4",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DNSNames": [
+                "ministack-mwaa-us-east-1-test",
+                "6143bfadecdc"
+            ]
+        }
+    }
+},
 
 ```
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> docker network create ministack_network

@@ -37,7 +37,7 @@ variable "s3_teams_mwaa_kubeconfig_file_path" {
 
 # Secrets Manager
 # /urls
-variable "secrets_manager_container_endpoint_url" { type = string }
+variable "secrets_manager_url" { type = string }
 
 # SSM Parameter
 # /teams

@@ -9,10 +9,10 @@ output "aws_rds_db_identifier" {
   value = module.rds.postgres_identifier
 }
 output "aws_rds_db_host" {
-  value = module.rds.postgres_egress_host
+  value = module.rds.postgres_local_host
 }
 output "aws_rds_db_port" {
-  value = module.rds.postgres_egress_port
+  value = module.rds.postgres_local_port
 }
 
 output "aws_s3_mlflow_bucket_name" {
