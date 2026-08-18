@@ -1,7 +1,7 @@
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  region     = var.aws_region
+  access_key = var.aws_admin_access_key
+  secret_key = var.aws_admin_secret_key
+  region     = var.aws_admin_region
 
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
@@ -30,11 +30,11 @@ provider "aws" {
 }
 
 provider "postgresql" {
-  host             = module.rds.address
-  port             = module.rds.port
-  database         = module.rds.name
-  username         = module.rds.username
-  password         = module.rds.password
+  host             = module.rds.postgres_egress_host
+  port             = module.rds.postgres_egress_port
+  database         = module.rds.postgres_db_name
+  username         = module.rds.postgres_admin_username
+  password         = module.rds.postgres_admin_password
   sslmode          = "require"
   expected_version = "15"
 }

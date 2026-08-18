@@ -1,4 +1,4 @@
-# TODO - 17/08/2026 - Continue here... Test if we can use NLB dns in ministack without manual injection to spawned containers of ministack services
+# TODO - 18/08/2026 - Continue here... (also need to update ps1 scripts for eks and mwaa)... Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack_network
 Start-Sleep -Seconds 5
 clear
@@ -7,12 +7,15 @@ docker run -d `
   --name ministack `
   --network ministack_network `
   -p 4566:4566 `
-  -e GATEWAY_PORT=4566 `
-  -e LOG_LEVEL=INFO `
   -e DOCKER_NETWORK=ministack_network `
+  -e PERSIST_STATE=1 `
+  -e S3_PERSIST=1 `
+  -e RDS_PERSIST=1 `
+  -e DSQL_PERSIST=1 `
+  -e LOG_LEVEL=DEBUG `
   -v ministack-data:/tmp/ministack-data `
   -v /var/run/docker.sock:/var/run/docker.sock `
-  ministackorg/ministack:latest
+  ministackorg/ministack:full
 Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
@@ -20,37 +23,40 @@ Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 
 ```
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> docker network create ministack_network
-df7fa56e587616028ce70775cc837aa99cddb99fd9f82a326e6a4fd4a0805f5b
+97ee1f4eaabccd2133a7d9bfa9e9a32a9200e5365eadfb205bacf084a2d30ab1
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> docker run -d `
 >>   --name ministack `
 >>   --network ministack_network `
 >>   -p 4566:4566 `
->>   -e GATEWAY_PORT=4566 `
->>   -e LOG_LEVEL=INFO `
 >>   -e DOCKER_NETWORK=ministack_network `
+>>   -e PERSIST_STATE=1 `
+>>   -e S3_PERSIST=1 `
+>>   -e RDS_PERSIST=1 `
+>>   -e DSQL_PERSIST=1 `
+>>   -e LOG_LEVEL=DEBUG `
 >>   -v ministack-data:/tmp/ministack-data `
 >>   -v /var/run/docker.sock:/var/run/docker.sock `
->>   ministackorg/ministack:latest
-bdd25b748efe071fcb7021ec3724ce7287172063f4f63cbeaee9a4b5cb46e2ea
+>>   ministackorg/ministack:full
+1e771f189e106c4cc448df25714fc75d01a7841d5d38f3f534f9caeb09554f54
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Start-Sleep -Seconds 5
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 
 services
 --------
-@{account=available; acm=available; backup=available; batch=...
+@{account=available; acm=available; backup=available; batch=available; apigateway=available; appconfig=available; appconfigdata=available; appsync=available; appsync-events=avai...
 
 
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> .\test-eks-traefik-ingressroute.ps1
 
 ╔═══ PHASE 1 — Prerequisites ═══
-  ✅✅ docker found
-  ✅✅ kubectl found
-  ✅✅ helm found
-  ✅✅ aws found
+  ✅ docker found
+  ✅ kubectl found
+  ✅ helm found
+  ✅ aws found
 
 ╔═══ PHASE 2 — Ministack Container Inspection ═══
-  ✅ Ministack container: ministack
-  ✅ Docker network: ministack_network
+  ✅✅ Ministack container: ministack
+  ✅✅ Docker network: ministack_network
   ✅ Ministack IP (Docker net) : 172.19.0.2
   ✅ Gateway                   : 172.19.0.1
   ✅ Host port                 : 4566
@@ -59,19 +65,19 @@ services
   ✅ EP_GATEWAY (pods via gw)  : http://172.19.0.1:4566
 
 ╔═══ PHASE 3 — Ministack Health ═══
-  ✅ Version: 1.3.59   Edition: light
+  ✅ Version: 1.4.19   Edition: full
   ✅ EKS service: available
 
 ╔═══ PHASE 4 — Pre-provision AWS Resources (VPC / Subnets / SG / IGW) ═══
   ℹ  Creating VPC (172.20.0.0/16)...
-  ✅ VPC: vpc-c0b688ebe69fd6838
+  ✅ VPC: vpc-6a758d93b59d365c3
   ℹ  Creating subnets (two AZs)...
-  ✅ Subnet-A (us-east-1a): subnet-4502d6ac246fc0d82
-  ✅ Subnet-B (us-east-1b): subnet-89805cd8568525b9d
+  ✅ Subnet-A (us-east-1a): subnet-96b0b66017f5f2606
+  ✅ Subnet-B (us-east-1b): subnet-dd99bdc1521fcfa9a
   ℹ  Creating security group...
-  ✅ Security group: sg-ae3c7053e53072299
+  ✅ Security group: sg-78c31677cb8d134d8
   ℹ  Creating + attaching IGW...
-  ✅ IGW: igw-9f1bf2ef699c17aaf
+  ✅ IGW: igw-0a83b431385e0bed7
 
 ╔═══ PHASE 5 — EKS Cluster Creation + Wait for ACTIVE ═══
   ℹ  Ensuring IAM role 'ministack-eks-cluster-role'...
@@ -84,8 +90,8 @@ services
   ✅ Cluster 'my-eks-cluster' is ACTIVE
 
 ╔═══ PHASE 6 — k3s Kubeconfig Setup ═══
-  ℹ  Waiting for k3s container 'ministack-eks-my-eks-cluster'...
-  ✅ k3s container running: ministack-eks-my-eks-cluster
+  ℹ  Waiting for k3s container 'ministack-eks-us-east-1-my-eks-cluster'...
+  ✅ k3s container running: ministack-eks-us-east-1-my-eks-cluster
   ✅ k3s container IP : 172.19.0.3
   ✅ k3s API host port: 16443
   ✅ Kubeconfig patched: C:\Users\MSILAP~1\AppData\Local\Temp\ministack-kubeconfig.yaml
@@ -94,7 +100,7 @@ CoreDNS is running at https://localhost:16443/api/v1/namespaces/kube-system/serv
 
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 NAME           STATUS   ROLES                  AGE   VERSION        INTERNAL-IP   EXTERNAL-IP   OS-IMAGE           KERNEL-VERSION                     CONTAINER-RUNTIME
-2ad480032eec   Ready    control-plane,master   7s    v1.31.4+k3s1   172.19.0.3    <none>        K3s v1.31.4+k3s1   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.23-k3s2
+cf2ea0d748f7   Ready    control-plane,master   9s    v1.31.4+k3s1   172.19.0.3    <none>        K3s v1.31.4+k3s1   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.23-k3s2
 
 ╔═══ PHASE 7 — Deploy FastAPI Pods ═══
   ℹ  Deploying fastapi-app in namespace test-app (container port 8765)...
@@ -114,11 +120,11 @@ service/fastapi-app-b created
   ℹ  Waiting for fastapi-app-b pods ready (up to 300s)...
   ✅ fastapi-app-b pods ready
 NAME                         READY   STATUS    RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
-fastapi-app-d4c8cd88-fpm8m   1/1     Running   0          111s   10.42.0.5   2ad480032eec   <none>           <none>
-fastapi-app-d4c8cd88-wktxw   1/1     Running   0          111s   10.42.0.4   2ad480032eec   <none>           <none>
+fastapi-app-d4c8cd88-nrcbn   1/1     Running   0          111s   10.42.0.3   cf2ea0d748f7   <none>           <none>
+fastapi-app-d4c8cd88-w8nq4   1/1     Running   0          111s   10.42.0.4   cf2ea0d748f7   <none>           <none>
 NAME                             READY   STATUS    RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
-fastapi-app-b-66cdf9b7c9-7gj9w   1/1     Running   0          111s   10.42.0.7   2ad480032eec   <none>           <none>
-fastapi-app-b-66cdf9b7c9-dx89h   1/1     Running   0          111s   10.42.0.6   2ad480032eec   <none>           <none>
+fastapi-app-b-66cdf9b7c9-764nk   1/1     Running   0          110s   10.42.0.7   cf2ea0d748f7   <none>           <none>
+fastapi-app-b-66cdf9b7c9-9749b   1/1     Running   0          110s   10.42.0.6   cf2ea0d748f7   <none>           <none>
 
 ╔═══ PHASE 8 — Install Traefik v3 (Helm) ═══
   ℹ  Adding Traefik Helm repo...
@@ -126,7 +132,7 @@ fastapi-app-b-66cdf9b7c9-dx89h   1/1     Running   0          111s   10.42.0.6  
   ℹ  Running helm upgrade/install for Traefik...
 Release "traefik" does not exist. Installing it now.
 NAME: traefik
-LAST DEPLOYED: Mon Aug 17 20:18:40 2026
+LAST DEPLOYED: Tue Aug 18 12:21:02 2026
 NAMESPACE: traefik
 STATUS: deployed
 REVISION: 1
@@ -135,12 +141,12 @@ TEST SUITE: None
 NOTES:
 traefik with docker.io/traefik:v3.7.10 has been deployed successfully on traefik namespace!
   ℹ  Waiting for Traefik pod to exist (timeout 60s)...
-  ℹ  Traefik pod found (traefik-755657f889-xtfcc) — waiting for Ready (timeout 120s)...
+  ℹ  Traefik pod found (traefik-755657f889-mm2rd) — waiting for Ready (timeout 120s)...
   ✅ Traefik pod Ready
 NAME                       READY   STATUS    RESTARTS   AGE
-traefik-755657f889-xtfcc   1/1     Running   0          21s
+traefik-755657f889-mm2rd   1/1     Running   0          10s
 NAME      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
-traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   21s
+traefik   LoadBalancer   10.43.31.56   <pending>     80:32080/TCP,443:30908/TCP   10s
 
 ╔═══ PHASE 9 — Middleware + IngressRoute ═══
   ℹ  Applying Middleware + IngressRoute for fastapi-app (/fastapi-app)...
@@ -163,13 +169,13 @@ fastapi-app-b-ingress-route   0s
 
 ╔═══ PHASE 10 — Manual NLB Registration (TCP:80 -> :32080) ═══
   ℹ  Creating NLB (network / internet-facing)...
-  ✅ NLB: ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com
+  ✅ NLB: ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com
   ℹ  Creating target group (TCP:32080 / instance)...
-  ✅ Target group: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/fsgzmldxh74s5x11
+  ✅ Target group: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/7veutw12q3t31937
   ℹ  Registering k3s node as target (172.19.0.3:32080)...
   ✅ Target registered
   ℹ  Creating NLB listener (TCP:80 -> forward)...
-  ✅ Listener: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/ministack-nlb/mg1g6v4g6o4q8uk7/hc07nfrn0gsxk9xe
+  ✅ Listener: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/ministack-nlb/7dc1dx54nkh51lut/fhi6a9k017ub9vr3
 
 ╔═══ PHASE 11 — ELBv2 Verification ═══
 
@@ -177,7 +183,7 @@ fastapi-app-b-ingress-route   0s
 ------------------------------------------------------------------
 |                      DescribeLoadBalancers                     |
 +--------+-------------------------------------------------------+
-|  DNS   |  ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com   |
+|  DNS   |  ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com   |
 |  Name  |  ministack-nlb                                        |
 |  Scheme|  internet-facing                                      |
 |  State |  active                                               |
@@ -207,109 +213,109 @@ fastapi-app-b-ingress-route   0s
 
 ╔═══ PHASE 12 — Traefik Activity ═══
 
-  Traefik pod: pod/traefik-755657f889-xtfcc
+  Traefik pod: pod/traefik-755657f889-mm2rd
 
   Traefik logs (last 20 lines):
-2026-08-17T12:18:50Z WRN Traefik can reject some encoded characters in the request path.When your backend is not fully compliant with [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986),it is recommended to set these options to `false` to avoid split-view situation.Refer to the documentation for more details: https://doc.traefik.io/traefik/v3.7/migrate/v3/#encoded-characters-configuration-default-values
-2026-08-17T12:18:50Z INF Traefik version 3.7.10 built on 2026-07-31T12:42:19Z version=3.7.10
-2026-08-17T12:18:50Z INF Version check is enabled.
-2026-08-17T12:18:50Z INF Traefik checks for new releases to notify you if your version is out of date.
-2026-08-17T12:18:50Z INF It also collects usage data during this process.
-2026-08-17T12:18:50Z INF Check the documentation to get more info: https://doc.traefik.io/traefik/contributing/data-collection/
-2026-08-17T12:18:50Z INF
+2026-08-18T04:21:11Z WRN Traefik can reject some encoded characters in the request path.When your backend is not fully compliant with [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986),it is recommended to set these options to `false` to avoid split-view situation.Refer to the documentation for more details: https://doc.traefik.io/traefik/v3.7/migrate/v3/#encoded-characters-configuration-default-values
+2026-08-18T04:21:11Z INF Traefik version 3.7.10 built on 2026-07-31T12:42:19Z version=3.7.10
+2026-08-18T04:21:11Z INF Version check is enabled.
+2026-08-18T04:21:11Z INF Traefik checks for new releases to notify you if your version is out of date.
+2026-08-18T04:21:11Z INF It also collects usage data during this process.
+2026-08-18T04:21:11Z INF Check the documentation to get more info: https://doc.traefik.io/traefik/contributing/data-collection/
+2026-08-18T04:21:11Z INF
 Stats collection is disabled.
 Help us improve Traefik by turning this feature on :)
 More details on: https://doc.traefik.io/traefik/contributing/data-collection/
 
-2026-08-17T12:18:50Z INF Starting provider aggregator *aggregator.ProviderAggregator
-2026-08-17T12:18:50Z INF Starting provider *traefik.Provider
-2026-08-17T12:18:50Z INF Starting provider *ingress.Provider
-2026-08-17T12:18:50Z INF ingress label selector is: "" providerName=kubernetes
-2026-08-17T12:18:50Z INF Starting provider *acme.ChallengeTLSALPN
-2026-08-17T12:18:50Z INF Creating in-cluster Provider client providerName=kubernetes
-2026-08-17T12:18:50Z INF Starting provider *crd.Provider
-2026-08-17T12:18:50Z INF label selector is: "" providerName=kubernetescrd
-2026-08-17T12:18:50Z INF Creating in-cluster Provider client providerName=kubernetescrd
+2026-08-18T04:21:11Z INF Starting provider aggregator *aggregator.ProviderAggregator
+2026-08-18T04:21:11Z INF Starting provider *traefik.Provider
+2026-08-18T04:21:11Z INF Starting provider *ingress.Provider
+2026-08-18T04:21:11Z INF ingress label selector is: "" providerName=kubernetes
+2026-08-18T04:21:11Z INF Creating in-cluster Provider client providerName=kubernetes
+2026-08-18T04:21:11Z INF Starting provider *crd.Provider
+2026-08-18T04:21:11Z INF Starting provider *acme.ChallengeTLSALPN
+2026-08-18T04:21:11Z INF label selector is: "" providerName=kubernetescrd
+2026-08-18T04:21:11Z INF Creating in-cluster Provider client providerName=kubernetescrd
 
   IngressRoutes:
 NAMESPACE    NAME                          AGE
-test-app-b   fastapi-app-b-ingress-route   11s
-test-app     fastapi-app-ingress-route     12s
+test-app-b   fastapi-app-b-ingress-route   9s
+test-app     fastapi-app-ingress-route     10s
 
   Middleware:
 NAMESPACE    NAME                       AGE
-test-app-b   fastapi-app-b-middleware   12s
-test-app     fastapi-app-middleware     12s
+test-app-b   fastapi-app-b-middleware   10s
+test-app     fastapi-app-middleware     10s
 
   Traefik service:
 NAME      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
-traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   35s
+traefik   LoadBalancer   10.43.31.56   <pending>     80:32080/TCP,443:30908/TCP   20s
 
 ╔═══ PHASE 13 — Tests ═══
 
   [Test 1] Ingress — docker-network → k3s:32080/fastapi-app → Traefik → fastapi-app
   ℹ  GET http://172.19.0.3:32080/fastapi-app
   ✅ Ingress confirmed — FastAPI pod reachable via IngressRoute
-{"hostname":"fastapi-app-d4c8cd88-fpm8m","app":"fastapi-app","ns":"test-app","path":"/","status":"ok"}
+{"hostname":"fastapi-app-d4c8cd88-nrcbn","app":"fastapi-app","ns":"test-app","path":"/","status":"ok"}
 
   [Test 2] Egress (EP_DOCKER) — fastapi-app pod → S3 via http://172.19.0.2:4566
   ✅ Egress (EP_DOCKER) confirmed — S3 put+get matched via http://172.19.0.2:4566
-{"endpoint": "http://172.19.0.2:4566", "bucket": "egress-47efa3e7", "put": "ministack egress ok via http://172.19.0.2:4566", "got": "ministack egress ok via http://172.19.0.2:4566", "match": true}
+{"endpoint": "http://172.19.0.2:4566", "bucket": "egress-f6ba6321", "put": "ministack egress ok via http://172.19.0.2:4566", "got": "ministack egress ok via http://172.19.0.2:4566", "match": true}
 
   [Test 3] Egress (Gateway) — fastapi-app pod → S3 via http://172.19.0.1:4566
   ✅ Egress (Gateway) confirmed — S3 put+get matched via http://172.19.0.1:4566
-{"endpoint": "http://172.19.0.1:4566", "bucket": "egress-2bbc14ca", "put": "ministack egress ok via http://172.19.0.1:4566", "got": "ministack egress ok via http://172.19.0.1:4566", "match": true}
+{"endpoint": "http://172.19.0.1:4566", "bucket": "egress-a8ee0417", "put": "ministack egress ok via http://172.19.0.1:4566", "got": "ministack egress ok via http://172.19.0.1:4566", "match": true}
 
   [Test 4] Cross-namespace — fastapi-app <-> fastapi-app-b via cluster DNS
   ℹ  fastapi-app -> fastapi-app-b  (http://fastapi-app-b.test-app-b.svc.cluster.local/)
   ✅ fastapi-app -> fastapi-app-b cross-namespace call succeeded (HTTP 200)
-{"url": "http://fastapi-app-b.test-app-b.svc.cluster.local/", "status": 200, "body": {"hostname": "fastapi-app-b-66cdf9b7c9-7gj9w", "app": "fastapi-app-b", "ns": "test-app-b", "path": "/", "status": "ok"}}
+{"url": "http://fastapi-app-b.test-app-b.svc.cluster.local/", "status": 200, "body": {"hostname": "fastapi-app-b-66cdf9b7c9-9749b", "app": "fastapi-app-b", "ns": "test-app-b", "path": "/", "status": "ok"}}
   ℹ  fastapi-app-b -> fastapi-app  (http://fastapi-app.test-app.svc.cluster.local:80/)
   ✅ fastapi-app-b -> fastapi-app cross-namespace call succeeded (HTTP 200)
-{"url": "http://fastapi-app.test-app.svc.cluster.local:80/", "status": 200, "body": {"hostname": "fastapi-app-d4c8cd88-wktxw", "app": "fastapi-app", "ns": "test-app", "path": "/", "status": "ok"}}
+{"url": "http://fastapi-app.test-app.svc.cluster.local:80/", "status": 200, "body": {"hostname": "fastapi-app-d4c8cd88-w8nq4", "app": "fastapi-app", "ns": "test-app", "path": "/", "status": "ok"}}
 
-  [Test 5] NLB DNS — external container -> ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com -> NLB -> Traefik -> fastapi-app
-  ℹ  GET http://ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com/fastapi-app
-  ⚠  NLB DNS not reachable: http://ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com/fastapi-app
-  ℹ  ministack 'light' edition may not proxy NLB listeners.
+  [Test 5] NLB DNS — external container -> ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com -> NLB -> Traefik -> fastapi-app
+  ℹ  GET http://ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com/fastapi-app
+  ⚠  NLB DNS not reachable: http://ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com/fastapi-app
+  ℹ  ministack 'full' edition may not proxy NLB listeners.
   ℹ  NLB target (172.19.0.3:32080) is healthy (Phase 11)
 
   Workload state:
 NAME                             READY   STATUS    RESTARTS   AGE
-pod/fastapi-app-d4c8cd88-fpm8m   1/1     Running   0          2m35s
-pod/fastapi-app-d4c8cd88-wktxw   1/1     Running   0          2m35s
+pod/fastapi-app-d4c8cd88-nrcbn   1/1     Running   0          2m41s
+pod/fastapi-app-d4c8cd88-w8nq4   1/1     Running   0          2m41s
 
 NAME                  TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
-service/fastapi-app   ClusterIP   10.43.67.95   <none>        80/TCP    2m35s
+service/fastapi-app   ClusterIP   10.43.29.89   <none>        80/TCP    2m41s
 
 NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/fastapi-app   2/2     2            2           2m35s
+deployment.apps/fastapi-app   2/2     2            2           2m41s
 
 NAME                                   DESIRED   CURRENT   READY   AGE
-replicaset.apps/fastapi-app-d4c8cd88   2         2         2       2m35s
+replicaset.apps/fastapi-app-d4c8cd88   2         2         2       2m41s
 NAME                                 READY   STATUS    RESTARTS   AGE
-pod/fastapi-app-b-66cdf9b7c9-7gj9w   1/1     Running   0          2m35s
-pod/fastapi-app-b-66cdf9b7c9-dx89h   1/1     Running   0          2m35s
+pod/fastapi-app-b-66cdf9b7c9-764nk   1/1     Running   0          2m41s
+pod/fastapi-app-b-66cdf9b7c9-9749b   1/1     Running   0          2m41s
 
-NAME                    TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-service/fastapi-app-b   ClusterIP   10.43.66.190   <none>        80/TCP    2m35s
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/fastapi-app-b   ClusterIP   10.43.190.212   <none>        80/TCP    2m41s
 
 NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/fastapi-app-b   2/2     2            2           2m35s
+deployment.apps/fastapi-app-b   2/2     2            2           2m41s
 
 NAME                                       DESIRED   CURRENT   READY   AGE
-replicaset.apps/fastapi-app-b-66cdf9b7c9   2         2         2       2m35s
+replicaset.apps/fastapi-app-b-66cdf9b7c9   2         2         2       2m41s
 NAME                           READY   STATUS    RESTARTS   AGE
-pod/traefik-755657f889-xtfcc   1/1     Running   0          42s
+pod/traefik-755657f889-mm2rd   1/1     Running   0          26s
 
 NAME              TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
-service/traefik   LoadBalancer   10.43.188.0   <pending>     80:32080/TCP,443:32750/TCP   42s
+service/traefik   LoadBalancer   10.43.31.56   <pending>     80:32080/TCP,443:30908/TCP   26s
 
 NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/traefik   1/1     1            1           42s
+deployment.apps/traefik   1/1     1            1           26s
 
 NAME                                 DESIRED   CURRENT   READY   AGE
-replicaset.apps/traefik-755657f889   1         1         1       42s
+replicaset.apps/traefik-755657f889   1         1         1       26s
 
 ╔═══ PHASE 14 — Summary ═══
 
@@ -318,7 +324,7 @@ replicaset.apps/traefik-755657f889   1         1         1       42s
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  CONTAINERS  (Docker network: ministack_network)
   ║    ministack : ministack  (172.19.0.2)
-  ║    k3s       : ministack-eks-my-eks-cluster  (172.19.0.3)
+  ║    k3s       : ministack-eks-us-east-1-my-eks-cluster  (172.19.0.3)
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  ENDPOINTS
   ║    EP_HOST    : http://localhost:4566   (Windows -> ministack)
@@ -332,16 +338,16 @@ replicaset.apps/traefik-755657f889   1         1         1       42s
   ║    Role    : arn:aws:iam::000000000000:role/ministack-eks-cluster-role
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  AWS RESOURCES
-  ║    VPC      : vpc-c0b688ebe69fd6838
-  ║    Subnet-A : subnet-4502d6ac246fc0d82  (us-east-1a)
-  ║    Subnet-B : subnet-89805cd8568525b9d  (us-east-1b)
-  ║    SG       : sg-ae3c7053e53072299
-  ║    IGW      : igw-9f1bf2ef699c17aaf
+  ║    VPC      : vpc-6a758d93b59d365c3
+  ║    Subnet-A : subnet-96b0b66017f5f2606  (us-east-1a)
+  ║    Subnet-B : subnet-dd99bdc1521fcfa9a  (us-east-1b)
+  ║    SG       : sg-78c31677cb8d134d8
+  ║    IGW      : igw-0a83b431385e0bed7
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  NLB
-  ║    DNS      : ministack-nlb-mg1g6v4g.us-east-1.elb.amazonaws.com
-  ║    ARN      : arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/ministack-nlb/mg1g6v4g6o4q8uk7
-  ║    TG       : arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/fsgzmldxh74s5x11
+  ║    DNS      : ministack-nlb-7dc1dx54.us-east-1.elb.amazonaws.com
+  ║    ARN      : arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/ministack-nlb/7dc1dx54nkh51lut
+  ║    TG       : arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/ministack-nlb-tg/7veutw12q3t31937
   ║    Target   : 172.19.0.3:32080   (Traefik NodePort)
   ╠══════════════════════════════════════════════════════════════════════════╣
   ║  TRAEFIK v3

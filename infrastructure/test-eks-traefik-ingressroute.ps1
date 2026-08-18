@@ -86,7 +86,7 @@ foreach ($tool in @('docker', 'kubectl', 'helm', 'aws')) {
 Step "PHASE 2 — Ministack Container Inspection"
 
 $ministack_container_name = docker ps `
-    --filter "ancestor=ministackorg/ministack" `
+    --filter "ancestor=ministackorg/ministack:full" `
     --format '{{.Names}}' | Select-Object -First 1
 
 if (-not $ministack_container_name) {
@@ -222,8 +222,9 @@ if (-not $eksRoleArn) {
 }
 
 INFO "Checking for existing cluster '$CLUSTER_NAME'..."
-$clusterJson   = aws eks describe-cluster --name $CLUSTER_NAME 2>$null
-$currentStatus = if ($clusterJson) { ($clusterJson | ConvertFrom-Json).cluster.status } else { $null }
+$clusterJson    = aws eks describe-cluster --name $CLUSTER_NAME 2>$null
+$clusterDesc    = if ($clusterJson) { $clusterJson | ConvertFrom-Json } else { $null }
+$currentStatus  = if ($clusterDesc) { $clusterDesc.cluster.status } else { $null }
 
 if ($currentStatus -eq 'ACTIVE') {
     OK "Cluster '$CLUSTER_NAME' already ACTIVE — skipping creation"
@@ -266,7 +267,24 @@ if ($currentStatus -eq 'ACTIVE') {
 # ==============================================================================
 Step "PHASE 6 — k3s Kubeconfig Setup"
 
-$k3sContainer = "ministack-eks-$CLUSTER_NAME"
+# Get ministack network configurations
+$ministack_network_json_config = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
+$ministack_network_containers = $ministack_network_json_config.Containers
+
+# Get k3s container name using its ip in ministack network
+$k3sContainer = $null
+foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+    $containerName = $container.Name
+    $containerHostPort = (docker inspect $containerName | ConvertFrom-Json)[0].NetworkSettings.Ports.PSobject.Properties.Value[0].HostPort
+    $k3sClusterHostPort = ([System.UriBuilder]$clusterDesc.cluster.endpoint).Port
+    if ([int]$containerHostPort -eq [int]$k3sClusterHostPort) {
+        $k3sContainer = $containerName
+        break
+    }
+}
+if (-not $k3sContainer) {
+    throw "No container with IP '$k3sContainer' found in network '$ministack_network_name'."
+}
 
 INFO "Waiting for k3s container '$k3sContainer'..."
 $k3sDeadline = (Get-Date).AddSeconds(30)
@@ -279,11 +297,7 @@ OK "k3s container running: $k3sContainer"
 $k3sInspect    = (docker inspect $k3sContainer | ConvertFrom-Json)[0]
 $k3sPorts      = $k3sInspect.NetworkSettings.Ports
 $k3s6443Prop   = $k3sPorts.PSObject.Properties | Where-Object { $_.Name -like '6443/*' }
-$K3S_API_PORT  = if ($k3s6443Prop) {
-    $k3s6443Prop.Value[0].HostPort
-} else {
-    $k3sPorts.PSObject.Properties.Value[0].HostPort
-}
+$K3S_API_PORT  = $k3sPorts.PSobject.Properties.Value[0].HostPort
 $k3sContainerIP = $k3sInspect.NetworkSettings.Networks.$ministack_network_name.IPAddress
 
 if (-not $k3sContainerIP) { throw "Cannot resolve k3s container IP on '$ministack_network_name'." }

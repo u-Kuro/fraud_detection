@@ -1,11 +1,11 @@
 # AWS
 # /admin
 variable "aws_admin_access_key" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "aws_admin_secret_key" {
-  type = string
+  type      = string
   sensitive = true
 }
 variable "aws_admin_region" { type = string }
