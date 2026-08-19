@@ -1,9 +1,4 @@
 # Allow teams to manage their own parameters
-locals {
-  ssm_teams_parameter_arns = {
-    for k, v in local.ssm_teams_parameter_paths : k => "${local.ssm_parameter_base_arn}:${v}"
-  }
-}
 resource "aws_iam_user_policy" "teams_ssm_parameter" {
   for_each = var.ssm_teams
   user     = var.iam_teams_names[each.key]

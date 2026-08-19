@@ -15,8 +15,7 @@ resource "helm_release" "mlflow" {
 
   set = [
     { name = "fullnameOverride", value = var.mlflow_host },
-    { name = "extraEnvVars.SCRIPT_NAME", value = "/${var.mlflow_host}" },
-    { name = "service.port", value = var.eks_traefik_http_port },
+    { name = "service.port", value = var.traefik_http_port },
     { name = "service.containerPort", value = var.mlflow_container_port },
 
     { name = "backendStore.postgres.host", value = var.rds_postgres_host },
@@ -46,25 +45,7 @@ resource "helm_release" "mlflow" {
     { name = "flaskServerSecretKey", value = var.mlflow_flask_server_secret_key },
   ]
 }
-# Strip url prefixes in Traefik from reroutes
-resource "kubernetes_manifest" "middleware" {
-  manifest = {
-    apiVersion = "traefik.io/v1alpha1"
-    kind       = "Middleware"
-    metadata = {
-      name      = "${var.mlflow_host}-middleware"
-      namespace = var.eks_mlflow_namespace
-    }
-    spec = {
-      stripPrefix = {
-        prefixes = ["/${var.mlflow_host}"]
-      }
-    }
-  }
-
-  depends_on = [helm_release.mlflow]
-}
-# Adds ingress route in Traefik for MLflow
+# Adds ingress route in Traefik for MLflow subdomain
 resource "kubernetes_manifest" "ingress_route" {
   manifest = {
     apiVersion = "traefik.io/v1alpha1"
@@ -74,21 +55,25 @@ resource "kubernetes_manifest" "ingress_route" {
       namespace = var.eks_mlflow_namespace
     }
     spec = {
-      entryPoints = ["web"] # http 80
+      entryPoints = ["web", var.traefik_eks_host_entry_point] # http 80 / 16443
       routes = [
         {
-          match = "PathPrefix(`/${var.mlflow_host}`)"
+          match = "Host(${local.mlflow_subdomain})"
           kind  = "Rule"
-          middlewares = [
-            {
-              name      = kubernetes_manifest.middleware.manifest.metadata.name
-              namespace = var.eks_mlflow_namespace
-            }
-          ]
           services = [
             {
               name = var.mlflow_host
-              port = var.eks_traefik_http_port
+              port = var.traefik_http_port
+            }
+          ]
+        },
+        {
+          match = "Host(${local.mlflow_subdomain_from_host})"
+          kind  = "Rule"
+          services = [
+            {
+              name = var.mlflow_host
+              port = var.traefik_http_port
             }
           ]
         }
@@ -98,15 +83,9 @@ resource "kubernetes_manifest" "ingress_route" {
 
   depends_on = [
     helm_release.mlflow,
-    kubernetes_manifest.middleware,
   ]
 }
 # Create script in cluster for creating MLflow workspace
-locals {
-  create_mlflow_workspace_script_file_resource_name = "create-mlflow-workspace-script"
-  create_mlflow_workspace_script_file_name          = "create-mlflow-workspace.sh"
-  create_mlflow_workspace_script_file_relative_path = "${local.scripts_relative_path}/${local.create_mlflow_workspace_script_file_name}"
-}
 resource "kubernetes_config_map" "create_mlflow_workspace" {
   metadata {
     name      = local.create_mlflow_workspace_script_file_resource_name
@@ -116,9 +95,6 @@ resource "kubernetes_config_map" "create_mlflow_workspace" {
     (local.create_mlflow_workspace_script_file_name) = file("${path.module}/${local.create_mlflow_workspace_script_file_relative_path}")
   }
   immutable = true
-}
-locals {
-  mlflow_intra_url = "http://${var.mlflow_host}:${var.eks_traefik_http_port}"
 }
 # Runs the job to create MLflow workspaces for each team
 resource "kubernetes_job" "teams" {

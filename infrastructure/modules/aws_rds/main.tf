@@ -37,3 +37,89 @@ data "external" "postgres_configuration" {
     postgres_endpoint_ip   = aws_db_instance.postgres.address
   }
 }
+# {
+#    "DBInstance": {
+#        "DBInstanceIdentifier": "test",
+#        "DBInstanceClass": "db.t3.micro",
+#        "Engine": "postgres",
+#        "DBInstanceStatus": "creating",
+#        "MasterUsername": "admin",
+#        "DBName": "mydb",
+#        "Endpoint": {
+#            "Address": "172.19.0.4",
+#            "Port": 5432,
+#            "HostedZoneId": "Z2R2ITUGPM61AM"
+#        },
+#        "AllocatedStorage": 20,
+#        "InstanceCreateTime": "2026-08-19T07:13:12.850000+00:00",
+#        "PreferredBackupWindow": "03:00-04:00",
+#        "BackupRetentionPeriod": 1,
+#        "DBSecurityGroups": [],
+#        "VpcSecurityGroups": [],
+#        "DBParameterGroups": [
+#            {
+#                "DBParameterGroupName": "default.postgres15",
+#                "ParameterApplyStatus": "in-sync"
+#            }
+#        ],
+#        "AvailabilityZone": "us-east-1a",
+#        "DBSubnetGroup": {
+#            "DBSubnetGroupName": "default",
+#            "DBSubnetGroupDescription": "default",
+#            "VpcId": "vpc-00000000",
+#            "SubnetGroupStatus": "Complete",
+#            "Subnets": [],
+#            "DBSubnetGroupArn": "arn:aws:rds:us-east-1:000000000000:subgrp:default"
+#        },
+#        "PreferredMaintenanceWindow": "sun:05:00-sun:06:00",
+#        "PendingModifiedValues": {},
+#        "LatestRestorableTime": "2026-08-19T07:13:12.850000+00:00",
+#        "MultiAZ": false,
+#        "EngineVersion": "15.3",
+#        "AutoMinorVersionUpgrade": true,
+#        "ReadReplicaSourceDBInstanceIdentifier": "",
+#        "ReadReplicaDBInstanceIdentifiers": [],
+#        "ReadReplicaDBClusterIdentifiers": [],
+#        "ReplicaMode": "",
+#        "LicenseModel": "postgresql-license",
+#        "StorageThroughput": 0,
+#        "OptionGroupMemberships": [
+#            {
+#                "OptionGroupName": "default:postgres-15",
+#                "Status": "in-sync"
+#            }
+#        ],
+#        "PubliclyAccessible": false,
+#        "StatusInfos": [],
+#        "StorageType": "gp2",
+#        "DbInstancePort": 0,
+#        "DBClusterIdentifier": "",
+#        "StorageEncrypted": false,
+#        "KmsKeyId": "",
+#        "DbiResourceId": "db-5CC414DD6715487EAD2F",
+#        "CACertificateIdentifier": "rds-ca-rsa2048-g1",
+#        "DomainMemberships": [],
+#        "CopyTagsToSnapshot": false,
+#        "MonitoringInterval": 0,
+#        "EnhancedMonitoringResourceArn": "",
+#        "MonitoringRoleArn": "",
+#        "PromotionTier": 1,
+#        "DBInstanceArn": "arn:aws:rds:us-east-1:000000000000:db:test",
+#        "IAMDatabaseAuthenticationEnabled": false,
+#        "PerformanceInsightsEnabled": false,
+#        "EnabledCloudwatchLogsExports": [],
+#        "ProcessorFeatures": [],
+#        "DeletionProtection": false,
+#        "AssociatedRoles": [],
+#        "MaxAllocatedStorage": 20,
+#        "TagList": [],
+#        "CustomerOwnedIpEnabled": false,
+#        "NetworkType": "IPV4",
+#        "BackupTarget": "region",
+#        "CertificateDetails": {
+#            "CAIdentifier": "rds-ca-rsa2048-g1",
+#            "ValidTill": "2061-01-01T00:00:00+00:00"
+#        },
+#        "IsStorageConfigUpgradeAvailable": false
+#    }
+#}

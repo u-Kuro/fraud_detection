@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # Get Ministack container name
-$ministack_container_name = docker ps --filter "ancestor=ministackorg/ministack:full" --format '{{.Names}}' | Select-Object -First 1
+$ministack_container_name = docker ps --filter "ancestor=ministackorg/ministack" --format '{{.Names}}' | Select-Object -First 1
 if (-not $ministack_container_name) {
     throw "Ministack is not running."
 }

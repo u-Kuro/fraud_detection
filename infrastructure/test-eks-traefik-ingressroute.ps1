@@ -86,7 +86,7 @@ foreach ($tool in @('docker', 'kubectl', 'helm', 'aws')) {
 Step "PHASE 2 — Ministack Container Inspection"
 
 $ministack_container_name = docker ps `
-    --filter "ancestor=ministackorg/ministack:full" `
+    --filter "ancestor=ministackorg/ministack" `
     --format '{{.Names}}' | Select-Object -First 1
 
 if (-not $ministack_container_name) {

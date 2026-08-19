@@ -1,27 +1,67 @@
-# TODO - 18/08/2026 - Continue here... (also need to update ps1 scripts for mwaa)... Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
-docker network rm ministack_network
+# TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
+docker network rm ministack-network
+docker volume rm ministack
 Start-Sleep -Seconds 5
 clear
-docker network create ministack_network
+docker network create ministack-network
 docker run -d `
   --name ministack `
-  --network ministack_network `
+  --network ministack-network `
   -p 4566:4566 `
-  -e DOCKER_NETWORK=ministack_network `
+  -e DOCKER_NETWORK=ministack-network `
   -e PERSIST_STATE=1 `
+  -e LOCALSTACK_PERSISTENCE=1 `
   -e S3_PERSIST=1 `
   -e RDS_PERSIST=1 `
+  -e MWAA_PERSIST=1 `
   -e DSQL_PERSIST=1 `
+  -e DSQL_STRICT=1 `
   -e LOG_LEVEL=DEBUG `
-  -v ministack-data:/tmp/ministack-data `
   -v /var/run/docker.sock:/var/run/docker.sock `
-  ministackorg/ministack:full
+  ministackorg/ministack
 Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
 
+aws mwaa create-environment `
+    --name            $ENV_NAME `
+    --execution-role-arn "arn:aws:iam::000000000000:role/mwaa-execution-role" `
+    --source-bucket-arn  "arn:aws:s3:::$BUCKET" `
+    --dag-s3-path        "dags/" `
+    --airflow-version    "3.0.6" `
+    --environment-class  "mw1.small" `
+    --network-configuration '{\"SubnetIds\":[\"subnet-00000000\",\"subnet-00000001\"],\"SecurityGroupIds\":[\"sg-00000000\"]}'
 
-aws mwaa create-environment --name test --execution-role-arn "arn:aws:iam::000000000000:role/mwaa-role-test" --source-bucket-arn "arn:aws:s3:::airflow-dags-test" --dag-s3-path "dags/" --network-configuration  "SubnetIds=0,1,SecurityGroupIds=0"
+>>     mwaa invoke-rest-api `
+>>     --name   $ENV_NAME `
+>>     --path   "/dags/$DAG_ID/dagRuns" `
+>>     --method POST `
+>>     --body   '{\"logical_date\": \"2024-01-01T00:00:00Z\"}' `
+>>     --output json
+
+
+name: Build and Copy Directory
+on: [push]
+
+jobs:
+  docker-copy-job:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out your repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Build or start your destination container
+      - name: Start Target Container
+        run: |
+          docker run -d --name my_target_container alpine sleep 300
+
+      # 3. Copy the directory from checkout to the container (MWAA s3 auto sync currently not implemented in Ministack. invoking existing dag in airflow does work tho.)
+      - name: Copy Directory to Docker Container
+        run: |
+          docker cp ${{ github.workspace }}/dags/. airflow_container_name:/opt/airflow/dags/
+
+TO CHECK ERRORS - docker exec airflow_container_name airflow dags list-import-errors
 
 {
     "Environment": {
@@ -124,7 +164,7 @@ aws mwaa create-environment --name test --execution-role-arn "arn:aws:iam::00000
 >>   -e LOG_LEVEL=DEBUG `
 >>   -v ministack-data:/tmp/ministack-data `
 >>   -v /var/run/docker.sock:/var/run/docker.sock `
->>   ministackorg/ministack:full
+>>   ministackorg/ministack
 1e771f189e106c4cc448df25714fc75d01a7841d5d38f3f534f9caeb09554f54
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Start-Sleep -Seconds 5
 (fraud-detection) PS C:\Projects\Personal\Practice\fraud_detection\infrastructure> Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"

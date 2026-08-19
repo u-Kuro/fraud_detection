@@ -1,8 +1,8 @@
 output "aws_eks_cluster_name" {
   value = module.eks.cluster_name
 }
-output "aws_eks_cluster_endpoint" {
-  value = module.eks.cluster_endpoint
+output "aws_eks_host_url" {
+  value = module.eks.host_url
 }
 
 output "aws_rds_db_identifier" {

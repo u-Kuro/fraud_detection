@@ -32,7 +32,6 @@ variable "eks_teams" { type = set(string) }
 variable "local_files_kubeconfig_for_localhost_file_path" { type = string }
 variable "local_files_kubeconfig_for_docker_file_path" {type = string}
 variable "local_files_registries_file_path" {type = string}
-variable "local_files_directory_path" { type = string }
 
 # Ministack
 # /network

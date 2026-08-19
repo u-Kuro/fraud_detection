@@ -1,15 +1,16 @@
+# TODO - 19/08/2026 - Continue here...
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
+$airflow_container_url  = $query.airflow_container_url
 $ministack_network_name = $query.ministack_network_name
-$postgres_container_ip  = $query.postgres_container_ip
 
 # Validate inputs values
 $items = @{
     ministack_network_name = $ministack_network_name
-    postgres_container_ip  = $postgres_container_ip
+    airflow_container_url  = $airflow_container_url
 }.GetEnumerator()
 foreach ($item in $items) {
     if ([string]::IsNullOrWhiteSpace($item.Value)) {
@@ -17,20 +18,23 @@ foreach ($item in $items) {
     }
 }
 
+# Get Airflow container host port
+$airflow_container_ip = ([System.UriBuilder]$airflow_container_url).Host
+
 # Get Ministack network configurations
 $ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
 $ministack_network_containers          = $ministack_network_json_configurations.Containers
 
-# Get Postgres container name using its IP in Ministack network
-$postgres_container_name = $null
+# Get Airflow container name using its IP in Ministack network
+$airflow_container_name = $null
 foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
-    if ($container.IPv4Address -like "$postgres_container_ip/*") {
-        $postgres_container_name = $container.Name
+    if ($container.IPv4Address -like "$airflow_container_ip/*") {
+        $airflow_container_name = $container.Name
         break
     }
 }
-if (-not $postgres_container_name) {
-    throw "No container with IP '$postgres_container_ip' found in network '$ministack_network_name'."
+if (-not $airflow_container_name) {
+    throw "No container with IP '$airflow_container_ip' found in network '$ministack_network_name'."
 }
 
 # Get Postgres container configurations

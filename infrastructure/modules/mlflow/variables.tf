@@ -11,20 +11,14 @@ variable "iam_admin_password" {
 variable "iam_admin_region" { type = string }
 
 # EKS
+# /domain
+variable "eks_ingress_domain" { type = string }
+variable "eks_ingress_domain_from_host" { type = string }
 # /mlflow
 variable "eks_mlflow_namespace" {
   type    = string
   default = "mlflow"
 }
-# /traefik
-variable "eks_traefik_http_port" {
-  type    = number
-  default = 80
-}
-
-# ELB
-# /alb
-variable "elb_alb_dns_name" { type = string }
 
 # MLflow
 # /deployment
@@ -79,3 +73,12 @@ variable "secrets_manager_teams_secret_paths" { type = map(string) }
 # SSM
 # /teams
 variable "ssm_teams_parameter_paths" { type = map(string) }
+
+# Traefik
+# /entry-point
+variable "traefik_eks_host_entry_point" {type = string}
+# /port
+variable "traefik_http_port" {
+  type    = number
+  default = 80
+}

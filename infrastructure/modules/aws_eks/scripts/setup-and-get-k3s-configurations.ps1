@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$eks_cluster_host_url               = $query.eks_cluster_host_url
+$k3s_container_host_url             = $query.k3s_container_host_url
 $ministack_network_name             = $query.ministack_network_name
 $kubeconfig_for_localhost_file_path = $query.kubeconfig_for_localhost_file_path
 $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
@@ -11,7 +11,7 @@ $registries_file_path               = $query.registries_file_path
 
 # Validate inputs values
 $items = @{
-    eks_cluster_host_url               = $eks_cluster_host_url
+    k3s_container_host_url             = $k3s_container_host_url
     ministack_network_name             = $ministack_network_name
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = $kubeconfig_for_docker_file_path
@@ -23,8 +23,8 @@ foreach ($item in $items) {
     }
 }
 
-# Get EKS cluster configurations
-$eks_cluster_host_port = ([System.UriBuilder]$eks_cluster_host_url).Port
+# Get K3s container host port
+$k3s_container_host_port = ([System.UriBuilder]$k3s_container_host_url).Port
 
 # Get Ministack network configurations
 $ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
@@ -34,22 +34,30 @@ $ministack_network_containers          = $ministack_network_json_configurations.
 $k3s_container_name = $null
 foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
     $container_host_port = (docker inspect $container.Name | ConvertFrom-Json)[0].NetworkSettings.Ports.PSobject.Properties.Value[0].HostPort
-    if ([int]$container_host_port -eq [int]$eks_cluster_host_port) {
+    if ([int]$container_host_port -eq [int]$k3s_container_host_port) {
         $k3s_container_name = $container.Name
         break
     }
 }
 if (-not $k3s_container_name) {
-    throw "No K3s container with port '$eks_cluster_host_port' found in the network '$ministack_network_name'."
+    throw "No K3s container with port '$k3s_container_host_port' found in the network '$ministack_network_name'."
 }
 
 # Get K3s container configurations
 $k3s_container_json_configurations = (docker inspect $k3s_container_name | ConvertFrom-Json)[0]
-$k3s_container_ports               = $k3s_container_json_configurations.NetworkSettings.Ports
+$k3s_container_network_settings    = $k3s_container_json_configurations.NetworkSettings
+$k3s_container_networks            = $k3s_container_network_settings.Networks
+$k3s_container_ports               = $k3s_container_network_settings.Ports
+
+# Get K3s container ip
+$k3s_container_ip                  = $k3s_container_networks.$ministack_network_name.IPAddress
+if (-not $k3s_container_ip) {
+    throw "No IP found for K3s container '$k3s_container_name' in network '$ministack_network_name'."
+}
 
 # Get K3s container ports
 $k3s_container_port      = ($k3s_container_ports.PSobject.Properties.Name -split "/")[0]
-$k3s_container_host_port = $eks_cluster_host_port
+$k3s_container_host_port = $k3s_container_host_port
 
 # Define configuration files directory path in K3s container
 $k3s_container_configuration_files_directory_path = "/etc/rancher/k3s"
@@ -95,3 +103,8 @@ if ($elapsed -ge $max_wait) {
 } else {
     Write-Host "[EKS] K3s is ready."
 }
+
+@{
+    k3s_container_ip = $k3s_container_ip
+    k3s_container_host_port = $k3s_container_host_port
+} | ConvertTo-Json -Compress

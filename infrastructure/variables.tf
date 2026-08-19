@@ -46,3 +46,10 @@ variable "mlflow_flask_server_secret_key" {
   type      = string
   sensitive = true
 }
+
+# sslip.io
+# /dns
+variable "sslip_io_public_wildcard_dns_domain" {
+  type = string
+  default = "sslip.io"
+}

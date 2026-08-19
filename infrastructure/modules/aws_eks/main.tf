@@ -113,16 +113,62 @@ resource "kubernetes_role_binding" "teams" {
   depends_on = [aws_eks_cluster.main]
 }
 # Setup and get Ministack's EKS configurations
-data "external" "eks_configuration" {
+data "external" "k3s_configuration" {
   depends_on = [aws_eks_cluster.main]
 
-  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-eks-configurations.ps1"]
+  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
 
   query = {
-    eks_cluster_host_url               = aws_eks_cluster.main.endpoint
+    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
     ministack_network_name             = var.ministack_network_name
     kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
-    registries_file_path               = var.local_files_directory_path
+    registries_file_path               = var.local_files_registries_file_path
   }
 }
+# {
+#    "cluster": {
+#        "name": "test",
+#        "arn": "arn:aws:eks:us-east-1:000000000000:cluster/test",
+#        "createdAt": "2026-08-19T15:10:19+08:00",
+#        "version": "1.30",
+#        "endpoint": "https://localhost:16443",
+#        "roleArn": "0",
+#        "resourcesVpcConfig": {
+#            "subnetIds": [
+#                "0",
+#                "1"
+#            ],
+#            "securityGroupIds": [
+#                "0"
+#            ],
+#            "clusterSecurityGroupId": "sg-dbc3c57251c9433",
+#            "vpcId": "vpc-00000000",
+#            "endpointPublicAccess": true,
+#            "endpointPrivateAccess": false,
+#            "publicAccessCidrs": [
+#                "0.0.0.0/0"
+#            ]
+#        },
+#        "kubernetesNetworkConfig": {
+#            "serviceIpv4Cidr": "10.100.0.0/16",
+#            "ipFamily": "ipv4"
+#        },
+#        "logging": {
+#            "clusterLogging": []
+#        },
+#        "identity": {
+#            "oidc": {
+#                "issuer": "http://localhost:4566/oidc/id/AC0DBC95D857474180110E76289C"
+#            }
+#        },
+#        "status": "CREATING",
+#        "certificateAuthority": {
+#            "data": ""
+#        },
+#        "platformVersion": "eks.19",
+#        "tags": {},
+#        "encryptionConfig": [],
+#        "accessConfig": {}
+#    }
+#}

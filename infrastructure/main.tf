@@ -100,20 +100,23 @@ module "ecr" {
 module "eks" {
   source = "./modules/aws_eks"
 
-  ec2_role_arn                          = module.iam.ec2_role_arn
-  ec2_role_name                         = module.iam.ec2_role_name
-  eks_host_endpoint_url                 = local.eks_host_url
-  eks_role_arn                          = module.iam.eks_role_arn
-  eks_role_name                         = module.iam.ec2_role_name
-  eks_teams                             = local.eks_teams
-  iam_admin_password                    = var.aws_admin_secret_key
-  iam_admin_region                      = module.iam.admin_region
-  iam_admin_arn                         = module.iam.admin_arn
-  iam_admin_username                    = var.aws_admin_access_key
-  iam_teams_role_arns                   = module.iam.teams_role_arns
-  local_files_directory_path            = local.local_files_directory_path
+  ec2_role_arn                                   = module.iam.ec2_role_arn
+  ec2_role_name                                  = module.iam.ec2_role_name
+  eks_host_endpoint_url                          = local.eks_host_url
+  eks_role_arn                                   = module.iam.eks_role_arn
+  eks_role_name                                  = module.iam.ec2_role_name
+  eks_teams                                      = local.eks_teams
+  iam_admin_password                             = var.aws_admin_secret_key
+  iam_admin_region                               = module.iam.admin_region
+  iam_admin_arn                                  = module.iam.admin_arn
+  iam_admin_username                             = var.aws_admin_access_key
+  iam_teams_role_arns                            = module.iam.teams_role_arns
   local_files_kubeconfig_for_localhost_file_path = local_sensitive_file.kubeconfig_for_localhost.filename
-  ssm_teams_parameter_path              = module.ssm.teams_parameter_path
+  ssm_teams_parameter_path                       = module.ssm.teams_parameter_path
+  local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
+  local_files_registries_file_path            = local_sensitive_file.registries.filename
+  ministack_network_name                      = local.ministack_network_name
+
   depends_on = [
     terraform_data.configure_aws,
     module.iam,
@@ -157,7 +160,8 @@ module "mwaa" {
 module "mlflow" {
   source = "modules/mlflow"
 
-  elb_alb_dns_name                   = module.elb.alb_dns_name
+  eks_ingress_domain         = local.eks_ingress_domain
+  eks_ingress_domain_from_host = local.eks_ingress_domain_from_host
   iam_admin_password                 = var.aws_admin_secret_key
   iam_admin_region                   = module.iam.admin_region
   iam_admin_username                 = var.aws_admin_access_key
