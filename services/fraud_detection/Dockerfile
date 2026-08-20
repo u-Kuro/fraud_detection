@@ -1,4 +1,4 @@
-FROM python:3.12.13-slim
+FROM python:3.12.11-slim
 
 ARG FRAUD_DETECTION_API_PORT
 
