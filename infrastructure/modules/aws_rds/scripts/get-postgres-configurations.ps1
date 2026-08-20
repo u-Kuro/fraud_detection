@@ -39,7 +39,7 @@ $postgres_container_network_settings    = $postgres_container_json_configuration
 $postgres_container_ports               = $postgres_container_network_settings.Ports
 
 # Get Postgres container host port
-$postgres_container_host_port = $postgres_container_ports.PSobject.Properties.Value[0].HostPort
+$postgres_container_host_port = $postgres_container_ports[0].PSobject.Properties.Value[0].HostPort
 if (-not $postgres_container_host_port) {
     throw "'$postgres_container_name' port has invalid value of '$postgres_container_host_port'."
 }

@@ -43,8 +43,11 @@ if (-not $ministack_container_ip) {
     throw "'$ministack_container_name' IP has invalid value of '$ministack_container_ip'."
 }
 
+# Get Ministack container port
+$ministack_container_port = ($ministack_container_ports[0].PSObject.Properties.Name -split "/")[0]
+
 # Get Ministack container host port
-$ministack_container_host_port = $ministack_container_ports.PSobject.Properties.Value[0].HostPort
+$ministack_container_host_port = $ministack_container_ports[0].PSobject.Properties.Value[0].HostPort
 if (-not $ministack_container_host_port) {
     throw "'$ministack_container_name' port has invalid value of '$ministack_container_host_port'."
 }
@@ -56,6 +59,6 @@ if (-not $ministack_container_host_port) {
     ministack_container_ip        = $ministack_container_ip
     ministack_container_host_port = $ministack_container_host_port
     ministack_host_url            = "http://localhost:${ministack_container_host_port}"
-    ministack_url                 = "http://${ministack_container_name}:${ministack_container_host_port}"
-    ministack_endpoint            = "${ministack_container_name}:${ministack_container_host_port}"
+    ministack_url                 = "http://${ministack_container_name}:${ministack_container_port}"
+    ministack_endpoint            = "${ministack_container_name}:${ministack_container_port}"
 } | ConvertTo-Json -Compress

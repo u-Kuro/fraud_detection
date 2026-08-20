@@ -18,7 +18,7 @@ resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
 resource "aws_mwaa_environment" "teams" {
   for_each           = var.mwaa_teams
   name               = local.mwaa_teams_environment_names[each.key]
-  airflow_version    = "3.0.6"
+  airflow_version    = "3.0.6-python3.12" # v3.12.11 | core-executor: LocalExecution
   execution_role_arn = var.iam_teams_role_arns[each.key]
 
   source_bucket_arn    = var.s3_teams_mwaa_bucket_arn[each.key]
@@ -32,6 +32,7 @@ resource "aws_mwaa_environment" "teams" {
       variables_prefix   = local.mwaa_teams_airflow_secrets_backend_variables_prefixes[each.key]
       sep                = "/"
       endpoint_url       = var.secrets_manager_url
+      profile_name       = "default"
     })
   }
 

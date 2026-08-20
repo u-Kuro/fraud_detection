@@ -56,7 +56,7 @@ if (-not $k3s_container_ip) {
 }
 
 # Get K3s container ports
-$k3s_container_port      = ($k3s_container_ports.PSobject.Properties.Name -split "/")[0]
+$k3s_container_port      = ($k3s_container_ports[0].PSobject.Properties.Name -split "/")[0]
 $k3s_container_host_port = $k3s_container_host_port
 
 # Define configuration files directory path in K3s container
@@ -100,9 +100,12 @@ do {
 if ($elapsed -ge $max_wait) {
     Write-Error "[EKS] K3s container did not recover after waiting ${max_wait}s."
     exit 1
-} else {
-    Write-Host "[EKS] K3s is ready."
 }
+
+# Wait until its safe for deployment
+kubectl wait --for=condition=Ready nodes --all --timeout=5m
+
+Write-Host "[EKS] K3s is ready."
 
 @{
     k3s_container_ip = $k3s_container_ip

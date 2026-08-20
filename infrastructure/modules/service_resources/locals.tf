@@ -36,7 +36,7 @@ locals {
   # github = "GITHUB_CONNECTION_ID"
   # github = jsonencode({
   #  "conn_type": "http",
-  #  "host": "https://api.github.com",
+  #  "host": "api.github.com",
   #  "extra": {
   #    "headers": {
   #      "Authorization": "Bearer ghp_YourGitHubPersonalAccessTokenHere",

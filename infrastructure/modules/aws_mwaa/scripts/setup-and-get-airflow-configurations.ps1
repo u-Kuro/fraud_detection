@@ -2,6 +2,23 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+docker exec ministack-mwaa-test sh -c @'
+mkdir -p ~/.aws && cat > ~/.aws/config << EOF
+[default]
+region = us-east-1
+endpoint_url = http://ministack:4566
+request_checksum_calculation = when_required
+EOF
+'@
+
+docker exec ministack-mwaa-test sh -c @'
+mkdir -p ~/.aws && cat > ~/.aws/credentials << EOF
+[default]
+aws_access_key_id = test
+aws_secret_access_key = test
+EOF
+'@
+
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
 $airflow_container_url  = $query.airflow_container_url
@@ -43,7 +60,7 @@ $postgres_container_network_settings    = $postgres_container_json_configuration
 $postgres_container_ports               = $postgres_container_network_settings.Ports
 
 # Get Postgres container host port
-$postgres_container_host_port = $postgres_container_ports.PSobject.Properties.Value[0].HostPort
+$postgres_container_host_port = $postgres_container_ports[0].PSobject.Properties.Value[0].HostPort
 if (-not $postgres_container_host_port) {
     throw "'$postgres_container_name' port has invalid value of '$postgres_container_host_port'."
 }

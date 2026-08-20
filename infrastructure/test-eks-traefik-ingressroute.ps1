@@ -113,7 +113,7 @@ if (-not $ms_networks.PSObject.Properties[$ministack_network_name]) {
 
 $ministack_gw        = $ms_networks.$ministack_network_name.Gateway
 $ministack_ip        = $ms_networks.$ministack_network_name.IPAddress
-$ministack_host_port = $ms_ports.PSObject.Properties.Value[0].HostPort
+$ministack_host_port = $ms_ports[0].PSObject.Properties.Value[0].HostPort
 
 if (-not $ministack_gw)        { throw "Gateway for '$ministack_network_name' is empty." }
 if (-not $ministack_ip)        { throw "Ministack container IP is empty." }
