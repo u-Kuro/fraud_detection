@@ -1,4 +1,4 @@
-# TODO - 19/08/2026 - Continue here...
+# TODO - 20/08/2026 - Continue here...
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -21,8 +21,12 @@ EOF
 
 
 # need to also add requirements.txt to /opt/airflow then pip install it there
+docker cp ./infrastructure/local_files/requirements.txt ministack-mwaa-test:/opt/airflow/requirements.txt
+docker exec ministack-mwaa-test sh -c "pip install -r /opt/airflow/requirements.txt --constraint 'https://raw.githubusercontent.com/apache/airflow/constraints-3.0.6/constraints-3.12.txt' 2>&1"
 # need to also add kubeconfig.yaml to /opt/airflow (different than mwaa but this directory persists in ministack)
+docker cp ./infrastructure/local_files/kubeconfig.yaml ministack-mwaa-test:/opt/airflow/kubeconfig.yaml
 
+docker exec ministack-mwaa-test sh -c "airflow dags reserialize 2>/dev/null" # read immed
 # docker cp [local_files_kubeconfig_container_file_path] <airflow_container>:/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]
 # manually too
 #

@@ -59,7 +59,7 @@ aws secretsmanager create-secret `
     --secret-string "file://$temporary_file"
 Remove-Item $temporary_file
 # Read
-plain = (aws secretsmanager get-secret-value --secret-id $secretNamePlain | ConvertFrom-Json).SecretString
+$plain = (aws secretsmanager get-secret-value --secret-id $secretNamePlain | ConvertFrom-Json).SecretString
 $parsed = (aws secretsmanager get-secret-value --secret-id $secretNameJson | ConvertFrom-Json).SecretString | ConvertFrom-Json
 
 # SSM Parameter
@@ -135,6 +135,19 @@ $secret = (aws ssm get-parameter --name $ssmSecureName --with-decryption | Conve
 $multiResult = aws ssm get-parameters --names $ssmParamName $ssmSecureName --with-decryption | ConvertFrom-Json
 foreach ($param in $multiResult.Parameters) { $param.Value }
 
+# After restart all metadata in aws are gone even with all persists (mwaa metadata also is deleted even if container was not deleted)
+aws rds describe-db-instances
+aws rds describe-db-instances --db-instance-identifier test
+aws eks list-clusters
+aws eks describe-cluster --name test-cluster
+aws mwaa list-environments
+aws mwaa get-environment --name test
+
+aws rds create-db-instance `
+ --db-instance-identifier test `
+ --db-instance-class "db.t3.micro" `
+ --engine postgres
+
 aws mwaa create-environment `
     --name            $ENV_NAME `
     --execution-role-arn "arn:aws:iam::000000000000:role/mwaa-execution-role" `
@@ -148,12 +161,12 @@ aws mwaa create-environment `
 
 '{\"secrets.backend\":\"airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend\",\"secrets.backend_kwargs\":\"{\\\"connections_prefix\\\":\\\"airflow/connections/mle\\\",\\\"variables_prefix\\\":\\\"airflow/variables/mle\\\",\\\"sep\\\":\\\"/\\\",\\\"endpoint_url\\\":\\\"http://ministack:4566\\\",\\\"profile_name\\\":\\\"default\\\"}\"}' | ConvertFrom-Json
 
->>     mwaa invoke-rest-api `
->>     --name   $ENV_NAME `
->>     --path   "/dags/$DAG_ID/dagRuns" `
->>     --method POST `
->>     --body   '{\"logical_date\": \"2024-01-01T00:00:00Z\"}' `
->>     --output json
+aws mwaa invoke-rest-api `
+ --name   test `
+ --path   "/dags/test_kubernetes_pod/dagRuns" `
+ --method POST `
+ --body   '{\"logical_date\": \"2024-01-01T00:00:00Z\"}' `
+ --output json
 
 
 docker exec -it ministack-mwaa-test airflow config get-value core executor

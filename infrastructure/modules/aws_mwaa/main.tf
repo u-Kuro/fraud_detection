@@ -31,7 +31,7 @@ resource "aws_mwaa_environment" "teams" {
       connections_prefix = local.mwaa_teams_airflow_secrets_backend_connections_prefixes[each.key]
       variables_prefix   = local.mwaa_teams_airflow_secrets_backend_variables_prefixes[each.key]
       sep                = "/"
-      endpoint_url       = var.secrets_manager_url
+      endpoint_url       = var.secrets_manager_url # "http://ministack:4566
       profile_name       = "default"
     })
   }

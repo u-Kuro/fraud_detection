@@ -74,6 +74,25 @@ resource "kubernetes_secret" "eks_teams_docker_registry" {
   }
 }
 # MWAA CONNECTIONS
+# > KUBERNETES CONNECTION
+resource "aws_secretsmanager_secret" "mwaa_connections_k8s_connection_id" {
+  for_each = var.mwaa_teams
+  name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_k8s_connection_id}"
+}
+resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id" {
+  for_each = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
+  secret_id =  each.value.id
+
+  secret_string = jsonencode({
+    conn_type = "kubernetes",
+    extra = {
+      kube_config_path = var.mwaa_teams_kubeconfig_file_path #/opt/airflow/kubeconfig.yaml
+      in_cluster = false
+    }
+  })
+
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_k8s_connection_id]
+}
 # > TEAMS' POSTGRES CONNECTION
 resource "aws_secretsmanager_secret" "mwaa_connections_postgres_connection_id" {
   for_each = var.rds_postgres_teams
@@ -168,6 +187,23 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_docker_registry
   ]
 }
 # > MWAA TEAMS' CONNECTION IDS
+resource "aws_secretsmanager_secret" "mwaa_variables_k8s_connection_id" {
+  for_each = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
+  name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_connection_id}"
+
+  depends_on = [aws_secretsmanager_secret.mwaa_connections_k8s_connection_id]
+}
+resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_connection_id" {
+  for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_connection_id
+  secret_id = each.value.id
+
+  secret_string = local.mwaa_connections_k8s_connection_id
+
+  depends_on = [
+    aws_secretsmanager_secret.mwaa_connections_k8s_connection_id,
+    aws_secretsmanager_secret.mwaa_variables_k8s_connection_id
+  ]
+}
 resource "aws_secretsmanager_secret" "mwaa_variables_postgres_connection_id" {
   for_each = aws_secretsmanager_secret.mwaa_connections_postgres_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_postgres_connection_id}"

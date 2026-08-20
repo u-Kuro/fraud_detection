@@ -55,6 +55,7 @@ variable "mwaa_teams" { type = set(string) }
 variable "mwaa_teams_environment_names" { type = map(string) }
 variable "mwaa_teams_connections_prefixes" { type = map(string) }
 variable "mwaa_teams_variables_prefixes" { type = map(string) }
+variable "mwaa_teams_kubeconfig_file_path" { type = string }
 
 # RDS
 # /postgres
