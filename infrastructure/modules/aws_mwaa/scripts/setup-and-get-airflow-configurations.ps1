@@ -19,6 +19,11 @@ aws_secret_access_key = test
 EOF
 '@
 
+# docker cp [local_files_kubeconfig_container_file_path] <airflow_container>:/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]
+# manually too
+#
+#But try to put in /opt/airflow for Persistence in current setup
+
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
 $airflow_container_url  = $query.airflow_container_url
