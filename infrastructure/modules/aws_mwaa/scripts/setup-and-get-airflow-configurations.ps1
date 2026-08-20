@@ -18,6 +18,8 @@ aws_access_key_id = test
 aws_secret_access_key = test
 EOF
 '@
+# need to also add requirements.txt to /opt/airflow then pip install it there
+
 
 # docker cp [local_files_kubeconfig_container_file_path] <airflow_container>:/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]
 # manually too
