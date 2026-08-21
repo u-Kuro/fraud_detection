@@ -2,7 +2,7 @@ from enum import StrEnum
 from itertools import product
 from typing import Sequence, Type, Any
 
-from airflow.sdk.types import TaskInstance
+from airflow.models import TaskInstance
 
 def build_task_id(segments: Sequence[str]) -> str:
     return ".".join(segments)

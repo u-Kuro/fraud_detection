@@ -1,4 +1,5 @@
-from airflow.sdk import task, TriggerRule
+from airflow.sdk import task
+from airflow.utils.trigger_rule import TriggerRule
 from sqlalchemy import select
 
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches

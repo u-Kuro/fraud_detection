@@ -1,5 +1,6 @@
-from sqlalchemy.orm import InstrumentedAttribute
 from typing import TypeVar
+
+from sqlalchemy.orm import InstrumentedAttribute
 
 T = TypeVar("T")
 

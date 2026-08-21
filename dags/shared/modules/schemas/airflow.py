@@ -1,4 +1,4 @@
-from airflow.sdk.types import TaskInstance
+from airflow.models import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
 class AirflowTaskContext(BaseModel):

@@ -1,9 +1,9 @@
 import json
 
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.sdk import task, get_current_context
 from airflow.providers.http.operators.http import HttpOperator
-from kubernetes import client as k8s
+from airflow.sdk import task, get_current_context
+from kubernetes.client import models
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
@@ -57,24 +57,24 @@ def archive_used_transaction_inferences() -> None:
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.archive}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
-            k8s.V1LocalObjectReference(
+            models.V1LocalObjectReference(
                 name=ECRSecretKeys.ecr_secret
             )
         ],
         env=[
-            k8s.V1EnvVar(
+            models.V1EnvVar(
                 name=ArchiveKeys.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
                 value=archive_used_transaction_inferences_xcom.transaction_inferences_archive_cutoff_iso_datetime.isoformat()
             )
         ],
         env_from=[
-            k8s.V1EnvFromSource(
-                config_map_ref=k8s.V1ConfigMapEnvSource(
+            models.V1EnvFromSource(
+                config_map_ref=models.V1ConfigMapEnvSource(
                     name=K8sConfigMapKeys.platform_infrastructure
                 )
             ),
-            k8s.V1EnvFromSource(
-                secret_ref=k8s.V1SecretEnvSource(
+            models.V1EnvFromSource(
+                secret_ref=models.V1SecretEnvSource(
                     name=K8sSecretKeys.mle_pipeline_secret
                 )
             ),

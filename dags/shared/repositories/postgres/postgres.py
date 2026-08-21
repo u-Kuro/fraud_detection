@@ -1,6 +1,6 @@
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from sqlalchemy import NullPool
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from dags.shared.modules.configs.postgres import PostgresConfig
 

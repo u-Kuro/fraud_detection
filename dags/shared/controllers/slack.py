@@ -1,5 +1,5 @@
 from airflow.providers.slack.hooks.slack import SlackHook
-from slack_sdk.web.client import WebClient
+from slack_sdk import WebClient
 
 from dags.shared.modules.configs.slack import SlackConfig
 

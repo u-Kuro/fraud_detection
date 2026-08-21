@@ -1,8 +1,7 @@
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.sdk import task_group, task, get_current_context
-from airflow.sdk.definitions._internal.node import DAGNode
-from kubernetes import client as k8s
+from kubernetes.client import models
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import initialize_training_approval, update_training_approval, invalidate_old_training_approval, invalidate_expired_promotion_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches, SetupTrainingApprovalBranches, DispatchTrainingApprovalBranches
@@ -30,7 +29,7 @@ def invalidate_expired_challenger_model() -> None:
         no_action(branch=NoActionBranches.no_expired_promote_pending_workflow_with_replacement)
     ]
 
-def setup_training_approval(branch: SetupTrainingApprovalBranches) -> DAGNode:
+def setup_training_approval(branch: SetupTrainingApprovalBranches):
     @task_group(group_id=build_task_id((setup_training_approval.__name__, branch)))
     def group() -> None:
         initialize_training_approval() \
@@ -39,7 +38,7 @@ def setup_training_approval(branch: SetupTrainingApprovalBranches) -> DAGNode:
 
     return group()
 
-def dispatch_training_approval(branch: DispatchTrainingApprovalBranches) -> DAGNode:
+def dispatch_training_approval(branch: DispatchTrainingApprovalBranches):
     @task_group(group_id=build_task_id((dispatch_training_approval.__name__, branch)))
     def group() -> None:
         check_current_model_deployment_workflows(branch=branch) >> [
@@ -63,18 +62,18 @@ def drift_check() -> KubernetesPodOperator:
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.drift_check}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
-            k8s.V1LocalObjectReference(
+            models.V1LocalObjectReference(
                 name=ECRSecretKeys.ecr_secret
             )
         ],
         env_from=[
-            k8s.V1EnvFromSource(
-                config_map_ref=k8s.V1ConfigMapEnvSource(
+            models.V1EnvFromSource(
+                config_map_ref=models.V1ConfigMapEnvSource(
                     name=K8sConfigMapKeys.platform_infrastructure
                 )
             ),
-            k8s.V1EnvFromSource(
-                secret_ref=k8s.V1SecretEnvSource(
+            models.V1EnvFromSource(
+                secret_ref=models.V1SecretEnvSource(
                     name=K8sSecretKeys.mle_pipeline_secret
                 )
             ),
@@ -82,7 +81,7 @@ def drift_check() -> KubernetesPodOperator:
         get_logs=True,
         is_delete_operator_pod=True,
         do_xcom_push=True,
-        startup_timeout_seconds=120,
+        startup_timeout_seconds=300,
         config_file=AirflowConfig.kubeconfig_file_path
     )
 

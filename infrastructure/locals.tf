@@ -103,11 +103,13 @@ resource "local_sensitive_file" "mwaa_requirements" {
   filename        = "${local.local_files_directory_path}/requirements.txt"
   file_permission = "0600"
   content = <<-EOT
-    apache-airflow-providers-amazon==9.33.0
-    apache-airflow-providers-cncf-kubernetes==10.20.0
-    apache-airflow-providers-http==6.0.5
-    apache-airflow-providers-postgres==7.0.0
-    apache-airflow-providers-slack==9.10.2
-    pydantic==2.13.4
+    apache-airflow==3.0.6
+    apache-airflow-providers-amazon==9.12.0
+    apache-airflow-providers-cncf-kubernetes==10.7.0
+    apache-airflow-providers-http==5.3.3
+    apache-airflow-providers-postgres==6.2.3
+    apache-airflow-providers-slack==9.1.4
+    pydantic==2.11.7
+    pydantic-settings==2.15.0
   EOT
 }

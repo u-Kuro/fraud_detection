@@ -1,4 +1,3 @@
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import declarative_base
 
-class PostgresTableBase(DeclarativeBase):
-    pass
+PostgresTableBase = declarative_base()

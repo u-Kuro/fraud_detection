@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from airflow.sdk import task, get_current_context
-from sqlalchemy import select, func, true, literal, cast, delete, insert, update
+from sqlalchemy import select, func, literal, cast, true, delete, insert, update
 from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.orm import aliased
 

@@ -1,5 +1,5 @@
 from airflow.sdk import task, get_current_context
-from sqlalchemy import update, select, insert, true
+from sqlalchemy import select, update, insert, true
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations

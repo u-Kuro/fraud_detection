@@ -9,10 +9,11 @@ from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
 
 @dag(
     dag_id=DagIDs.check_training_need,
-    schedule="0 */6 * * *",
+    schedule="@daily",
     start_date=datetime(2026, 1, 1),
+    is_paused_upon_creation=False,
     max_active_runs=1,
-    catchup=True,
+    catchup=False,
     default_args={
         "owner": AirflowConfig.owner,
         "retries": 1,

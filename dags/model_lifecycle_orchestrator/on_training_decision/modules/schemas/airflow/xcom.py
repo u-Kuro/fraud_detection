@@ -1,4 +1,4 @@
-from airflow.sdk.types import TaskInstance
+from airflow.models import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
 from dags.model_lifecycle_orchestrator.on_training_decision.controllers.slack import initialize_promotion_approval

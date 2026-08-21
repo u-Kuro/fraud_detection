@@ -11,8 +11,8 @@ from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
     dag_id=DagIDs.on_training_decision,
     schedule=None,
     start_date=datetime(2026, 1, 1),
+    is_paused_upon_creation=False,
     max_active_runs=1,
-    catchup=True,
     default_args={
         "owner": AirflowConfig.owner,
         "retries": 1,
