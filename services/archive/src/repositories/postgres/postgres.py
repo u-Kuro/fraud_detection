@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, NullPool
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from services.shared.modules.configs.postgres import PostgresConfig
 

@@ -109,6 +109,7 @@ resource "local_sensitive_file" "mwaa_requirements" {
     apache-airflow-providers-http==5.3.3
     apache-airflow-providers-postgres==6.2.3
     apache-airflow-providers-slack==9.1.4
+    mlflow-skinny==3.2.0
     pydantic==2.11.7
     pydantic-settings==2.15.0
   EOT

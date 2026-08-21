@@ -1,10 +1,10 @@
 from collections import defaultdict
 from datetime import date
 
-from dags.shared.modules.configs.s3 import S3Config
 from services.archive.src.repositories.postgres.postgres import sql_session
 from services.archive.src.repositories.postgres.transaction_inferences import get_transaction_inferences_batch, delete_transaction_inferences_batch
 from services.archive.src.repositories.s3.archive import upload_transaction_inference_batch
+from services.shared.modules.configs.s3 import S3Config
 from services.shared.repositories.s3.bucket import ensure_bucket
 
 def archive_transaction_inferences():

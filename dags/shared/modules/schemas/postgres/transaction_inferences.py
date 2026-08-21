@@ -1,8 +1,7 @@
-from sqlalchemy import Column, func, DateTime, Float, Boolean, ForeignKey
+from sqlalchemy import Column, func, DateTime, Float, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 
-from services.shared.modules.schemas.postgres.model_deployments import ModelDeployments
-from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
+from dags.shared.modules.schemas.postgres.postgres import PostgresTableBase
 
 class TransactionInferences(PostgresTableBase):
     __tablename__ = "transaction_inferences"
@@ -15,7 +14,7 @@ class TransactionInferences(PostgresTableBase):
     is_fraud = Column(Boolean, nullable=True)
     is_fraud_prediction = Column(Boolean, nullable=True)
     is_fraud_probability = Column(Float, nullable=True)
-    model_deployment_id = Column(UUID(as_uuid=True), ForeignKey(ModelDeployments.id), nullable=True)
+    model_deployment_id = Column(UUID(as_uuid=True), nullable=True)
     v1 = Column(Float, nullable=False)
     v2 = Column(Float, nullable=False)
     v3 = Column(Float, nullable=False)

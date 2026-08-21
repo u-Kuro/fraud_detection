@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-import pandas as pd
+import pandas
 from sqlalchemy import select, func, or_
 
 from services.shared.modules.configs.dataset import DatasetConfig
@@ -22,7 +22,7 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
             .limit(1)
             .scalar_subquery()
         )
-        df = pd.read_sql(
+        df = pandas.read_sql(
             select(
                 TransactionInferences.is_fraud,
                 TransactionInferences.amount,
@@ -65,7 +65,7 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
         df[TransactionInferences.is_fraud.key] = df[TransactionInferences.is_fraud.key].astype("int64")
         # Convert datetime64[ns, UTC] to seconds (int64)
         df[TransactionInferences.transaction_timestamp.key] = (
-            pd.to_datetime(
+            pandas.to_datetime(
                 df[TransactionInferences.transaction_timestamp.key],
                 utc=True
             )

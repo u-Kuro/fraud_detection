@@ -16,8 +16,11 @@ def load_reference_dataset() -> tuple[DataFrame, datetime]:
     if df_reference is None:
         raise RuntimeError(f"No reference dataset was found in {MLFlowConfig.REFERENCE_DATASET_URI()}.")
 
+    df_reference_max_timestamp = df_reference[TransactionInferences.transaction_timestamp.key].max()
+    assert isinstance(df_reference_max_timestamp, float)
+
     dataset_max_timestamp = datetime.fromtimestamp(
-        df_reference[TransactionInferences.transaction_timestamp.key].max(),
+        df_reference_max_timestamp,
         timezone.utc
     )
     chosen_current_dataset_cutoff = datetime.now(timezone.utc) - timedelta(days=7)

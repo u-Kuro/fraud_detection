@@ -11,7 +11,6 @@ def save_and_register_model(
 ) -> MLFlowRegisteredModelInfo:
     model_info = mlflow.sklearn.log_model(
         sk_model=model,
-        serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_SKOPS,
         registered_model_name=MLFlowConfig.MODEL_NAME,
         signature=infer_signature(
             model_input=X_test_samples,
@@ -25,10 +24,6 @@ def save_and_register_model(
             "pandas==2.3.3",
         ],
         name=MLFlowConfig.MODEL_PATH,
-        skops_trusted_types=[
-            "xgboost.core.Booster",
-            "xgboost.sklearn.XGBClassifier",
-        ],
     )
 
     if isinstance(model_info.registered_model_version, int):

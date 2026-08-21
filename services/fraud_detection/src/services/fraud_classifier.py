@@ -1,4 +1,4 @@
-import pandas as pd
+import pandas
 
 from services.fraud_detection.src.modules.configs.fraud_classifier import FraudClassifierConfig
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationOutput
@@ -18,7 +18,7 @@ class FraudClassifier(MlflowModel):
             include=set(FraudClassificationFeaturesKeys)
         )
 
-        features_df = pd.DataFrame([features])
+        features_df = pandas.DataFrame([features])
         features_df[TransactionInferences.transaction_timestamp.key] = features_df[
             TransactionInferences.transaction_timestamp.key
         ].apply(lambda x: int(x.timestamp()))

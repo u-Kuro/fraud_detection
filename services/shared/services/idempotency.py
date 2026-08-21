@@ -1,6 +1,5 @@
 import threading
 import time
-from typing import Optional
 
 class AlreadyProcessed(Exception): pass
 
@@ -29,7 +28,7 @@ class IdempotencyStore:
     def __init__(
         self,
         ttl: float,
-        cleanup_interval: Optional[float] = None,
+        cleanup_interval: float | None = None,
     ):
         self.completed: dict[str, float] = {}   # key → expiry monotonic time
         self.lock = threading.Lock()

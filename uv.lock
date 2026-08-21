@@ -15,7 +15,7 @@ constraints = [
     { name = "apache-airflow-providers-http", specifier = "==5.3.3" },
     { name = "apache-airflow-providers-postgres", specifier = "==6.2.3" },
     { name = "apache-airflow-providers-slack", specifier = "==9.1.4" },
-    { name = "mlflow", specifier = "==3.2.0" },
+    { name = "mlflow-skinny", specifier = "==3.2.0" },
     { name = "pydantic", specifier = "==2.11.7" },
     { name = "pydantic-settings", specifier = "==2.15.0" },
 ]
@@ -1225,6 +1225,14 @@ version = "0.1.0"
 source = { virtual = "." }
 
 [package.dev-dependencies]
+archive = [
+    { name = "boto3" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy" },
+]
 dev = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
@@ -1232,9 +1240,7 @@ dev = [
     { name = "apache-airflow-providers-http" },
     { name = "apache-airflow-providers-postgres" },
     { name = "apache-airflow-providers-slack" },
-    { name = "boto3" },
     { name = "boto3-stubs", extra = ["mwaa", "s3"] },
-    { name = "evidently" },
     { name = "fastapi" },
     { name = "imbalanced-learn" },
     { name = "ipykernel" },
@@ -1242,32 +1248,69 @@ dev = [
     { name = "matplotlib" },
     { name = "matplotlib-stubs" },
     { name = "mlflow" },
-    { name = "moto", extra = ["s3"] },
     { name = "mypy" },
     { name = "numpy" },
     { name = "optuna" },
     { name = "pandas" },
     { name = "pandas-stubs" },
-    { name = "pyarrow" },
     { name = "pyarrow-stubs" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-env" },
     { name = "pytest-mock" },
     { name = "ruff" },
     { name = "scikit-learn" },
     { name = "seaborn" },
-    { name = "slack-bolt" },
     { name = "sqlalchemy" },
     { name = "types-seaborn" },
+    { name = "uvicorn" },
+    { name = "xgboost" },
+]
+drift-check = [
+    { name = "boto3" },
+    { name = "evidently" },
+    { name = "mlflow-skinny" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy" },
+]
+fraud-detection = [
+    { name = "boto3" },
+    { name = "fastapi" },
+    { name = "mlflow-skinny" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "slack-bolt" },
+    { name = "sqlalchemy" },
+]
+train-model = [
+    { name = "boto3" },
+    { name = "imbalanced-learn" },
+    { name = "matplotlib" },
+    { name = "mlflow-skinny" },
+    { name = "numpy" },
+    { name = "optuna" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "scikit-learn" },
+    { name = "sqlalchemy" },
     { name = "xgboost" },
 ]
 
 [package.metadata]
 
 [package.metadata.requires-dev]
-archive = []
+archive = [
+    { name = "boto3", specifier = ">=1.43.77" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pyarrow", specifier = ">=21.0.0" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+    { name = "sqlalchemy", specifier = ">=1.4.54" },
+]
 dev = [
     { name = "apache-airflow", specifier = ">=3.0.6" },
     { name = "apache-airflow-providers-amazon", specifier = ">=9.12.0" },
@@ -1275,9 +1318,7 @@ dev = [
     { name = "apache-airflow-providers-http", specifier = ">=5.3.3" },
     { name = "apache-airflow-providers-postgres", specifier = ">=6.2.3" },
     { name = "apache-airflow-providers-slack", specifier = ">=9.1.4" },
-    { name = "boto3", specifier = ">=1.43.77" },
     { name = "boto3-stubs", extras = ["mwaa", "s3"], specifier = ">=1.43.77" },
-    { name = "evidently", specifier = ">=0.7.21" },
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "imbalanced-learn", specifier = ">=0.14.2" },
     { name = "ipykernel", specifier = ">=7.3.0" },
@@ -1285,31 +1326,57 @@ dev = [
     { name = "matplotlib", specifier = ">=3.11.1" },
     { name = "matplotlib-stubs", specifier = ">=0.3.11" },
     { name = "mlflow", specifier = ">=3.2.0" },
-    { name = "moto", extras = ["s3"], specifier = ">=5.2.2" },
     { name = "mypy", specifier = ">=2.3.1" },
     { name = "numpy", specifier = ">=2.5.2" },
     { name = "optuna", specifier = ">=4.9.0" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pandas-stubs", specifier = ">=3.0.5.260730" },
-    { name = "pyarrow", specifier = ">=21.0.0" },
     { name = "pyarrow-stubs", specifier = ">=20.0.0.20260819" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-env", specifier = ">=1.7.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "ruff", specifier = ">=0.16.4" },
     { name = "scikit-learn", specifier = ">=1.9.0" },
     { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "slack-bolt", specifier = ">=1.30.0" },
     { name = "sqlalchemy", specifier = ">=1.4.54" },
     { name = "types-seaborn", specifier = ">=0.13.2.20260728" },
+    { name = "uvicorn", specifier = ">=0.52.4" },
     { name = "xgboost", specifier = ">=3.4.1" },
 ]
-drift-check = []
-fraud-detection = []
-mlflow = []
-train-model = []
+drift-check = [
+    { name = "boto3", specifier = ">=1.43.77" },
+    { name = "evidently", specifier = ">=0.7.21" },
+    { name = "mlflow-skinny", specifier = ">=3.2.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+    { name = "sqlalchemy", specifier = ">=1.4.54" },
+]
+fraud-detection = [
+    { name = "boto3", specifier = ">=1.43.77" },
+    { name = "fastapi", specifier = ">=0.141.1" },
+    { name = "mlflow-skinny", specifier = ">=3.2.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+    { name = "slack-bolt", specifier = ">=1.30.0" },
+    { name = "sqlalchemy", specifier = ">=1.4.54" },
+]
+train-model = [
+    { name = "boto3", specifier = ">=1.43.77" },
+    { name = "imbalanced-learn", specifier = ">=0.14.2" },
+    { name = "matplotlib", specifier = ">=3.11.1" },
+    { name = "mlflow-skinny", specifier = ">=3.2.0" },
+    { name = "numpy", specifier = ">=2.5.2" },
+    { name = "optuna", specifier = ">=4.9.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pyarrow", specifier = ">=21.0.0" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+    { name = "scikit-learn", specifier = ">=1.9.0" },
+    { name = "sqlalchemy", specifier = ">=1.4.54" },
+    { name = "xgboost", specifier = ">=3.4.1" },
+]
 
 [[package]]
 name = "frozenlist"
@@ -2226,30 +2293,6 @@ wheels = [
 ]
 
 [[package]]
-name = "moto"
-version = "5.2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "boto3" },
-    { name = "botocore" },
-    { name = "cryptography" },
-    { name = "requests" },
-    { name = "responses" },
-    { name = "werkzeug" },
-    { name = "xmltodict" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/47/63/d944f387582cc53f53febbff2b3fa36a6d2ed7c1feef8990bf646cfa9cba/moto-5.2.2.tar.gz", hash = "sha256:aac8023a429e125e91c91f8f4730a67b54f518cda587352f7e67252fe3168f75", size = 8678761, upload-time = "2026-06-06T18:57:54.931Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/45/13cff46f4f617a6e97e1d497d75abd913e250bb4c823a4985668c6e593e4/moto-5.2.2-py3-none-any.whl", hash = "sha256:3817f1e39721ca833579b921e53e3b68547ace6a34d848c9486fbb5905808de9", size = 6698689, upload-time = "2026-06-06T18:57:51.435Z" },
-]
-
-[package.optional-dependencies]
-s3 = [
-    { name = "py-partiql-parser" },
-    { name = "pyyaml" },
-]
-
-[[package]]
 name = "msgspec"
 version = "0.21.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2859,15 +2902,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-partiql-parser"
-version = "0.6.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/56/7a/a0f6bda783eb4df8e3dfd55973a1ac6d368a89178c300e1b5b91cd181e5e/py_partiql_parser-0.6.3.tar.gz", hash = "sha256:09cecf916ce6e3da2c050f0cb6106166de42c33d34a078ec2eb19377ea70389a", size = 17456, upload-time = "2025-10-18T13:56:13.441Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/33/a7cbfccc39056a5cf8126b7aab4c8bafbedd4f0ca68ae40ecb627a2d2cd3/py_partiql_parser-0.6.3-py2.py3-none-any.whl", hash = "sha256:deb0769c3346179d2f590dcbde556f708cdb929059fb654bad75f4cf6e07f582", size = 23752, upload-time = "2025-10-18T13:56:12.256Z" },
-]
-
-[[package]]
 name = "pyarrow"
 version = "21.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3288,20 +3322,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
-]
-
-[[package]]
-name = "responses"
-version = "0.26.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f0/1a/4af3e6d659394b809838490b144e4ab8d7ed3b9fecc7ca78f5d2f79b1a3d/responses-0.26.2.tar.gz", hash = "sha256:9c9259b46a8349197edebf43cfa68a87e1a2802ef503ff8b2fecbabc0b45afd8", size = 84030, upload-time = "2026-07-03T16:44:50.325Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/28/693e1d9ebf72baa062ded80d837a035b86ce75eda5a269379e9e2b1008a8/responses-0.26.2-py3-none-any.whl", hash = "sha256:6fdfeabd58e5ec473b98dfe02e6d46d3173bd8dd573eff2ccccf1a05a5135364", size = 35609, upload-time = "2026-07-03T16:44:49.1Z" },
 ]
 
 [[package]]
@@ -4246,15 +4266,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/99/c7/bd05c5c430feb347aa040fcc8870135d70b256718deee9bc7d2ca74a77ff/xgboost-3.4.1-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:6adf2afa396da2ae8ed30295b50b99d4712eed9a6e0ce6cfe069290e4335e51f", size = 57615456, upload-time = "2026-08-15T08:39:09.983Z" },
     { url = "https://files.pythonhosted.org/packages/2f/3c/925394671f6a1668e2a71886de66e80be694eaf37f615cec74eefaf43107/xgboost-3.4.1-py3-none-win_amd64.whl", hash = "sha256:2d30fa513673101f542fdcbd18f30c8f96c064046f798635ac08663e9969f81b", size = 48942686, upload-time = "2026-08-15T08:39:16.182Z" },
     { url = "https://files.pythonhosted.org/packages/90/2f/f2fbe984ca095709fd246546125e78834740f347e3aa7561a22a1e928510/xgboost-3.4.1-py3-none-win_arm64.whl", hash = "sha256:e9312b30e5679d27c1d8b9ee97e092b964d960a672d5d406d9fb3cd0845c9797", size = 2094178, upload-time = "2026-08-15T08:39:19.308Z" },
-]
-
-[[package]]
-name = "xmltodict"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/19/70/80f3b7c10d2630aa66414bf23d210386700aa390547278c789afa994fd7e/xmltodict-1.0.4.tar.gz", hash = "sha256:6d94c9f834dd9e44514162799d344d815a3a4faec913717a9ecbfa5be1bb8e61", size = 26124, upload-time = "2026-02-22T02:21:22.074Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/34/98a2f52245f4d47be93b580dae5f9861ef58977d73a79eb47c58f1ad1f3a/xmltodict-1.0.4-py3-none-any.whl", hash = "sha256:a4a00d300b0e1c59fc2bfccb53d7b2e88c32f200df138a0dd2229f842497026a", size = 13580, upload-time = "2026-02-22T02:21:21.039Z" },
 ]
 
 [[package]]

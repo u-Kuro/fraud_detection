@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from typing import Any
 
 import mlflow
-import pyarrow as pa
-import pyarrow.parquet as pq
+import pyarrow
+from pyarrow import parquet
 from matplotlib.figure import Figure
 from pandas import DataFrame
 from pydantic import validate_call
@@ -42,8 +42,11 @@ def save_model_reference_dataset(
             temporary_directory,
             MLFlowArtifactsConfig.reference_dataset_filename
         )
-        pq.write_table(
-            table=pa.table(model_reference_dataset),
+        parquet.write_table(
+            table=pyarrow.Table.from_pandas(
+                df=model_reference_dataset,
+                preserve_index=False
+            ),
             where=dataset_reference_file_path
         )
         mlflow.log_artifact(

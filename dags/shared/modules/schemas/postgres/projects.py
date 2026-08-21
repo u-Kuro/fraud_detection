@@ -1,7 +1,7 @@
 from sqlalchemy import Column, func, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
 
-from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
+from dags.shared.modules.schemas.postgres.postgres import PostgresTableBase
 
 class Projects(PostgresTableBase):
     __tablename__ = "projects"

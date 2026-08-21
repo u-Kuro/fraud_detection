@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import pandas as pd
+import pandas
 from pandas import DataFrame
 from sqlalchemy import select, func
 
@@ -46,7 +46,7 @@ def load_current_dataset(
             )
             .subquery()
         )
-        df_current = pd.read_sql(
+        df_current = pandas.read_sql(
             select(current_dataset_subquery)
             .order_by(func.random())
             .limit(DatasetConfig.maximum_dataset_rows),
@@ -62,7 +62,7 @@ def load_current_dataset(
         df_current[TransactionInferences.is_fraud_prediction.key] = df_current[TransactionInferences.is_fraud_prediction.key].astype("int64")
         # Convert datetime64[ns, UTC] to seconds (int64)
         df_current[TransactionInferences.transaction_timestamp.key] = (
-            pd.to_datetime(
+            pandas.to_datetime(
                 df_current[TransactionInferences.transaction_timestamp.key],
                 utc=True
             )

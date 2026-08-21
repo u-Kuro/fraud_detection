@@ -2,8 +2,9 @@ import io
 from collections import defaultdict
 from datetime import date
 
-import pyarrow as pa
-import pyarrow.parquet as pq
+import pandas
+import pyarrow
+from pyarrow import parquet
 
 from services.shared.modules.configs.s3 import S3Config
 from services.shared.repositories.s3.s3 import s3_client
@@ -14,9 +15,12 @@ def upload_transaction_inference_batch(
 ):
     for date_key, item in transaction_inferences_by_date.items():
         buffer = io.BytesIO()
-        pq.write_table(
-            pa.Table.from_pylist(mapping=item),
-            buffer
+        parquet.write_table(
+            table=pyarrow.Table.from_pandas(
+                df=pandas.DataFrame(item),
+                preserve_index=False
+            ),
+            where=buffer
         )
         buffer.seek(0)
 
