@@ -3,19 +3,19 @@ $ErrorActionPreference = "Stop"
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$k3s_container_host_url             = $query.k3s_container_host_url
 $ministack_network_name             = $query.ministack_network_name
+$k3s_container_host_url             = $query.k3s_container_host_url
+$k3s_registries_file_path           = $query.k3s_registries_file_path
 $kubeconfig_for_localhost_file_path = $query.kubeconfig_for_localhost_file_path
 $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
-$registries_file_path               = $query.registries_file_path
 
 # Validate inputs values
 $items = @{
-    k3s_container_host_url             = $k3s_container_host_url
     ministack_network_name             = $ministack_network_name
+    k3s_container_host_url             = $k3s_container_host_url
+    k3s_registries_file_path           = $k3s_registries_file_path
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = $kubeconfig_for_docker_file_path
-    registries_file_path               = $registries_file_path
 }.GetEnumerator()
 foreach ($item in $items) {
     if ([string]::IsNullOrWhiteSpace($item.Value)) {
@@ -79,7 +79,7 @@ $raw_kubeconfig -replace `
 
 # Copy registries.yaml into K3s container to redirect requests to ECR
 docker cp `
-    $registries_file_path `
+    $k3s_registries_file_path `
     "${k3s_container_name}:${k3s_container_configuration_files_directory_path}/registries.yaml"
 
 # Restart K3s container to apply registries.yaml

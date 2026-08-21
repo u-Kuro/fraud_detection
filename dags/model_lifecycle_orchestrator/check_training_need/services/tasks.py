@@ -59,6 +59,7 @@ def drift_check() -> KubernetesPodOperator:
         task_id=drift_check.__name__,
         name=drift_check.__name__,
         namespace=K8sConfig.namespace,
+        config_file=AirflowConfig.kubeconfig_file_path,
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.drift_check}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
@@ -78,11 +79,11 @@ def drift_check() -> KubernetesPodOperator:
                 )
             ),
         ],
-        get_logs=True,
-        is_delete_operator_pod=True,
         do_xcom_push=True,
         startup_timeout_seconds=300,
-        config_file=AirflowConfig.kubeconfig_file_path
+        get_logs=True,
+        log_events_on_failure=True,
+        on_finish_action="delete_pod",
     )
 
 @task.branch(task_id="has_drift")

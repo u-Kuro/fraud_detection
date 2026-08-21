@@ -119,11 +119,11 @@ data "external" "k3s_configuration" {
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
 
   query = {
-    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
     ministack_network_name             = var.ministack_network_name
+    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
+    k3s_registries_file_path           = var.local_files_eks_registries_file_path
     kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
-    registries_file_path               = var.local_files_registries_file_path
   }
 }
 # {

@@ -54,6 +54,7 @@ def archive_used_transaction_inferences() -> None:
         task_id=archive_used_transaction_inferences.__name__,
         name=archive_used_transaction_inferences.__name__,
         namespace=K8sConfig.namespace,
+        config_file=AirflowConfig.kubeconfig_file_path,
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.archive}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[
@@ -79,10 +80,10 @@ def archive_used_transaction_inferences() -> None:
                 )
             ),
         ],
-        get_logs=True,
-        is_delete_operator_pod=True,
         do_xcom_push=False,
         startup_timeout_seconds=300,
-        config_file=AirflowConfig.kubeconfig_file_path
+        get_logs=True,
+        log_events_on_failure=True,
+        on_finish_action="delete_pod",
     )
     task_operator.execute(context=context)

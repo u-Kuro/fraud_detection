@@ -47,12 +47,12 @@ aws secretsmanager list-secrets
 }
 # Write
 $temporary_file = [System.IO.Path]::GetTempFileName()
-[System.IO.File]::WriteAllText($temporary_file, @{
+[System.IO.File]::WriteAllText($temporary_file, $(@{
     username = "admin"
     password = "P@ssw0rd!"
     host     = "db.example.com"
     port     = 5432
-} | ConvertTo-Json -Compress)
+} | ConvertTo-Json -Compress))
 aws secretsmanager create-secret `
     --name $secretNameJson `
     --description "A JSON object secret for testing" `
@@ -130,8 +130,8 @@ aws ssm put-parameter `
  --type  SecureString `
  --overwrite # Replace if exists else errors
 # Read
-$plain = (aws ssm get-parameter --name $ssmParamName | ConvertFrom-Json).Value
-$secret = (aws ssm get-parameter --name $ssmSecureName --with-decryption | ConvertFrom-Json).Value
+$plain = (aws ssm get-parameter --name $ssmParamName | ConvertFrom-Json).Parameter.Value
+$secret = (aws ssm get-parameter --name $ssmSecureName --with-decryption | ConvertFrom-Json).Parameter.Value
 $multiResult = aws ssm get-parameters --names $ssmParamName $ssmSecureName --with-decryption | ConvertFrom-Json
 foreach ($param in $multiResult.Parameters) { $param.Value }
 
@@ -158,8 +158,7 @@ aws mwaa create-environment `
     --network-configuration '{\"SubnetIds\":[\"subnet-00000000\",\"subnet-00000001\"],\"SecurityGroupIds\":[\"sg-00000000\"]}' `
     --airflow-configuration-options '{\"secrets.backend\":\"airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend\",\"secrets.backend_kwargs\":\"{\\\"connections_prefix\\\":\\\"airflow/connections/mle\\\",\\\"variables_prefix\\\":\\\"airflow/variables/mle\\\",\\\"sep\\\":\\\"/\\\",\\\"endpoint_url\\\":\\\"http://ministack:4566\\\",\\\"profile_name\\\":\\\"default\\\"}\"}'
 
-
-'{\"secrets.backend\":\"airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend\",\"secrets.backend_kwargs\":\"{\\\"connections_prefix\\\":\\\"airflow/connections/mle\\\",\\\"variables_prefix\\\":\\\"airflow/variables/mle\\\",\\\"sep\\\":\\\"/\\\",\\\"endpoint_url\\\":\\\"http://ministack:4566\\\",\\\"profile_name\\\":\\\"default\\\"}\"}' | ConvertFrom-Json
+docker exec ministack-mwaa-test sh -c "airflow dags reserialize || exit 1"
 
 aws mwaa invoke-rest-api `
  --name   test `

@@ -1,4 +1,4 @@
-# Set Python package requirements for MWAA environments
+# Set Python package requirements for MWAA environments (not working with current setup)
 resource "aws_s3_object" "upload_requirements_for_mwaa" {
   for_each = var.mwaa_teams
   bucket   = var.s3_teams_mwaa_bucket_name[each.key]
@@ -6,19 +6,19 @@ resource "aws_s3_object" "upload_requirements_for_mwaa" {
   source   = var.local_files_mwaa_requirements_file_path
   etag     = filemd5(var.local_files_mwaa_requirements_file_path)
 }
-# Upload K8s cluster credential file in MWAA environments for authentication
+# Upload K8s cluster credential file in MWAA environments for authentication (not working with current setup)
 resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
   for_each = var.mwaa_teams
   bucket   = var.s3_teams_mwaa_bucket_name[each.key]
   key      = "${var.s3_teams_mwaa_dag_path}/${var.s3_teams_mwaa_kubeconfig_file_path}"
-  source   = var.local_files_kubeconfig_container_file_path
-  etag     = filemd5(var.local_files_kubeconfig_container_file_path)
+  source   = var.local_files_kubeconfig_for_docker_file_path
+  etag     = filemd5(var.local_files_kubeconfig_for_docker_file_path)
 }
 # Create MWAA environments for each team
 resource "aws_mwaa_environment" "teams" {
   for_each           = var.mwaa_teams
   name               = local.mwaa_teams_environment_names[each.key]
-  airflow_version    = "3.0.6-python3.12" # v3.12.11 | core-executor: LocalExecution
+  airflow_version    = local.mwaa_airflow_version
   execution_role_arn = var.iam_teams_role_arns[each.key]
 
   source_bucket_arn    = var.s3_teams_mwaa_bucket_arn[each.key]
@@ -32,7 +32,7 @@ resource "aws_mwaa_environment" "teams" {
       variables_prefix   = local.mwaa_teams_airflow_secrets_backend_variables_prefixes[each.key]
       sep                = "/"
       endpoint_url       = var.secrets_manager_url # "http://ministack:4566
-      profile_name       = "default"
+      profile_name       = local.mwaa_secrets_backend_aws_profile_name
     })
   }
 
@@ -81,18 +81,22 @@ resource "aws_iam_user_policy" "teams" {
   })
 }
 # Setup and get Ministack's EKS configurations
-data "external" "k3s_configuration" {
+data "external" "airflow_configuration" {
   depends_on = [aws_mwaa_environment.teams]
   for_each = aws_mwaa_environment.teams
 
-  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
+  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 
   query = {
-    airflow_container_url              = local.mwaa_urls[each.key] # https://172.19.0.5:[8080|internal-port]
-    ministack_network_name             = var.ministack_network_name
-    kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
-    kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
-    registries_file_path               = var.local_files_registries_file_path
+    ministack_network_name                 = var.ministack_network_name
+    airflow_container_url                  = local.mwaa_urls[each.key] # https://172.19.0.5:[8080|internal-port]
+    airflow_requirements_file_path         = var.local_files_mwaa_requirements_file_path
+    airflow_python_packages_constraint_url = local.mwaa_airflow_python_packages_constraint_url
+    kubeconfig_for_docker_file_path        = var.local_files_kubeconfig_for_docker_file_path
+    secrets_manager_url                    = var.secrets_manager_url # "http://ministack:4566
+    iam_admin_region                       = var.iam_admin_region
+    aws_access_key_id                      = var.iam_teams_usernames[each.key]
+    aws_secret_access_key                  = var.iam_teams_passwords[each.key]
   }
 }
 # {

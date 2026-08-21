@@ -34,7 +34,7 @@ data "external" "postgres_configuration" {
 
   query = {
     ministack_network_name = var.ministack_network_name
-    postgres_endpoint_ip   = aws_db_instance.postgres.address
+    postgres_container_ip  = aws_db_instance.postgres.address
   }
 }
 # {

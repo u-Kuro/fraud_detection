@@ -1,5 +1,9 @@
 locals {
   # MWAA
+  # /environment-configurations
+  mwaa_secrets_backend_aws_profile_name = "default"
+  mwaa_airflow_version = "3.0.6-python3.12" # v3.12.11 | core-executor: LocalExecution
+  mwaa_airflow_python_packages_constraint_url = "https://raw.githubusercontent.com/apache/airflow/constraints-3.0.6/constraints-3.12.txt"
   # /urls
   mwaa_urls = { for k, v in aws_mwaa_environment.teams : k => "http://${v.webserver_url}" } # 172.19.0.5:[8080|internal-port]
   # /teams

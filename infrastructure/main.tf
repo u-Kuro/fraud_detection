@@ -114,7 +114,7 @@ module "eks" {
   local_files_kubeconfig_for_localhost_file_path = local_sensitive_file.kubeconfig_for_localhost.filename
   ssm_teams_parameter_path                       = module.ssm.teams_parameter_path
   local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
-  local_files_registries_file_path            = local_sensitive_file.registries.filename
+  local_files_eks_registries_file_path            = local_sensitive_file.eks_registries.filename
   ministack_network_name                      = local.ministack_network_name
 
   depends_on = [
@@ -139,7 +139,7 @@ module "mwaa" {
   iam_admin_account_id                       = module.iam.admin_account_id
   iam_teams_names                            = module.iam.teams_names
   iam_teams_role_arns                        = module.iam.teams_role_arns
-  local_files_kubeconfig_container_file_path = module.eks.local_files_kubeconfig_container_path
+  local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
   local_files_mwaa_requirements_file_path    = local_sensitive_file.mwaa_requirements.filename
   ministack_ip                               = local.ministack_container_ip
   ministack_port                             = number(local.ministack_container_host_port)

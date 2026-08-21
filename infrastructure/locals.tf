@@ -67,18 +67,8 @@ locals {
   ssm_teams             = [for key, team in local.teams : key if team.includes.ssm]
 }
 
-# Initialize kubeconfig file to access K8s cluster locally
-resource "local_sensitive_file" "kubeconfig_for_localhost" {
-  filename        = "${local.local_files_directory_path}/kubeconfig_for_localhost.yaml"
-  file_permission = "0600"
-}
-# Initialize kubeconfig file to access K8s cluster in docker network
-resource "local_sensitive_file" "kubeconfig_for_docker" {
-  filename        = "${local.local_files_directory_path}/kubeconfig.yaml"
-  file_permission = "0600"
-}
 # Create registries file to redirect container registry calls to Ministack's ECR
-resource "local_sensitive_file" "registries" {
+resource "local_sensitive_file" "eks_registries" {
   filename        = "${local.local_files_directory_path}/registries.yaml"
   file_permission = "0600"
 
@@ -97,6 +87,16 @@ resource "local_sensitive_file" "registries" {
       }
     }
   })
+}
+# Initialize kubeconfig file to access K8s cluster locally
+resource "local_sensitive_file" "kubeconfig_for_localhost" {
+  filename        = "${local.local_files_directory_path}/kubeconfig_for_localhost.yaml"
+  file_permission = "0600"
+}
+# Initialize kubeconfig file to access K8s cluster in docker network
+resource "local_sensitive_file" "kubeconfig_for_docker" {
+  filename        = "${local.local_files_directory_path}/kubeconfig.yaml"
+  file_permission = "0600"
 }
 # Initialize MWAA python package requirements
 resource "local_sensitive_file" "mwaa_requirements" {

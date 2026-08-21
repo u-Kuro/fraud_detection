@@ -1,16 +1,28 @@
 # IAM
 # /admin
 variable "iam_admin_account_id" { type = string }
+variable "iam_admin_region" { type = string }
 # /teams
 variable "iam_teams_names" { type = map(string) }
 variable "iam_teams_role_arns" { type = map(string) }
+variable "iam_teams_usernames" {
+  type = map(string)
+  sensitive = true
+}
+variable "iam_teams_passwords" {
+  type = map(string)
+  sensitive = true
+}
 
 # Local Files
 # /paths
 variable "local_files_mwaa_requirements_file_path" { type = string }
-variable "local_files_kubeconfig_container_file_path" { type = string }
+variable "local_files_kubeconfig_for_docker_file_path" { type = string }
 
 # Ministack
+# /container
+variable "ministack_network_name" { type = string }
+# /urls
 variable "ministack_ip" { type = string }
 variable "ministack_port" { type = number }
 

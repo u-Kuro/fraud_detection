@@ -1,46 +1,29 @@
-# TODO - 20/08/2026 - Continue here...
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-docker exec ministack-mwaa-test sh -c @'
-mkdir -p ~/.aws && cat > ~/.aws/config << EOF
-[default]
-region = us-east-1
-endpoint_url = http://ministack:4566
-request_checksum_calculation = when_required
-EOF
-'@
-
-docker exec ministack-mwaa-test sh -c @'
-mkdir -p ~/.aws && cat > ~/.aws/credentials << EOF
-[default]
-aws_access_key_id = test
-aws_secret_access_key = test
-EOF
-'@
-
-
-# need to also add requirements.txt to /opt/airflow then pip install it there
-docker cp ./infrastructure/local_files/requirements.txt ministack-mwaa-test:/opt/airflow/requirements.txt
-docker exec ministack-mwaa-test sh -c "pip install -r /opt/airflow/requirements.txt --constraint 'https://raw.githubusercontent.com/apache/airflow/constraints-3.0.6/constraints-3.12.txt' 2>&1"
-# need to also add kubeconfig.yaml to /opt/airflow (different than mwaa but this directory persists in ministack)
-docker cp ./infrastructure/local_files/kubeconfig.yaml ministack-mwaa-test:/opt/airflow/kubeconfig.yaml
-
-docker exec ministack-mwaa-test sh -c "airflow dags reserialize 2>/dev/null" # read immed
-# docker cp [local_files_kubeconfig_container_file_path] <airflow_container>:/usr/local/airflow/dags/[s3_kubeconfig_file_path_for_mwaa]
-# manually too
-#
-#But try to put in /opt/airflow for Persistence in current setup
-
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$airflow_container_url  = $query.airflow_container_url
-$ministack_network_name = $query.ministack_network_name
+$ministack_network_name                 = $query.ministack_network_name
+$airflow_container_url                  = $query.airflow_container_url
+$airflow_requirements_file_path         = $query.airflow_requirements_file_path
+$airflow_python_packages_constraint_url = $query.airflow_python_packages_constraint_url
+$kubeconfig_for_docker_file_path        = $query.kubeconfig_for_docker_file_path
+$secrets_manager_url                    = $query.secrets_manager_url
+$iam_admin_region                       = $query.iam_admin_region
+$aws_access_key_id                      = $query.aws_access_key_id
+$aws_secret_access_key                  = $query.aws_secret_access_key
 
 # Validate inputs values
 $items = @{
-    ministack_network_name = $ministack_network_name
-    airflow_container_url  = $airflow_container_url
+    ministack_network_name                 = $ministack_network_name
+    airflow_container_url                  = $airflow_container_url
+    airflow_requirements_file_path         = $airflow_requirements_file_path
+    airflow_python_packages_constraint_url = $airflow_python_packages_constraint_url
+    kubeconfig_for_docker_file_path        = $kubeconfig_for_docker_file_path
+    secrets_manager_url                    = $secrets_manager_url
+    iam_admin_region                       = $iam_admin_region
+    aws_access_key_id                      = $aws_access_key_id
+    aws_secret_access_key                  = $aws_secret_access_key
 }.GetEnumerator()
 foreach ($item in $items) {
     if ([string]::IsNullOrWhiteSpace($item.Value)) {
@@ -48,7 +31,7 @@ foreach ($item in $items) {
     }
 }
 
-# Get Airflow container host port
+# Get Airflow container IP
 $airflow_container_ip = ([System.UriBuilder]$airflow_container_url).Host
 
 # Get Ministack network configurations
@@ -67,17 +50,50 @@ if (-not $airflow_container_name) {
     throw "No container with IP '$airflow_container_ip' found in network '$ministack_network_name'."
 }
 
-# Get Postgres container configurations
-$postgres_container_json_configurations = (docker inspect $postgres_container_name | ConvertFrom-Json)[0]
-$postgres_container_network_settings    = $postgres_container_json_configurations.NetworkSettings
-$postgres_container_ports               = $postgres_container_network_settings.Ports
+# Get Airflow container configurations
+$airflow_container_json_configurations = (docker inspect $airflow_container_name | ConvertFrom-Json)[0]
+$airflow_container_network_settings    = $airflow_container_json_configurations.NetworkSettings
+$airflow_container_ports               = $airflow_container_network_settings.Ports
+$airflow_container_persisted_directory = "/opt/airflow"
 
-# Get Postgres container host port
-$postgres_container_host_port = $postgres_container_ports[0].PSobject.Properties.Value[0].HostPort
-if (-not $postgres_container_host_port) {
-    throw "'$postgres_container_name' port has invalid value of '$postgres_container_host_port'."
+# Install additional package and dependencies in Airflow container
+$airflow_container_requirements_file_path = "${airflow_container_persisted_directory}/requirements.txt"
+docker cp $airflow_requirements_file_path "${airflow_container_name}:${airflow_container_requirements_file_path}"
+docker exec $airflow_container_name sh -c "pip install -r ${airflow_container_requirements_file_path} --constraint '$airflow_python_packages_constraint_url' || exit 1"
+
+# Copy kubeconfig to Airflow container for K3s access
+$airflow_container_kubeconfig_file_path = "${airflow_container_persisted_directory}/kubeconfig.yaml"
+docker cp $kubeconfig_for_docker_file_path "${airflow_container_name}:${airflow_container_kubeconfig_file_path}"
+
+# Initialize AWS credentials for Airflow's secrets backend (secrets manager)
+docker exec $airflow_container_name sh -c @"
+set -e
+
+mkdir -p ~/.aws
+
+# AWS config
+cat > ~/.aws/config << EOF
+[default]
+region = $iam_admin_region
+endpoint_url = $secrets_manager_url
+request_checksum_calculation = when_required
+EOF
+
+# AWS credentials
+cat > ~/.aws/credentials << EOF
+[default]
+aws_access_key_id = $aws_access_key_id
+aws_secret_access_key = $aws_secret_access_key
+EOF
+"@
+
+# Get Airflow container host port
+$airflow_container_host_port = $airflow_container_ports[0].PSobject.Properties.Value[0].HostPort
+if (-not $airflow_container_host_port) {
+    throw "'$airflow_container_name' port has invalid value of '$airflow_container_host_port'."
 }
 
 @{
-    postgres_container_host_port = $postgres_container_host_port
+    airflow_container_host_port            = $airflow_container_host_port
+    airflow_container_kubeconfig_file_path = $airflow_container_kubeconfig_file_path
 } | ConvertTo-Json -Compress
