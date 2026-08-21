@@ -24,7 +24,7 @@ def train_model() -> KubernetesPodOperator:
         task_id=train_model.__name__,
         name=train_model.__name__,
         namespace=K8sConfig.namespace,
-        config_file=AirflowConfig.kubeconfig_file_path,
+        kubernetes_conn_id=KubernetesConfig.connection_id,
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.train_model}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[

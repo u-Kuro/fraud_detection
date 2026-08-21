@@ -59,7 +59,7 @@ def drift_check() -> KubernetesPodOperator:
         task_id=drift_check.__name__,
         name=drift_check.__name__,
         namespace=K8sConfig.namespace,
-        config_file=AirflowConfig.kubeconfig_file_path,
+        kubernetes_conn_id=KubernetesConfig.connection_id,
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.drift_check}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[

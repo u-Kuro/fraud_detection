@@ -55,6 +55,7 @@ $airflow_container_json_configurations = (docker inspect $airflow_container_name
 $airflow_container_network_settings    = $airflow_container_json_configurations.NetworkSettings
 $airflow_container_ports               = $airflow_container_network_settings.Ports
 $airflow_container_persisted_directory = "/opt/airflow"
+$airflow_container_dag_directory_path  = "$airflow_container_persisted_directory/dags"
 
 # Install additional package and dependencies in Airflow container
 $airflow_container_requirements_file_path = "${airflow_container_persisted_directory}/requirements.txt"
@@ -94,6 +95,8 @@ if (-not $airflow_container_host_port) {
 }
 
 @{
+    airflow_container_name                 = $airflow_container_name
     airflow_container_host_port            = $airflow_container_host_port
+    airflow_container_dag_directory_path   = $airflow_container_dag_directory_path
     airflow_container_kubeconfig_file_path = $airflow_container_kubeconfig_file_path
 } | ConvertTo-Json -Compress

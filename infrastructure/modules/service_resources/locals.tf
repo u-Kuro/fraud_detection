@@ -34,7 +34,7 @@ locals {
   mwaa_variables_mlflow_tracking_username = "MLFLOW_TRACKING_USERNAME"
   mwaa_variables_mlflow_tracking_password = "MLFLOW_TRACKING_PASSWORD"
 
-  # GITHUB (TEAM CREATED)
+  # GitHub (team created)
   # github = "GITHUB_CONNECTION_ID"
   # github = jsonencode({
   #  "conn_type": "http",
@@ -48,20 +48,20 @@ locals {
   #  }
   # })
 
-  # GITHUB (TEAM CREATED)
+  # GitHub (team created)
   # github_ids = {
   #   owner = "GITHUB_OWNER"
   #   repository = "GITHUB_REPOSITORY"
   # }
 
-  # SLACK (TEAM CREATED)
+  # Slack (team created)
   # slack = "SLACK_CONNECTION_ID"
   # slack = jsonencode({
   #   "conn_type": "slack",
   #   "password": "YOUR_SLACK_BOT_TOKEN"
   # })
 
-  # SLACK (TEAM CREATED)
+  # Slack (team created)
   # slack_ids = {
   #   channel_id = "SLACK_CHANNEL_ID"
   # }

@@ -1,4 +1,31 @@
-# Create base kubernetes config map for pods
+# What else are essential
+
+# DAGs (secretsmanager) - DONE CHECKING
+# 1) postgres connection - ok
+# 2) Slack connection - user created
+# 3) mlflow url and credentials - ok
+# 4) kubernetes connection - ok
+# 5) teams' kubernetes namespace
+# 6) ecr url (mwaa variable and ssm-export)
+# 7) repo images (multiple depends on teams repo) - user created (e.g. drift_check:latest)
+# 8) k8s docker registry - ok
+# 9) k8s docker registry name - ok
+# 10) k8s base config map - ok
+# 11) k8s base config map name - ok
+# 12) k8s base secret - ok
+# 13) k8s base secret name - ok
+# 14) github_connection - user created
+# 15) github_connection name - user created
+# 16) github variable headers auth token - user created
+
+# TODO - 21/08/2026 - Continue here and add more...
+# Services
+# 1)
+
+# GitHub Workflows
+# 2)
+
+# Create base kubernetes config map for each teams' namespace
 resource "kubernetes_config_map" "eks_teams_base_config_map" {
   for_each = var.eks_teams
 
@@ -8,7 +35,7 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
   }
 
   data = {
-    # POSTGRES
+    # Postgres
     PGHOST     = var.rds_postgres_host
     PGPORT     = var.rds_postgres_port
     PGDATABASE = var.rds_postgres_db_name
@@ -18,13 +45,13 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
     # MWAA
     AWS_ENDPOINT_URL_MWAA = var.mwaa_url
     MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
-    # MLFLOW
+    # MLflow
     MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
-    # SLACK (TEAM CREATED)
+    # Slack (team created)
     # SLACK_CHANNEL_ID = ""
   }
 }
-# EKS TEAMS' SECRETS
+# Create base kubernetes secret for each teams' namespace
 resource "kubernetes_secret" "eks_teams_base_secret" {
   for_each = var.eks_teams
   type     = "Opaque"
@@ -35,22 +62,22 @@ resource "kubernetes_secret" "eks_teams_base_secret" {
   }
 
   data = {
-    # POSTGRES
+    # Postgres
     PGUSER     = var.rds_postgres_teams_usernames[each.key]
     PGPASSWORD = var.rds_postgres_teams_passwords[each.key]
     # S3 / MWAA
     AWS_ACCESS_KEY_ID     = var.iam_teams_usernames[each.key]
     AWS_SECRET_ACCESS_KEY = var.iam_teams_passwords[each.key]
-    # MLFLOW
+    # MLflow
     MLFLOW_TRACKING_USERNAME = var.mlflow_teams_usernames[each.key]
     MLFLOW_TRACKING_PASSWORD = var.mlflow_teams_passwords[each.key]
-    # SLACK (TEAM CREATED)
+    # Slack (team created)
     # SLACK_BOT_TOKEN = ""
     # SLACK_APP_TOKEN = ""
     # SLACK_SIGNING_SECRET = ""
   }
 }
-# EKS TEAMS' DOCKER REGISTRY
+# Create kubernetes docker registry for each teams' namespace
 resource "kubernetes_secret" "eks_teams_docker_registry" {
   for_each = var.eks_teams
   type     = "kubernetes.io/dockerconfigjson"
@@ -73,8 +100,7 @@ resource "kubernetes_secret" "eks_teams_docker_registry" {
     })
   }
 }
-# MWAA CONNECTIONS
-# > KUBERNETES CONNECTION
+# Create Kubernetes connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_k8s_connection_id" {
   for_each = var.mwaa_teams
   name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_k8s_connection_id}"
@@ -86,14 +112,14 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id
   secret_string = jsonencode({
     conn_type = "kubernetes",
     extra = {
-      kube_config_path = var.mwaa_teams_kubeconfig_file_path #/opt/airflow/kubeconfig.yaml
+      kube_config_path = var.mwaa_teams_kubeconfig_file_path # /opt/airflow/kubeconfig.yaml
       in_cluster = false
     }
   })
 
   depends_on = [aws_secretsmanager_secret.mwaa_connections_k8s_connection_id]
 }
-# > TEAMS' POSTGRES CONNECTION
+# Create Postgres connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_postgres_connection_id" {
   for_each = var.rds_postgres_teams
   name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_postgres_connection_id}"
@@ -113,7 +139,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_postgres_connecti
 
   depends_on = [aws_secretsmanager_secret.mwaa_connections_postgres_connection_id]
 }
-# > TEAMS' S3 CONNECTION
+# Create S3 connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_s3_connection_id" {
   for_each = var.s3_teams
   name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_s3_connection_id}"
@@ -133,8 +159,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_s3_connection_id"
 
   depends_on = [aws_secretsmanager_secret.mwaa_connections_s3_connection_id]
 }
-# MWAA VARIABLES
-# > EKS TEAMS' KUBERNETES RESOURCE NAMES
+# Create name variable of the base Kubernetes config map for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_config_map_name" {
   for_each = kubernetes_config_map.eks_teams_base_config_map
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_config_map_name}"
@@ -152,6 +177,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_config_map
     aws_secretsmanager_secret.mwaa_variables_k8s_base_config_map_name
   ]
 }
+# Create name variable of the base Kubernetes secret for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_secret_name" {
   for_each = kubernetes_secret.eks_teams_base_secret
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_secret_name}"
@@ -169,6 +195,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_secret_nam
     aws_secretsmanager_secret.mwaa_variables_k8s_base_secret_name
   ]
 }
+# Create variable name of Kubernetes docker registry for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_docker_registry_secret_name" {
   for_each = kubernetes_secret.eks_teams_docker_registry
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_docker_registry_secret_name}"
@@ -186,7 +213,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_docker_registry
     aws_secretsmanager_secret.mwaa_variables_k8s_docker_registry_secret_name
   ]
 }
-# > MWAA TEAMS' CONNECTION IDS
+# Create ID variable for the Kubernetes connection for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_connection_id" {
   for_each = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_connection_id}"
@@ -204,6 +231,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_connection_id" 
     aws_secretsmanager_secret.mwaa_variables_k8s_connection_id
   ]
 }
+# Create ID variable for the Postgres connection for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_postgres_connection_id" {
   for_each = aws_secretsmanager_secret.mwaa_connections_postgres_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_postgres_connection_id}"
@@ -221,6 +249,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_postgres_connection
     aws_secretsmanager_secret.mwaa_variables_postgres_connection_id
   ]
 }
+# Create ID variable for the S3 connection for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_s3_connection_id" {
   for_each = aws_secretsmanager_secret.mwaa_connections_s3_connection_id
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_s3_connection_id}"
@@ -238,7 +267,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_s3_connection_id" {
     aws_secretsmanager_secret.mwaa_variables_s3_connection_id
   ]
 }
-# > MLFLOW TEAMS
+# Create URL variable of MLflow for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_uri" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_uri}"
@@ -251,6 +280,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_uri
 
   depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_uri]
 }
+# Create username variable for each teams' MLflow account
 resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_username" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_username}"
@@ -263,6 +293,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_use
 
   depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_username]
 }
+# Create password variable for each teams' MLflow account
 resource "aws_secretsmanager_secret" "mwaa_variables_mlflow_tracking_password" {
   for_each = var.mlflow_teams
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_password}"
@@ -275,7 +306,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_pas
 
   depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_password]
 }
-# PLATFORM RESOURCES PROTECTION
+# Set Kubernetes policy to only allow each team to access their own namespace resources
 resource "kubernetes_manifest" "platform_resources_protection" {
   for_each = var.eks_teams
 

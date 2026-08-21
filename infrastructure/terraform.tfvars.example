@@ -261,7 +261,7 @@ jobs:
       # 3. Copy the directory from checkout to the container (MWAA s3 auto sync currently not implemented in Ministack. invoking existing dag in airflow does work tho.)
       - name: Copy Directory to Docker Container
         run: |
-          docker cp ${{ github.workspace }}/dags/. airflow_container_name:/opt/airflow/dags/
+          docker cp ${{ github.workspace }}/dags/. airflow_container_name:/opt/airflow/dags
 
 TO CHECK ERRORS - docker exec airflow_container_name airflow dags list-import-errors
 

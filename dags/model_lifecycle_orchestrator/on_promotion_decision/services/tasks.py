@@ -29,6 +29,7 @@ def apply_model_deployment() -> HttpOperator:
     return HttpOperator(
         task_id=apply_model_deployment.__name__,
         http_conn_id="github_api", # TODO - add in secretsmanager? airflow/connections/github_api
+        # TODO - GitHubConfig.owner and GitHubConfig.repository are not sensitive since it is stored in the repo it points to
         endpoint=f"repos/{GitHubConfig.owner}/{GitHubConfig.repository}/actions/workflows/cd-fraud-detection.yaml/dispatches",
         method="POST",
         headers={
@@ -54,7 +55,7 @@ def archive_used_transaction_inferences() -> None:
         task_id=archive_used_transaction_inferences.__name__,
         name=archive_used_transaction_inferences.__name__,
         namespace=K8sConfig.namespace,
-        config_file=AirflowConfig.kubeconfig_file_path,
+        kubernetes_conn_id=KubernetesConfig.connection_id,
         image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.archive}:latest",
         image_pull_policy="Always",
         image_pull_secrets=[

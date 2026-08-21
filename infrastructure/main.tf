@@ -207,6 +207,7 @@ module "service_resources" {
   mwaa_teams_connections_prefixes      = module.mwaa.teams_environment_connections_prefixes
   mwaa_teams_environment_names         = module.mwaa.teams_environment_names
   mwaa_teams_variables_prefixes        = module.mwaa.teams_environment_variables_prefixes
+  mwaa_teams_kubeconfig_file_path      = module.mwaa.teams_environment_kubeconfig_file_path
   rds_postgres_db_name                 = module.rds.postgres_db_name
   rds_postgres_host                    = module.rds.postgres_host
   rds_postgres_port                    = module.rds.postgres_port
