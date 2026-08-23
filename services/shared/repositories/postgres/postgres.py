@@ -6,7 +6,7 @@ from services.shared.modules.configs.postgres import PostgresConfig
 
 sql_session: sessionmaker = sessionmaker(
     create_engine(
-        PostgresConfig.POSTGRES_DB_URL,
+        url=PostgresConfig.POSTGRES_DB_URL,
         poolclass=NullPool
     )
 )

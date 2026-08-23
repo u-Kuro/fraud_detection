@@ -23,6 +23,67 @@ Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
 
+# example
+TAG: ${{ ECR_REGISTRY }}/my-app:latest
+TEST_TAG: ${{ ECR_REGISTRY }}/my-app:test
+- uses: docker/setup-buildx-action@v4
+
+# ① Build locally (no push) so we can test it
+- name: Build and export to Docker
+uses: docker/build-push-action@v7
+with:
+  load: true          # loads into local daemon, doesn't push
+  tags: ${{ env.TEST_TAG }}
+  cache-from: type=gha
+  cache-to: type=gha,mode=max
+
+# ② Run your tests against the local image
+- name: Test
+run: |
+  docker run --rm ${{ env.TEST_TAG }} npm test
+  # or: docker run --rm ${{ env.TEST_TAG }} pytest
+  # or: docker run --rm ${{ env.TEST_TAG }} ./run_tests.sh
+
+# ③ If tests pass, push (reuses cache from step ①)
+- name: Build and push
+uses: docker/build-push-action@v7
+with:
+  push: true
+  platforms: linux/amd64,linux/arm64
+  tags: ${{ env.TAG }}
+  cache-from: type=gha
+  cache-to: type=gha,mode=max
+
+# manually triggered workflow (workflow_dispatch)
+act workflow_dispatch -W .github/workflows/manual.yml
+
+# manually triggered with inputs
+act workflow_dispatch -W .github/workflows/manual.yml --input KEY=value
+
+# CI
+on:
+  pull_request:               # open-source repos often have no branch filter here;
+    branches: [main]          # private teams usually add this to scope PRs targeting main
+    paths: ['database/**']
+  workflow_dispatch:          # for manual reruns from the UI
+
+# run CI workflow
+act pull_request -W .github/workflows/workflow.yml
+
+# CD
+on:
+  push:
+    branches: [main]
+    paths: ['database/**']
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        type: choice
+        options: [staging, production]
+
+# run CD workflow
+act push -W .github/workflows/workflow.yml
 
 # Secrets Manager
 aws secretsmanager list-secrets

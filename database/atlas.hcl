@@ -5,7 +5,7 @@ variable "url" {
 
 variable "dev" {
   type    = string
-  default = "docker://postgres/${getenv("POSTGRES_VERSION")}/${getenv("POSTGRES_DB_NAME")}?search_path=public"
+  default = "docker://postgres/${getenv("POSTGRES_VERSION")}/dev?search_path=public"
 }
 
 variable "dir" {
@@ -13,20 +13,7 @@ variable "dir" {
   default = "file://migrations"
 }
 
-env "local" {
-  url = var.url
-  dev = var.dev
-  migration {
-    dir = var.dir
-  }
-  lint {
-    destructive { error = true }
-    incompatible { error = true }
-  }
-}
-
-env "ci" {
-  url = var.url
+env "test" {
   dev = var.dev
   migration {
     dir = var.dir
