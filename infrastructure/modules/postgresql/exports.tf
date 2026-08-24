@@ -77,3 +77,30 @@ resource "aws_ssm_parameter" "teams_postgres_migration_credentials" {
 
   depends_on = [aws_secretsmanager_secret_version.teams_postgres_migration_credentials]
 }
+# Allow teams to see their Postgres URI with credentials
+locals { secrets_manager_teams_postgres_migration_database_url_path = "postgres/migration-database-url" }
+resource "aws_secretsmanager_secret" "teams_postgres_migration_database_url" {
+  for_each                = postgresql_role.teams
+  name                    = "${var.secrets_manager_teams_secret_paths[each.key]}/${local.secrets_manager_teams_postgres_migration_database_url_path}"
+  recovery_window_in_days = 0
+
+  depends_on = [postgresql_role.teams]
+}
+resource "aws_secretsmanager_secret_version" "teams_postgres_migration_database_url" {
+  for_each  = aws_secretsmanager_secret.teams_postgres_migration_database_url
+  secret_id = each.value.id
+
+  secret_string_wo         = "postgresql://${local.rds_postgres_teams_migration_usernames[each.key]}:${local.rds_postgres_teams_migration_passwords[each.key]}@${var.rds_postgres_local_host}:${var.rds_postgres_local_port}/${var.rds_postgres_db_name}"
+  secret_string_wo_version = 1
+
+  depends_on = [aws_secretsmanager_secret.teams_postgres_migration_database_url]
+}
+# Allow teams to see that they have Postgres URI with credentials
+resource "aws_ssm_parameter" "teams_postgres_migration_database_url" {
+  for_each = aws_secretsmanager_secret.teams_postgres_migration_database_url
+  name     = "/${var.ssm_teams_parameter_paths[each.key]}/${local.secrets_manager_teams_postgres_migration_database_url_path}/secretsmanager/secret-id"
+  type     = "String"
+  value    = each.value.name
+
+  depends_on = [aws_secretsmanager_secret_version.teams_postgres_migration_database_url]
+}

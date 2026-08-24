@@ -1,0 +1,1 @@
+output "eks_host_entry_point_name" { value = var.traefik_host_entry_point_name }

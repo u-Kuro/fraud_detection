@@ -56,8 +56,7 @@ provider "postgresql" {
   database         = module.rds.postgres_db_name
   username         = module.rds.postgres_admin_username
   password         = module.rds.postgres_admin_password
-  sslmode          = "require"
-  expected_version = "15"
+  expected_version = module.rds.postgres_version
 }
 # Connect to K3s spawned by EKS from Ministack
 provider "kubernetes" {

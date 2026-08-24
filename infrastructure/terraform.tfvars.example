@@ -49,6 +49,8 @@ steps:
       docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
       docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+$KUBECONFIG_SECRET" | base64 -d > ~/.kube/config
+
 # example
 TAG: ${{ ECR_REGISTRY }}/my-app:latest
 TEST_TAG: ${{ ECR_REGISTRY }}/my-app:test
@@ -149,7 +151,7 @@ Remove-Item $temporary_file
 $plain = (aws secretsmanager get-secret-value --secret-id $secretNamePlain | ConvertFrom-Json).SecretString
 $parsed = (aws secretsmanager get-secret-value --secret-id $secretNameJson | ConvertFrom-Json).SecretString | ConvertFrom-Json
 
-# SSM Parameter
+# SSM
 aws ssm describe-parameters
 {
     "Parameters": [

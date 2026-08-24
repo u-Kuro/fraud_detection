@@ -5,42 +5,51 @@ locals {
   ecr_password            = data.aws_ecr_authorization_token.main.password
   ecr_authorization_token = data.aws_ecr_authorization_token.main.authorization_token
   # /urls
-  ecr_url = local.ministack_url
-  ecr_endpoint = local.ministack_endpoint
-  ecr_aws_url = data.aws_ecr_authorization_token.main.proxy_endpoint
+  ecr_url          = local.ministack_url
+  ecr_endpoint     = local.ministack_endpoint
+  ecr_aws_url      = data.aws_ecr_authorization_token.main.proxy_endpoint
   ecr_aws_endpoint = replace(local.ecr_aws_url, "/^[^:]+:\\/\\//", "")
 
   # EKS
   # /urls
   eks_host_url = local.ministack_host_url
   # /domain
-  eks_ingress_domain = "${module.eks.container_ip}.${var.sslip_io_public_wildcard_dns_domain}"
+  eks_ingress_domain           = "${module.eks.container_ip}.${var.sslip_io_public_wildcard_dns_domain}"
   eks_ingress_domain_from_host = "127.0.0.1.${var.sslip_io_public_wildcard_dns_domain}"
 
   # Local files
   # /path
-  local_files_directory_path             = "${path.root}/local_files"
+  local_files_directory_path = "${path.root}/local_files"
 
   # Ministack
   # /network
-  ministack_network_name        = data.external.ministack_configuration.result.ministack_network_name
-  ministack_network_gateway     = data.external.ministack_configuration.result.ministack_network_gateway
+  ministack_network_name    = data.external.ministack_configuration.result.ministack_network_name
+  ministack_network_gateway = data.external.ministack_configuration.result.ministack_network_gateway
   # /container
   ministack_container_name      = data.external.ministack_configuration.result.ministack_container_name
   ministack_container_ip        = data.external.ministack_configuration.result.ministack_container_ip
+  ministack_container_port      = data.external.ministack_configuration.result.ministack_container_port
   ministack_container_host_port = data.external.ministack_configuration.result.ministack_container_host_port
   # /urls
-  ministack_host_url            = data.external.ministack_configuration.result.ministack_host_url
-  ministack_url                 = data.external.ministack_configuration.result.ministack_url
-  ministack_endpoint            = data.external.ministack_configuration.result.ministack_endpoint
+  ministack_host_url = data.external.ministack_configuration.result.ministack_host_url
+  ministack_url      = data.external.ministack_configuration.result.ministack_url
+  ministack_endpoint = data.external.ministack_configuration.result.ministack_endpoint
+
+  # MWAA
+  # /urls
+  mwaa_url = local.ministack_url
+
+  # S3
+  # /urls
+  s3_url = local.ministack_url
 
   # Secrets Manager
   # /urls
-  secrets_manager_url           = local.ministack_url
+  secrets_manager_url = local.ministack_url
 
   # Scripts
   # /paths
-  scripts_directory_path                 = "${path.root}/scripts"
+  scripts_directory_path = "${path.root}/scripts"
 
   # Teams
   teams = {
@@ -102,7 +111,7 @@ resource "local_sensitive_file" "kubeconfig_for_docker" {
 resource "local_sensitive_file" "mwaa_requirements" {
   filename        = "${local.local_files_directory_path}/requirements.txt"
   file_permission = "0600"
-  content = <<-EOT
+  content         = <<-EOT
     apache-airflow==3.0.6
     apache-airflow-providers-amazon==9.12.0
     apache-airflow-providers-cncf-kubernetes==10.7.0

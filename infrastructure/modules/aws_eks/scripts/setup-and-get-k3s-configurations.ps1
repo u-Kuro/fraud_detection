@@ -4,6 +4,7 @@ $ErrorActionPreference = "Stop"
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
 $ministack_network_name             = $query.ministack_network_name
+$ministack_network_gateway          = $query.ministack_network_gateway
 $k3s_container_host_url             = $query.k3s_container_host_url
 $k3s_registries_file_path           = $query.k3s_registries_file_path
 $kubeconfig_for_localhost_file_path = $query.kubeconfig_for_localhost_file_path
@@ -12,6 +13,7 @@ $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
 # Validate inputs values
 $items = @{
     ministack_network_name             = $ministack_network_name
+    ministack_network_gateway          = $ministack_network_gateway
     k3s_container_host_url             = $k3s_container_host_url
     k3s_registries_file_path           = $k3s_registries_file_path
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
@@ -68,7 +70,7 @@ $raw_kubeconfig = docker exec $k3s_container_name cat "${k3s_container_configura
 # Write kubeconfig for localhost in defined file
 $raw_kubeconfig -replace `
     "https://127\.0\.0\.1:${k3s_container_port}", `
-    "https://127.0.0.1:${k3s_container_host_port}" `
+    "https://${ministack_network_gateway}:${k3s_container_host_port}" `
     | Out-File $kubeconfig_for_localhost_file_path -Encoding utf8
 
 # Write kubeconfig for docker in defined file
@@ -108,6 +110,7 @@ kubectl wait --for=condition=Ready nodes --all --timeout=5m
 Write-Host "[EKS] K3s is ready."
 
 @{
-    k3s_container_ip = $k3s_container_ip
-    k3s_container_host_port = $k3s_container_host_port
+    k3s_container_ip                   = $k3s_container_ip
+    k3s_container_host_port            = $k3s_container_host_port
+    kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
 } | ConvertTo-Json -Compress

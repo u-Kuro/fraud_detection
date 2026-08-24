@@ -10,6 +10,6 @@ variable "mwaa_teams" { type = set(string) }
 # /teams
 variable "s3_teams" { type = set(string) }
 
-# SSM Parameter
+# SSM
 # /teams
-variable "ssm_teams_parameter_path" { type = map(string) }
+variable "ssm_teams_parameter_paths" { type = map(string) }

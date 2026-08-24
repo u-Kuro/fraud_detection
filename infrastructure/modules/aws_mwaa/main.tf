@@ -1,7 +1,7 @@
 # Set Python package requirements for MWAA environments (not working with current setup)
 resource "aws_s3_object" "upload_requirements_for_mwaa" {
   for_each = var.mwaa_teams
-  bucket   = var.s3_teams_mwaa_bucket_name[each.key]
+  bucket   = var.s3_teams_mwaa_bucket_names[each.key]
   key      = var.s3_teams_mwaa_requirements_file_path
   source   = var.local_files_mwaa_requirements_file_path
   etag     = filemd5(var.local_files_mwaa_requirements_file_path)
@@ -9,7 +9,7 @@ resource "aws_s3_object" "upload_requirements_for_mwaa" {
 # Upload K8s cluster credential file in MWAA environments for authentication (not working with current setup)
 resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
   for_each = var.mwaa_teams
-  bucket   = var.s3_teams_mwaa_bucket_name[each.key]
+  bucket   = var.s3_teams_mwaa_bucket_names[each.key]
   key      = "${var.s3_teams_mwaa_dag_path}/${var.s3_teams_mwaa_kubeconfig_file_path}"
   source   = var.local_files_kubeconfig_for_docker_file_path
   etag     = filemd5(var.local_files_kubeconfig_for_docker_file_path)
@@ -21,7 +21,7 @@ resource "aws_mwaa_environment" "teams" {
   airflow_version    = local.mwaa_airflow_version
   execution_role_arn = var.iam_teams_role_arns[each.key]
 
-  source_bucket_arn    = var.s3_teams_mwaa_bucket_arn[each.key]
+  source_bucket_arn    = var.s3_teams_mwaa_bucket_arns[each.key]
   requirements_s3_path = var.s3_teams_mwaa_requirements_file_path
   dag_s3_path          = local.mwaa_teams_environment_dag_s3_paths[each.key]
 
@@ -83,7 +83,7 @@ resource "aws_iam_user_policy" "teams" {
 # Setup and get Ministack's EKS configurations
 data "external" "airflow_configuration" {
   depends_on = [aws_mwaa_environment.teams]
-  for_each = aws_mwaa_environment.teams
+  for_each   = aws_mwaa_environment.teams
 
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 

@@ -6,11 +6,11 @@ variable "iam_admin_region" { type = string }
 variable "iam_teams_names" { type = map(string) }
 variable "iam_teams_role_arns" { type = map(string) }
 variable "iam_teams_usernames" {
-  type = map(string)
+  type      = map(string)
   sensitive = true
 }
 variable "iam_teams_passwords" {
-  type = map(string)
+  type      = map(string)
   sensitive = true
 }
 
@@ -23,8 +23,8 @@ variable "local_files_kubeconfig_for_docker_file_path" { type = string }
 # /container
 variable "ministack_network_name" { type = string }
 # /urls
-variable "ministack_ip" { type = string }
-variable "ministack_port" { type = number }
+variable "ministack_container_ip" { type = string }
+variable "ministack_container_port" { type = number }
 
 # MWAA
 # /teams
@@ -32,8 +32,8 @@ variable "mwaa_teams" { type = set(string) }
 
 # S3
 # /mwaa
-variable "s3_teams_mwaa_bucket_name" { type = string }
-variable "s3_teams_mwaa_bucket_arn" { type = string }
+variable "s3_teams_mwaa_bucket_names" { type = string }
+variable "s3_teams_mwaa_bucket_arns" { type = string }
 variable "s3_teams_mwaa_requirements_file_path" {
   type    = string
   default = "requirements.txt"
@@ -51,6 +51,6 @@ variable "s3_teams_mwaa_kubeconfig_file_path" {
 # /urls
 variable "secrets_manager_url" { type = string }
 
-# SSM Parameter
+# SSM
 # /teams
-variable "ssm_teams_parameter_path" { type = map(string) }
+variable "ssm_teams_parameter_paths" { type = map(string) }

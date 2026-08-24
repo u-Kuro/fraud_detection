@@ -75,9 +75,9 @@ variable "secrets_manager_teams_secret_paths" { type = map(string) }
 variable "ssm_teams_parameter_paths" { type = map(string) }
 
 # Traefik
-# /entry-point
-variable "traefik_eks_host_entry_point" {type = string}
-# /port
+# /entry-points
+variable "traefik_eks_host_entry_point_name" { type = string }
+# /ports
 variable "traefik_http_port" {
   type    = number
   default = 80

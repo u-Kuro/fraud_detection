@@ -59,7 +59,6 @@ resource "postgresql_grant" "mlflow_sequence" {
     postgresql_role.mlflow
   ]
 }
-# TODO - NEEDS TO SAVE CREDENTIALS TO SECRETSMANAGER (only teams not migration for k8s since atlas does not run there)
 # Create teams schemas
 resource "postgresql_schema" "teams" {
   for_each = var.rds_postgres_teams

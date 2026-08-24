@@ -1,0 +1,19 @@
+ingressClass:
+  enabled: false # assure conflict avoidance with k3s built-in Traefik v2
+
+accessLog:
+  enabled: true
+
+# ports:
+# web:
+#   nodePort: [dynamic]
+# [dynamic]: # Localhost entrypoint
+#   port: [dynamic] # To be matched
+#   nodePort: [dynamic] # To be called
+
+deployment:
+  replicas: 1
+
+service:
+  type: LoadBalancer
+# externalIPs: [dynamic] # K3s container IP

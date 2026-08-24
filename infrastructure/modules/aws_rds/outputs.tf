@@ -1,6 +1,7 @@
 # RDS
 # /postgres
 output "postgres_identifier" { value = aws_db_instance.postgres.identifier }
+output "postgres_version" { value = aws_db_instance.postgres.engine_version_actual }
 output "postgres_host" { value = aws_db_instance.postgres.address }
 output "postgres_port" { value = tonumber(aws_db_instance.postgres.port) }
 output "postgres_local_host" { value = var.ministack_network_gateway }

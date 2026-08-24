@@ -16,7 +16,6 @@
 # 13) github_connection name - user created
 # 14) github variable headers auth token - user created
 
-# TODO - 21/08/2026 - Continue here and add more...
 # Services
 # 1) slack_bot_token (user created)
 # 2) slack_app_token (user created)
@@ -43,9 +42,9 @@
 # 4) aws access key - shared for .secrets
 # 5) aws secret access key - shared for .secrets
 # 6) aws endpoint url - shared for .secrets
-# 7) postgres version for atlas lint --dev-url
-# 8) postgres credential+endpoint in 1 uri string
-# 9) kubeconfig
+# 7) postgres version for atlas lint --dev-url - ok
+# 8) postgres credential+endpoint in 1 uri string - ok
+# 9) kubeconfig - ok
 
 # DAGs
 # CI test | CD copy dags
@@ -80,7 +79,7 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
     AWS_DEFAULT_REGION = var.iam_admin_region
     # S3
     AWS_ENDPOINT_URL_S3 = var.s3_url
-    S3_BUCKET_NAME = var.s3_teams_bucket_names[each.key]
+    S3_BUCKET_NAME      = var.s3_teams_bucket_names[each.key]
     # MWAA
     AWS_ENDPOINT_URL_MWAA = var.mwaa_url
     MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
@@ -145,15 +144,15 @@ resource "aws_secretsmanager_secret" "mwaa_connections_k8s_connection_id" {
   name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_k8s_connection_id}"
 }
 resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id" {
-  for_each = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
-  secret_id =  each.value.id
+  for_each  = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
+  secret_id = each.value.id
 
   secret_string = jsonencode({
     conn_type = "kubernetes",
     extra = {
       kube_config_path = var.mwaa_teams_kubeconfig_file_path # /opt/airflow/kubeconfig.yaml
-      namespace = var.eks_teams_kubernetes_namespaces[each.key]
-      in_cluster = false
+      namespace        = var.eks_teams_kubernetes_namespaces[each.key]
+      in_cluster       = false
     }
   })
 

@@ -3,7 +3,7 @@ resource "helm_release" "mlflow" {
   name             = var.mlflow_host
   repository       = "https://community-charts.github.io/helm-charts"
   chart            = "mlflow"
-  version          = "1.11.2" # v3.14.0 https://artifacthub.io/packages/helm/community-charts/mlflow
+  version          = "1.11.2" # v3.14.0 https://artifacthub.io/packages/helm/community-charts/mlflow/1.11.2
   namespace        = var.eks_mlflow_namespace
   create_namespace = true
   wait             = true
@@ -11,7 +11,7 @@ resource "helm_release" "mlflow" {
   atomic           = true
   cleanup_on_fail  = true
 
-  values = [file("${path.root}/helm/mlflow/values.yaml")]
+  values = [file("${path.module}/configurations/values.yaml")]
 
   set = [
     { name = "fullnameOverride", value = var.mlflow_host },
@@ -55,7 +55,7 @@ resource "kubernetes_manifest" "ingress_route" {
       namespace = var.eks_mlflow_namespace
     }
     spec = {
-      entryPoints = ["web", var.traefik_eks_host_entry_point] # http 80 / 16443
+      entryPoints = ["web", var.traefik_eks_host_entry_point_name] # http 80 / 16443
       routes = [
         {
           match = "Host(${local.mlflow_subdomain})"

@@ -1,3 +1,4 @@
+# TODO - 24/08/2026 - Continue here... Recheck all values
 module "iam" {
   source = "./modules/aws_iam"
 
@@ -9,14 +10,15 @@ module "iam" {
 module "ssm" {
   source = "modules/aws_ssm"
 
-  # SSM
-  # /teams
-  ssm_teams            = local.ssm_teams
-
   # IAM
   # /admin
   iam_admin_account_id = module.iam.admin_account_id
-  iam_teams_names      = module.iam.teams_names
+  # /teams
+  iam_teams_names = module.iam.teams_names
+
+  # SSM
+  # /teams
+  ssm_teams = local.ssm_teams
 
   depends_on = [module.iam]
 }
@@ -24,47 +26,72 @@ module "ssm" {
 module "s3" {
   source = "./modules/aws_s3"
 
-  # S3
-  # /teams
-  s3_teams        = local.s3_teams
-
-  # MWAA
-  # /teams
-  mwaa_teams      = local.mwaa_teams
-
   # IAM
   # /teams
   iam_teams_names = module.iam.teams_names
 
-  depends_on = [module.iam]
+  # MWAA
+  # /teams
+  mwaa_teams = local.mwaa_teams
+
+  # S3
+  # /teams
+  s3_teams = local.s3_teams
+
+  # SSM
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
+
+  depends_on = [
+    module.iam,
+    module.ssm
+  ]
 }
 
 module "rds" {
   source = "./modules/aws_rds"
 
+  # IAM
+  # /services
+  rds_role_name = module.iam.rds_role_name
+
   # Ministack
   # /network
-  ministack_network_gateway   = local.ministack_network_gateway
-  ministack_network_name      = local.ministack_network_name
+  ministack_network_name    = local.ministack_network_name
+  ministack_network_gateway = local.ministack_network_gateway
 
-  # IAM
-  # /rds
-  rds_role_name               = module.iam.rds_role_name
-
+  # RDS
+  # /postgres
   rds_postgres_admin_username = var.rds_postgres_admin_username
   rds_postgres_admin_password = var.rds_postgres_admin_password
-  s3_postgres_bucket_arn      = module.s3.postgres_bucket_arn
+  # /teams
+  postgres_teams = local.rds_postgres_teams
+
+  # S3
+  # /postgres
+  s3_postgres_bucket_arn = module.s3.postgres_bucket_arn
+
+  # SSM
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
 
   depends_on = [
     module.iam,
-    module.s3
+    module.s3,
+    module.ssm
   ]
 }
 module "secrets_manager" {
   source = "./modules/aws_secrets_manager"
 
-  iam_admin_account_id  = module.iam.admin_account_id
-  iam_teams_names       = module.iam.teams_names
+  # IAM
+  # /admin
+  iam_admin_account_id = module.iam.admin_account_id
+  # /teams
+  iam_teams_names = module.iam.teams_names
+
+  # Secrets Manager
+  # /teams
   secrets_manager_teams = local.secrets_manager_teams
 
   depends_on = [module.iam]
@@ -72,27 +99,44 @@ module "secrets_manager" {
 module "postgres" {
   source = "./modules/postgresql"
 
-  rds_postgres_db_name               = module.rds.postgres_db_name
-  rds_postgres_admin_username        = module.rds.postgres_admin_username
-  rds_postgres_mlflow_username       = var.rds_postgres_mlflow_username
-  rds_postgres_mlflow_password       = var.rds_postgres_mlflow_password
-  rds_postgres_teams                 = local.rds_postgres_teams
-  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_path
-  ssm_teams_parameter_paths          = module.ssm.teams_parameter_path
+  # RDS
+  # /postgres
+  rds_postgres_local_host     = module.rds.postgres_local_host
+  rds_postgres_local_port     = module.rds.postgres_local_port
+  rds_postgres_admin_username = module.rds.postgres_admin_username
+  rds_postgres_db_name        = module.rds.postgres_db_name
+  # /mlflow-schema
+  rds_postgres_mlflow_username = var.rds_postgres_mlflow_username
+  rds_postgres_mlflow_password = var.rds_postgres_mlflow_password
+  # /teams
+  rds_postgres_teams = local.rds_postgres_teams
+
+  # Secrets Manager
+  # /teams
+  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_paths
+
+  # SSM
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
 
   depends_on = [
-    module.rds
+    module.rds,
+    module.secrets_manager,
+    module.ssm
   ]
 }
-
-
 
 module "ecr" {
   source = "./modules/aws_ecr"
 
+  # IAM
+  # /admin
   iam_admin_account_id = module.iam.admin_account_id
   iam_teams_names      = module.iam.teams_names
-  ecr_teams            = local.ecr_teams
+
+  # ECR
+  # /teams
+  ecr_teams = local.ecr_teams
 
   depends_on = [module.iam]
 }
@@ -100,34 +144,64 @@ module "ecr" {
 module "eks" {
   source = "./modules/aws_eks"
 
-  ec2_role_arn                                   = module.iam.ec2_role_arn
-  ec2_role_name                                  = module.iam.ec2_role_name
-  eks_host_endpoint_url                          = local.eks_host_url
-  eks_role_arn                                   = module.iam.eks_role_arn
-  eks_role_name                                  = module.iam.ec2_role_name
-  eks_teams                                      = local.eks_teams
-  iam_admin_password                             = var.aws_admin_secret_key
-  iam_admin_region                               = module.iam.admin_region
-  iam_admin_arn                                  = module.iam.admin_arn
-  iam_admin_username                             = var.aws_admin_access_key
-  iam_teams_role_arns                            = module.iam.teams_role_arns
+  # IAM
+  # /admin
+  iam_admin_arn      = module.iam.admin_arn
+  iam_admin_region   = module.iam.admin_region
+  iam_admin_username = var.aws_admin_access_key
+  iam_admin_password = var.aws_admin_secret_key
+  # /teas
+  iam_teams_role_arns = module.iam.teams_role_arns
+
+  # EC2
+  # /service
+  ec2_role_arn  = module.iam.ec2_role_arn
+  ec2_role_name = module.iam.ec2_role_name
+
+  # EKS
+  # /service
+  eks_role_arn  = module.iam.eks_role_arn
+  eks_role_name = module.iam.ec2_role_name
+  # /urls
+  eks_host_endpoint_url = local.eks_host_url
+  # /teams
+  eks_teams = local.eks_teams
+
+  # Local Files
+  # /paths
   local_files_kubeconfig_for_localhost_file_path = local_sensitive_file.kubeconfig_for_localhost.filename
-  ssm_teams_parameter_path                       = module.ssm.teams_parameter_path
-  local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
-  local_files_eks_registries_file_path            = local_sensitive_file.eks_registries.filename
-  ministack_network_name                      = local.ministack_network_name
+  local_files_kubeconfig_for_docker_file_path    = local_sensitive_file.kubeconfig_for_docker.filename
+  local_files_eks_registries_file_path           = local_sensitive_file.eks_registries.filename
+
+  # Ministack
+  # /network
+  ministack_network_name    = local.ministack_network_name
+  ministack_network_gateway = local.ministack_network_gateway
+
+  # Secrets Manager
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
+
+  # SSM
+  # /teams
+  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_paths
 
   depends_on = [
-    terraform_data.configure_aws,
+    terraform_data.configure_aws, # TODO - check if others should also depend on this
     module.iam,
-    local_sensitive_file.kubeconfig_for_localhost
+    local_sensitive_file.kubeconfig_for_localhost,
+    local_sensitive_file.eks_registries,
+    module.ssm
   ]
 }
 
-module "elb" {
-  source = "modules/aws_elb"
+module "traefik" {
+  source = "modules/traefik"
 
-  eks_ip = module.eks.cluster_ip
+  # EKS
+  # /urls
+  eks_container_host_port = module.eks.container_host_port
+  eks_container_ip        = module.eks.container_ip
 
   depends_on = [module.eks]
 }
@@ -135,88 +209,178 @@ module "elb" {
 module "mwaa" {
   source = "./modules/aws_mwaa"
 
+  # IAM
+  # /admin
+  iam_admin_account_id = module.iam.admin_account_id
+  iam_admin_region     = module.iam.admin_region
+  # /teams
+  iam_teams_names     = module.iam.teams_names
+  iam_teams_role_arns = module.iam.teams_role_arns
+  iam_teams_usernames = module.iam.teams_usernames
+  iam_teams_passwords = module.iam.teams_passwords
 
-  iam_admin_account_id                       = module.iam.admin_account_id
-  iam_teams_names                            = module.iam.teams_names
-  iam_teams_role_arns                        = module.iam.teams_role_arns
+  # Local Files
+  # /paths
+  local_files_mwaa_requirements_file_path     = local_sensitive_file.mwaa_requirements.filename
   local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
-  local_files_mwaa_requirements_file_path    = local_sensitive_file.mwaa_requirements.filename
-  ministack_ip                               = local.ministack_container_ip
-  ministack_port                             = number(local.ministack_container_host_port)
-  mwaa_teams                                 = local.mwaa_teams
-  s3_teams_mwaa_bucket_arn                   = module.s3.teams_mwaa_bucket_arns
-  s3_teams_mwaa_bucket_name                  = module.s3.teams_mwaa_bucket_names
-  secrets_manager_url                        = local.secrets_manager_url
-  ssm_teams_parameter_path                   = module.ssm.teams_parameter_path
+
+  # Ministack
+  # /container
+  ministack_network_name = local.ministack_network_name
+  # /urls
+  ministack_container_ip   = local.ministack_container_ip
+  ministack_container_port = number(local.ministack_container_port)
+
+  # MWAA
+  # /teams
+  mwaa_teams = local.mwaa_teams
+
+  # S3
+  # /mwaa
+  s3_teams_mwaa_bucket_names = module.s3.teams_mwaa_bucket_names
+  s3_teams_mwaa_bucket_arns  = module.s3.teams_mwaa_bucket_arns
+
+  # Secrets Manager
+  # /urls
+  secrets_manager_url = local.secrets_manager_url
+
+  # SSM
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
 
   depends_on = [
     module.iam,
     local_sensitive_file.mwaa_requirements,
-    module.eks,
-    module.s3
+    local_sensitive_file.kubeconfig_for_docker,
+    module.s3,
+    module.eks, # TODO - check if this old value is needed
   ]
 }
 
 module "mlflow" {
   source = "modules/mlflow"
 
-  eks_ingress_domain         = local.eks_ingress_domain
+  # IAM
+  # /admin
+  iam_admin_username = var.aws_admin_access_key
+  iam_admin_password = var.aws_admin_secret_key
+  iam_admin_region   = module.iam.admin_region
+
+  # EKS
+  # /domain
+  eks_ingress_domain           = local.eks_ingress_domain
   eks_ingress_domain_from_host = local.eks_ingress_domain_from_host
-  iam_admin_password                 = var.aws_admin_secret_key
-  iam_admin_region                   = module.iam.admin_region
-  iam_admin_username                 = var.aws_admin_access_key
-  mlflow_admin_password              = var.mlflow_admin_password
-  mlflow_admin_username              = var.mlflow_admin_username
-  mlflow_flask_server_secret_key     = var.mlflow_flask_server_secret_key
-  mlflow_teams                       = local.mlflow_teams
-  rds_postgres_db_name               = module.rds.postgres_db_name
-  rds_postgres_host                  = module.rds.postgres_host
-  rds_postgres_mlflow_password       = var.rds_postgres_mlflow_password
-  rds_postgres_mlflow_username       = var.rds_postgres_mlflow_username
-  rds_postgres_port                  = module.rds.postgres_port
-  s3_mlflow_bucket_arn               = module.s3.mlflow_bucket_arn
-  s3_mlflow_bucket_name              = module.s3.mlflow_bucket_name
-  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_path
-  ssm_teams_parameter_paths          = module.ssm.teams_parameter_path
+
+  # MLflow
+  # /deployment
+  mlflow_flask_server_secret_key = var.mlflow_flask_server_secret_key
+  mlflow_admin_username          = var.mlflow_admin_username
+  mlflow_admin_password          = var.mlflow_admin_password
+  # /teams
+  mlflow_teams = local.mlflow_teams
+
+  # RDS
+  # /postgres
+  rds_postgres_db_name = module.rds.postgres_db_name
+  rds_postgres_host    = module.rds.postgres_host
+  rds_postgres_port    = module.rds.postgres_port
+  # /mlflow-schema
+  rds_postgres_mlflow_username = var.rds_postgres_mlflow_username
+  rds_postgres_mlflow_password = var.rds_postgres_mlflow_password
+
+  # S3
+  # /urls
+  s3_url                = local.s3_url
+  s3_mlflow_bucket_name = module.s3.mlflow_bucket_name
+  s3_mlflow_bucket_arn  = module.s3.mlflow_bucket_arn
+
+  # Secrets Manager
+  # /teams
+  secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_paths
+
+  # SSM
+  # /teams
+  ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
+
+  # Traefik
+  # /entry-points
+  traefik_eks_host_entry_point_name = module.traefik.eks_host_entry_point_name
 
   depends_on = [
     module.iam,
-    module.elb,
     module.rds,
-    module.s3
+    module.s3,
+    module.secrets_manager,
+    module.ssm,
+    module.traefik,
   ]
 }
 
 module "service_resources" {
   source = "modules/service_resources"
 
-  ecr_aws_authorization_token          = local.ecr_authorization_token
-  ecr_aws_authorization_token_password = local.ecr_password
-  ecr_aws_authorization_token_username = local.ecr_username
+  # IAM
+  # /admin
+  iam_admin_region = module.iam.admin_region
+  # /teams
+  iam_teams_usernames = module.iam.teams_usernames
+  iam_teams_passwords = module.iam.teams_passwords
+
+  # ECR
+  # /aws
   ecr_aws_endpoint                     = local.ecr_aws_endpoint
-  eks_teams                            = module.eks.cluster_teams
-  eks_teams_kubernetes_namespaces      = module.eks.cluster_teams_namespaces
-  iam_admin_region                     = module.iam.admin_region
-  iam_teams_passwords                  = module.iam.teams_passwords
-  iam_teams_usernames                  = module.iam.teams_usernames
-  mlflow_inter_url                     = module.mlflow.inter_url
-  mlflow_teams                         = local.mlflow_teams
-  mlflow_teams_passwords               = module.mlflow.teams_passwords
-  mlflow_teams_usernames               = module.mlflow.teams_usernames
-  mwaa_teams                           = local.mwaa_teams
-  mwaa_teams_connections_prefixes      = module.mwaa.teams_environment_connections_prefixes
-  mwaa_teams_environment_names         = module.mwaa.teams_environment_names
-  mwaa_teams_variables_prefixes        = module.mwaa.teams_environment_variables_prefixes
-  mwaa_teams_kubeconfig_file_path      = module.mwaa.teams_environment_kubeconfig_file_path
-  rds_postgres_db_name                 = module.rds.postgres_db_name
-  rds_postgres_host                    = module.rds.postgres_host
-  rds_postgres_port                    = module.rds.postgres_port
-  rds_postgres_teams                   = local.rds_postgres_teams
-  rds_postgres_teams_passwords         = module.postgres.teams_passwords
-  rds_postgres_teams_usernames         = module.postgres.teams_usernames
-  s3_teams                             = local.s3_teams
+  ecr_aws_authorization_token          = local.ecr_authorization_token
+  ecr_aws_authorization_token_username = local.ecr_username
+  ecr_aws_authorization_token_password = local.ecr_password
+
+  # EKS
+  # /teams
+  eks_teams                       = local.eks_teams
+  eks_teams_kubernetes_namespaces = module.eks.cluster_teams_namespaces
+
+  # MLflow
+  # /urls
+  mlflow_ingress_url = module.mlflow.ingress_url
+  mlflow_inter_url   = module.mlflow.inter_url
+  # /teams
+  mlflow_teams           = local.mlflow_teams
+  mlflow_teams_usernames = module.mlflow.teams_usernames
+  mlflow_teams_passwords = module.mlflow.teams_passwords
+
+  # MWAA
+  # /urls
+  mwaa_url = local.mwaa_url
+  # /teams
+  mwaa_teams                      = local.mwaa_teams
+  mwaa_teams_environment_names    = module.mwaa.teams_environment_names
+  mwaa_teams_connections_prefixes = module.mwaa.teams_environment_connections_prefixes
+  mwaa_teams_variables_prefixes   = module.mwaa.teams_environment_variables_prefixes
+  mwaa_teams_kubeconfig_file_path = module.mwaa.teams_environment_kubeconfig_file_path
+
+  # RDS
+  # /postgres
+  rds_postgres_host    = module.rds.postgres_host
+  rds_postgres_port    = module.rds.postgres_port
+  rds_postgres_db_name = module.rds.postgres_db_name
+  # /teams
+  rds_postgres_teams           = local.rds_postgres_teams
+  rds_postgres_teams_usernames = module.postgres.teams_usernames
+  rds_postgres_teams_passwords = module.postgres.teams_passwords
+
+  # S3
+  # /urls
+  s3_url = local.s3_url
+  # /teams
+  s3_teams              = local.s3_teams
+  s3_teams_bucket_names = module.s3.teams_bucket_names
 
   depends_on = [
-    module.iam
+    module.iam,
+    module.eks,
+    module.mlflow,
+    module.mwaa,
+    module.rds,
+    module.postgres,
+    module.s3,
   ]
 }

@@ -30,13 +30,18 @@ variable "eks_teams" { type = set(string) }
 # Local Files
 # /paths
 variable "local_files_kubeconfig_for_localhost_file_path" { type = string }
-variable "local_files_kubeconfig_for_docker_file_path" {type = string}
-variable "local_files_eks_registries_file_path" {type = string}
+variable "local_files_kubeconfig_for_docker_file_path" { type = string }
+variable "local_files_eks_registries_file_path" { type = string }
 
 # Ministack
 # /network
-variable "ministack_network_name" {type = string}
+variable "ministack_network_name" { type = string }
+variable "ministack_network_gateway" { type = string }
 
-# SSM Parameter
+# Secrets Manager
 # /teams
-variable "ssm_teams_parameter_path" { type = map(string) }
+variable "secrets_manager_teams_secret_paths" { type = map(string) }
+
+# SSM
+# /teams
+variable "ssm_teams_parameter_paths" { type = map(string) }

@@ -1,5 +1,7 @@
 # RDS
 # /postgres
+variable "rds_postgres_local_host" { type = string }
+variable "rds_postgres_local_port" { type = number }
 variable "rds_postgres_admin_username" {
   type      = string
   sensitive = true
