@@ -5,48 +5,47 @@
 # 2) Slack connection + slack channel id - user created
 # 3) mlflow url and credentials - ok
 # 4) kubernetes connection - ok
-# 5) teams' kubernetes namespace
-# 6) ecr url (mwaa variable and ssm-export)
-# 7) repo images? (multiple depends on teams repo) - user created (e.g. drift_check:latest)
-# 8) k8s docker registry - ok
-# 9) k8s docker registry name - ok
-# 10) k8s base config map - ok
-# 11) k8s base config map name - ok
-# 12) k8s base secret - ok
-# 13) k8s base secret name - ok
-# 14) github_connection - user created
-# 15) github_connection name - user created
-# 16) github variable headers auth token - user created
+# 5) repo images (multiple depends on teams repo) - user created (e.g. drift_check:latest)
+# 6) k8s docker registry - ok
+# 7) k8s docker registry name - ok
+# 8) k8s base config map - ok
+# 9) k8s base config map name - ok
+# 10) k8s base secret - ok
+# 11) k8s base secret name - ok
+# 12) github_connection - user created
+# 13) github_connection name - user created
+# 14) github variable headers auth token - user created
 
 # TODO - 21/08/2026 - Continue here and add more...
 # Services
-
-# slack_bot_token
-# slack_app_token
-# slack_signing_secret
-# slack_channel_id
-
-# S3 / MWAA
-# aws access key
-# aws secret access key
-# aws endpoint url
-# mwaa environment name
-
-# s3 bucket (mle)
-
-# postgres (all)
-
-# mlflow tracking uri
-
-# mwaa webserver url
+# 1) slack_bot_token (user created)
+# 2) slack_app_token (user created)
+# 3) slack_signing_secret (user created)
+# 4) slack_channel_id (user created)
+# 5) aws region - ok
+# 6) aws access key - ok
+# 7) aws secret access key - ok
+# 8) aws endpoint s3 url - ok
+# 9) s3 bucket (mle) - ok
+# 10) aws endpoint mwaa url - ok
+# 11) mwaa environment name - ok
+# 12) postgres host - ok
+# 13) postgres port - ok
+# 14) postgres db - ok
+# 15) postgres username - ok
+# 16) postgres password - ok
+# 17) mlflow tracking uri - ok
 
 # GitHub Workflows
-
-# 1) airflow container name
-# 2) aws credentials, region, endpoint
-# 3) postgres version for atlas lint --dev-url
-# 4) postgres credential+endpoint in 1 uri string
-# 5) kubeconfig
+# 1) airflow container name - ok
+# 2) airflow dag directory path - ok
+# 3) aws region - shared for .secrets
+# 4) aws access key - shared for .secrets
+# 5) aws secret access key - shared for .secrets
+# 6) aws endpoint url - shared for .secrets
+# 7) postgres version for atlas lint --dev-url
+# 8) postgres credential+endpoint in 1 uri string
+# 9) kubeconfig
 
 # DAGs
 # CI test | CD copy dags
@@ -77,9 +76,11 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
     PGHOST     = var.rds_postgres_host
     PGPORT     = var.rds_postgres_port
     PGDATABASE = var.rds_postgres_db_name
-    # S3 / MWAA
-    AWS_ENDPOINT_URL   = var.s3_url
+    # AWS
     AWS_DEFAULT_REGION = var.iam_admin_region
+    # S3
+    AWS_ENDPOINT_URL_S3 = var.s3_url
+    S3_BUCKET_NAME = var.s3_teams_bucket_names[each.key]
     # MWAA
     AWS_ENDPOINT_URL_MWAA = var.mwaa_url
     MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
@@ -103,7 +104,7 @@ resource "kubernetes_secret" "eks_teams_base_secret" {
     # Postgres
     PGUSER     = var.rds_postgres_teams_usernames[each.key]
     PGPASSWORD = var.rds_postgres_teams_passwords[each.key]
-    # S3 / MWAA
+    # AWS
     AWS_ACCESS_KEY_ID     = var.iam_teams_usernames[each.key]
     AWS_SECRET_ACCESS_KEY = var.iam_teams_passwords[each.key]
     # MLflow
@@ -151,6 +152,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id
     conn_type = "kubernetes",
     extra = {
       kube_config_path = var.mwaa_teams_kubeconfig_file_path # /opt/airflow/kubeconfig.yaml
+      namespace = var.eks_teams_kubernetes_namespaces[each.key]
       in_cluster = false
     }
   })

@@ -78,3 +78,4 @@ variable "rds_postgres_teams_passwords" {
 variable "s3_url" { type = string }
 # /teams
 variable "s3_teams" { type = set(string) }
+variable "s3_teams_bucket_names" { type = map(string) }

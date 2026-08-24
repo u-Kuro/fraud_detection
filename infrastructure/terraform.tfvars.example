@@ -23,6 +23,32 @@ Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
 
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ env.AWS_REGION }}
+
+  - name: Login to Amazon ECR
+    id: login-ecr
+    uses: aws-actions/amazon-ecr-login@v2
+
+  - name: Build, tag, and push image
+    env:
+      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      IMAGE_TAG: ${{ github.sha }}
+    run: |
+      ECR_REGISTRY="${REGISTRY/amazonaws.com/localhost.localstack.cloud:4566}"
+      ECR_REGISTRY="${ECR_REGISTRY/https:\/\//}"
+
+      docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+      docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
 # example
 TAG: ${{ ECR_REGISTRY }}/my-app:latest
 TEST_TAG: ${{ ECR_REGISTRY }}/my-app:test
