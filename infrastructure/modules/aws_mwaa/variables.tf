@@ -16,8 +16,8 @@ variable "iam_teams_passwords" {
 
 # Local Files
 # /paths
-variable "local_files_mwaa_requirements_file_path" { type = string }
 variable "local_files_kubeconfig_for_docker_file_path" { type = string }
+variable "local_files_mwaa_requirements_file_path" { type = string }
 
 # Ministack
 # /container
@@ -32,8 +32,8 @@ variable "mwaa_teams" { type = set(string) }
 
 # S3
 # /mwaa
-variable "s3_teams_mwaa_bucket_names" { type = string }
-variable "s3_teams_mwaa_bucket_arns" { type = string }
+variable "s3_teams_mwaa_bucket_names" { type = map(string) }
+variable "s3_teams_mwaa_bucket_arns" { type = map(string) }
 variable "s3_teams_mwaa_requirements_file_path" {
   type    = string
   default = "requirements.txt"

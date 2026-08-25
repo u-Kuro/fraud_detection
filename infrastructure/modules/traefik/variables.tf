@@ -16,7 +16,7 @@ variable "eks_traefik_namespace" {
 # /deployment
 variable "traefik_web_node_port" {
   type    = number
-  default = 30080
+  default = 30000
 }
 variable "traefik_host_entry_point_name" {
   type    = string

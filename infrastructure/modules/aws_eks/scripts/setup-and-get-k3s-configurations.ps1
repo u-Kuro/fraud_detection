@@ -113,4 +113,5 @@ Write-Host "[EKS] K3s is ready."
     k3s_container_ip                   = $k3s_container_ip
     k3s_container_host_port            = $k3s_container_host_port
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
+    kubeconfig_for_docker_file_path    = $kubeconfig_for_docker_file_path
 } | ConvertTo-Json -Compress

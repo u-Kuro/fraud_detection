@@ -12,7 +12,7 @@ resource "aws_db_instance" "postgres" {
 }
 # Allow snapshots/backup in RDS
 resource "aws_iam_role_policy" "rds" {
-  role = var.rds_role_name
+  role = var.iam_rds_role_name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

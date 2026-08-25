@@ -88,7 +88,7 @@ resource "aws_iam_user_policy" "teams" {
 }
 # Setup and get Ministack's EKS configurations
 data "external" "airflow_configuration" {
-  for_each   = aws_mwaa_environment.teams
+  for_each = aws_mwaa_environment.teams
 
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 

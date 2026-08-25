@@ -67,7 +67,7 @@ resource "kubernetes_config_map" "eks_teams_base_config_map" {
 
   metadata {
     name      = local.eks_k8s_base_config_map_name
-    namespace = var.eks_teams_kubernetes_namespaces[each.key]
+    namespace = var.eks_teams_namespaces[each.key]
   }
 
   data = {
@@ -96,7 +96,7 @@ resource "kubernetes_secret" "eks_teams_base_secret" {
 
   metadata {
     name      = local.eks_k8s_base_secret_name
-    namespace = var.eks_teams_kubernetes_namespaces[each.key]
+    namespace = var.eks_teams_namespaces[each.key]
   }
 
   data = {
@@ -122,7 +122,7 @@ resource "kubernetes_secret" "eks_teams_docker_registry" {
 
   metadata {
     name      = local.eks_k8s_docker_registry_secret_name
-    namespace = var.eks_teams_kubernetes_namespaces[each.key]
+    namespace = var.eks_teams_namespaces[each.key]
   }
 
   data = {
@@ -150,8 +150,8 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id
   secret_string = jsonencode({
     conn_type = "kubernetes",
     extra = {
-      kube_config_path = var.mwaa_teams_kubeconfig_file_path # /opt/airflow/kubeconfig.yaml
-      namespace        = var.eks_teams_kubernetes_namespaces[each.key]
+      kube_config_path = var.mwaa_teams_kubeconfig_file_paths[each.key] # /opt/airflow/kubeconfig.yaml
+      namespace        = var.eks_teams_namespaces[each.key]
       in_cluster       = false
     }
   })
@@ -354,7 +354,7 @@ resource "kubernetes_manifest" "platform_resources_protection" {
     kind       = "Policy"
     metadata = {
       name      = "${each.key}-platform-resources-protection"
-      namespace = var.eks_teams_kubernetes_namespaces[each.key]
+      namespace = var.eks_teams_namespaces[each.key]
     }
     spec = {
       rules = [
@@ -364,7 +364,7 @@ resource "kubernetes_manifest" "platform_resources_protection" {
             any = [{
               resources = {
                 kinds      = ["ConfigMap"]
-                names      = [kubernetes_config_map.eks_teams_base_config_map[each.key].metadata[0].name]
+                names      = [local.eks_k8s_base_config_map_name]
                 operations = ["UPDATE", "DELETE"]
               }
             }]
@@ -386,8 +386,8 @@ resource "kubernetes_manifest" "platform_resources_protection" {
               resources = {
                 kinds = ["Secret"]
                 names = [
-                  kubernetes_secret.eks_teams_base_secret[each.key].metadata[0].name,
-                  kubernetes_secret.eks_teams_docker_registry[each.key].metadata[0].name,
+                  local.eks_k8s_base_secret_name,
+                  local.eks_k8s_docker_registry_secret_name,
                 ]
                 operations = ["UPDATE", "DELETE"]
               }

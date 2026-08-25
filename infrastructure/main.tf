@@ -19,7 +19,9 @@ module "ecr" {
   # /teams
   ecr_teams = local.ecr_teams
 
-  depends_on = [module.iam]
+  depends_on = [
+    module.iam
+  ]
 }
 
 module "secrets_manager" {
@@ -35,7 +37,9 @@ module "secrets_manager" {
   # /teams
   secrets_manager_teams = local.secrets_manager_teams
 
-  depends_on = [module.iam]
+  depends_on = [
+    module.iam
+  ]
 }
 
 module "ssm" {
@@ -51,7 +55,9 @@ module "ssm" {
   # /teams
   ssm_teams = local.ssm_teams
 
-  depends_on = [module.iam]
+  depends_on = [
+    module.iam
+  ]
 }
 
 module "s3" {
@@ -84,7 +90,7 @@ module "rds" {
 
   # IAM
   # /services
-  rds_role_name = module.iam.rds_role_name
+  iam_rds_role_name = module.iam.rds_role_name
 
   # Ministack
   # /network
@@ -139,7 +145,7 @@ module "postgres" {
   depends_on = [
     module.rds,
     module.secrets_manager,
-    module.ssm
+    module.ssm,
   ]
 }
 
@@ -148,24 +154,16 @@ module "eks" {
 
   # IAM
   # /admin
-  iam_admin_arn      = module.iam.admin_arn
-  iam_admin_region   = module.iam.admin_region
-  iam_admin_username = var.aws_admin_access_key
-  iam_admin_password = var.aws_admin_secret_key
-  # /teas
+  iam_admin_arn = module.iam.admin_arn
+  # /teams
   iam_teams_role_arns = module.iam.teams_role_arns
-
-  # EC2
-  # /service
-  ec2_role_arn  = module.iam.ec2_role_arn
-  ec2_role_name = module.iam.ec2_role_name
+  # /services
+  iam_ec2_role_arn  = module.iam.ec2_role_arn
+  iam_ec2_role_name = module.iam.ec2_role_name
+  iam_eks_role_arn  = module.iam.eks_role_arn
+  iam_eks_role_name = module.iam.eks_role_name
 
   # EKS
-  # /service
-  eks_role_arn  = module.iam.eks_role_arn
-  eks_role_name = module.iam.ec2_role_name
-  # /urls
-  eks_host_endpoint_url = local.eks_host_url
   # /teams
   eks_teams = local.eks_teams
 
@@ -190,9 +188,8 @@ module "eks" {
 
   depends_on = [
     module.iam,
-    local_sensitive_file.kubeconfig_for_localhost,
-    local_sensitive_file.eks_registries,
-    module.ssm
+    module.ssm,
+    module.secrets_manager,
   ]
 }
 
@@ -201,10 +198,12 @@ module "traefik" {
 
   # EKS
   # /urls
-  eks_container_host_port = module.eks.container_host_port
   eks_container_ip        = module.eks.container_ip
+  eks_container_host_port = module.eks.container_host_port
 
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks
+  ]
 }
 
 module "mwaa" {
@@ -222,15 +221,15 @@ module "mwaa" {
 
   # Local Files
   # /paths
+  local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_localhost_file_path
   local_files_mwaa_requirements_file_path     = local_sensitive_file.mwaa_requirements.filename
-  local_files_kubeconfig_for_docker_file_path = local_sensitive_file.kubeconfig_for_docker.filename
 
   # Ministack
   # /container
   ministack_network_name = local.ministack_network_name
   # /urls
   ministack_container_ip   = local.ministack_container_ip
-  ministack_container_port = number(local.ministack_container_port)
+  ministack_container_port = local.ministack_container_port
 
   # MWAA
   # /teams
@@ -251,10 +250,9 @@ module "mwaa" {
 
   depends_on = [
     module.iam,
-    local_sensitive_file.mwaa_requirements,
-    local_sensitive_file.kubeconfig_for_docker,
+    module.eks,
     module.s3,
-    module.eks, # TODO - check if this old value is needed
+    module.ssm,
   ]
 }
 
@@ -263,9 +261,9 @@ module "mlflow" {
 
   # IAM
   # /admin
-  iam_admin_username = var.aws_admin_access_key
-  iam_admin_password = var.aws_admin_secret_key
-  iam_admin_region   = module.iam.admin_region
+  iam_admin_access_key = var.aws_admin_access_key
+  iam_admin_secret_key = var.aws_admin_secret_key
+  iam_admin_region     = module.iam.admin_region
 
   # EKS
   # /domain
@@ -293,7 +291,6 @@ module "mlflow" {
   # /urls
   s3_url                = local.s3_url
   s3_mlflow_bucket_name = module.s3.mlflow_bucket_name
-  s3_mlflow_bucket_arn  = module.s3.mlflow_bucket_arn
 
   # Secrets Manager
   # /teams
@@ -306,6 +303,8 @@ module "mlflow" {
   # Traefik
   # /entry-points
   traefik_eks_host_entry_point_name = module.traefik.eks_host_entry_point_name
+  # /ports
+  traefik_eks_host_port = module.traefik.eks_host_port
 
   depends_on = [
     module.iam,
@@ -336,8 +335,8 @@ module "service_resources" {
 
   # EKS
   # /teams
-  eks_teams                       = local.eks_teams
-  eks_teams_kubernetes_namespaces = module.eks.cluster_teams_namespaces
+  eks_teams            = local.eks_teams
+  eks_teams_namespaces = module.eks.teams_namespaces
 
   # MLflow
   # /urls
@@ -352,11 +351,11 @@ module "service_resources" {
   # /urls
   mwaa_url = local.mwaa_url
   # /teams
-  mwaa_teams                      = local.mwaa_teams
-  mwaa_teams_environment_names    = module.mwaa.teams_environment_names
-  mwaa_teams_connections_prefixes = module.mwaa.teams_environment_connections_prefixes
-  mwaa_teams_variables_prefixes   = module.mwaa.teams_environment_variables_prefixes
-  mwaa_teams_kubeconfig_file_path = module.mwaa.teams_environment_kubeconfig_file_path
+  mwaa_teams                       = local.mwaa_teams
+  mwaa_teams_environment_names     = module.mwaa.teams_environment_names
+  mwaa_teams_connections_prefixes  = module.mwaa.teams_environment_connections_prefixes
+  mwaa_teams_variables_prefixes    = module.mwaa.teams_environment_variables_prefixes
+  mwaa_teams_kubeconfig_file_paths = module.mwaa.teams_environment_kubeconfig_file_paths
 
   # RDS
   # /postgres

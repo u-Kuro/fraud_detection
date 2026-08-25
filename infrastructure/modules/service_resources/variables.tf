@@ -30,7 +30,7 @@ variable "ecr_aws_authorization_token_password" {
 # EKS
 # /teams
 variable "eks_teams" { type = set(string) }
-variable "eks_teams_kubernetes_namespaces" { type = map(string) }
+variable "eks_teams_namespaces" { type = map(string) }
 
 # MLflow
 # /urls
@@ -55,7 +55,7 @@ variable "mwaa_teams" { type = set(string) }
 variable "mwaa_teams_environment_names" { type = map(string) }
 variable "mwaa_teams_connections_prefixes" { type = map(string) }
 variable "mwaa_teams_variables_prefixes" { type = map(string) }
-variable "mwaa_teams_kubeconfig_file_path" { type = string }
+variable "mwaa_teams_kubeconfig_file_paths" { type = map(string) }
 
 # RDS
 # /postgres

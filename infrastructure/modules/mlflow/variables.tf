@@ -1,10 +1,10 @@
 # IAM
 # /admin
-variable "iam_admin_username" {
+variable "iam_admin_access_key" {
   type      = string
   sensitive = true
 }
-variable "iam_admin_password" {
+variable "iam_admin_secret_key" {
   type      = string
   sensitive = true
 }
@@ -25,10 +25,6 @@ variable "eks_mlflow_namespace" {
 variable "mlflow_host" {
   type    = string
   default = "mlflow"
-}
-variable "mlflow_container_port" {
-  type    = number
-  default = 8080
 }
 variable "mlflow_flask_server_secret_key" {
   type      = string
@@ -64,7 +60,6 @@ variable "rds_postgres_mlflow_password" {
 # /urls
 variable "s3_url" { type = string }
 variable "s3_mlflow_bucket_name" { type = string }
-variable "s3_mlflow_bucket_arn" { type = string }
 
 # Secrets Manager
 # /teams
@@ -78,6 +73,7 @@ variable "ssm_teams_parameter_paths" { type = map(string) }
 # /entry-points
 variable "traefik_eks_host_entry_point_name" { type = string }
 # /ports
+variable "traefik_eks_host_port" { type = number }
 variable "traefik_http_port" {
   type    = number
   default = 80

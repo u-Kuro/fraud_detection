@@ -16,7 +16,6 @@ resource "helm_release" "mlflow" {
   set = [
     { name = "fullnameOverride", value = var.mlflow_host },
     { name = "service.port", value = var.traefik_http_port },
-    { name = "service.containerPort", value = var.mlflow_container_port },
 
     { name = "backendStore.postgres.host", value = var.rds_postgres_host },
     { name = "backendStore.postgres.port", value = var.rds_postgres_port },
@@ -35,8 +34,8 @@ resource "helm_release" "mlflow" {
     { name = "backendStore.postgres.user", value = var.rds_postgres_mlflow_username },
     { name = "backendStore.postgres.password", value = var.rds_postgres_mlflow_password },
 
-    { name = "artifactRoot.s3.awsAccessKeyId", value = var.iam_admin_username },
-    { name = "artifactRoot.s3.awsSecretAccessKey", value = var.iam_admin_password },
+    { name = "artifactRoot.s3.awsAccessKeyId", value = var.iam_admin_access_key },
+    { name = "artifactRoot.s3.awsSecretAccessKey", value = var.iam_admin_secret_key },
 
     { name = "auth.adminUsername", value = var.mlflow_admin_username },
     { name = "auth.adminPassword", value = var.mlflow_admin_password },
@@ -55,7 +54,7 @@ resource "kubernetes_manifest" "ingress_route" {
       namespace = helm_release.mlflow.namespace
     }
     spec = {
-      entryPoints = ["web", var.traefik_eks_host_entry_point_name] # http 80 / 16443
+      entryPoints = ["web", var.traefik_eks_host_entry_point_name] # http 80 / e.g. 16443
       routes = [
         {
           match = "Host(${local.mlflow_subdomain})"

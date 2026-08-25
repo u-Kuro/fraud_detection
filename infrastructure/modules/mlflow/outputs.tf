@@ -3,6 +3,7 @@
 output "inter_url" { value = local.mlflow_inter_url }
 output "intra_url" { value = local.mlflow_intra_url }
 output "ingress_url" { value = local.mlflow_ingress_url }
+output "host_url" { value = local.mlflow_host_url }
 # /teams
 output "teams_workspace_names" { value = local.mlflow_teams_workspace_names }
 output "teams_usernames" {

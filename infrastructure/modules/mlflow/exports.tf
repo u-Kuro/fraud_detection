@@ -8,7 +8,6 @@ resource "aws_ssm_parameter" "teams_mlflow_workspace" {
   depends_on = [
     # Waits until teams MLflow resources are fully functional
     kubernetes_manifest.ingress_route,
-    kubernetes_job.teams,
   ]
 }
 # Allow teams to see their credentials for their MLflow workspace
@@ -21,7 +20,6 @@ resource "aws_secretsmanager_secret" "teams_mlflow_credentials" {
   depends_on = [
     # Waits until teams MLflow resources are fully functional
     kubernetes_manifest.ingress_route,
-    kubernetes_job.teams,
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_mlflow_credentials" {

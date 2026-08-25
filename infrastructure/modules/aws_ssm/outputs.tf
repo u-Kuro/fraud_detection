@@ -1,1 +1,3 @@
+# SSM
+# /teams
 output "teams_parameter_paths" { value = local.ssm_teams_parameter_paths }

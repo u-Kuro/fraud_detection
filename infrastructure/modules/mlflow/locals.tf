@@ -18,6 +18,7 @@ locals {
   mlflow_intra_url   = "http://${var.mlflow_host}"
   mlflow_inter_url   = "http://${var.mlflow_host}.${var.eks_mlflow_namespace}.svc.cluster.local"
   mlflow_ingress_url = "http://${local.mlflow_subdomain}"
+  mlflow_host_url    = "http://${local.mlflow_subdomain_from_host}:${var.traefik_eks_host_port}"
 
   # Teams
   # /workspace-names

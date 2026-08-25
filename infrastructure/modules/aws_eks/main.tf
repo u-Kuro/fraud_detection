@@ -3,7 +3,7 @@ data "aws_iam_policy" "eks_cluster_policy" {
   name = "AmazonEKSClusterPolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  role       = var.eks_role_name
+  role       = var.iam_eks_role_name
   policy_arn = data.aws_iam_policy.eks_cluster_policy.arn
 }
 # Allow EKS worker node to connect to EKS Cluster
@@ -11,7 +11,7 @@ data "aws_iam_policy" "eks_worker_node_policy" {
   name = "AmazonEKSWorkerNodePolicy"
 }
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  role       = var.ec2_role_name
+  role       = var.iam_ec2_role_name
   policy_arn = data.aws_iam_policy.eks_worker_node_policy.arn
 }
 # Allow CNI to modify the IP configuration for EKS worker node
@@ -19,7 +19,7 @@ data "aws_iam_policy" "eks_cni_policy" {
   name = "AmazonEKS_CNI_Policy"
 }
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = var.ec2_role_name
+  role       = var.iam_ec2_role_name
   policy_arn = data.aws_iam_policy.eks_cni_policy.arn
 }
 # Allow EC2 worker node to read from ECR
@@ -27,14 +27,14 @@ data "aws_iam_policy" "ecr_read_only" {
   name = "AmazonEC2ContainerRegistryReadOnly"
 }
 resource "aws_iam_role_policy_attachment" "ecr_read_only" {
-  role       = var.ec2_role_name
+  role       = var.iam_ec2_role_name
   policy_arn = data.aws_iam_policy.ecr_read_only.arn
 }
 # Initialize EKS
 resource "aws_eks_cluster" "main" {
   name     = "eks"
   version  = "1.32"
-  role_arn = var.eks_role_arn
+  role_arn = var.iam_eks_role_arn
 
   vpc_config {
     subnet_ids = ["subnet-00000000000000000", "subnet-00000000000000001"]
@@ -47,7 +47,7 @@ resource "aws_eks_cluster" "main" {
 # Initialize EKS worker node
 resource "aws_eks_node_group" "main" {
   cluster_name  = aws_eks_cluster.main.id
-  node_role_arn = var.ec2_role_arn
+  node_role_arn = var.iam_ec2_role_arn
 
   scaling_config {
     desired_size = 1
@@ -100,10 +100,10 @@ resource "aws_eks_access_policy_association" "admin" {
 }
 # Register teams to EKS cluster
 resource "aws_eks_access_entry" "teams" {
-  for_each      = var.eks_teams
-  cluster_name  = aws_eks_cluster.main.id
-  principal_arn = var.iam_teams_role_arns[each.key]
-  type          = "STANDARD"
+  for_each          = var.eks_teams
+  cluster_name      = aws_eks_cluster.main.id
+  principal_arn     = var.iam_teams_role_arns[each.key]
+  type              = "STANDARD"
   kubernetes_groups = [each.key]
 }
 # Allow teams to edit their own resources in EKS cluster
@@ -128,7 +128,7 @@ resource "kubernetes_role_binding" "teams" {
   }
 
   depends_on = [
-    data.external.k3s_configuration, # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
+    data.external.k3s_configuration,      # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
     aws_eks_access_entry.teams[each.key], # Needs access entry to bind role for teams' K8s group
   ]
 }

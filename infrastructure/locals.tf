@@ -28,8 +28,8 @@ locals {
   # /container
   ministack_container_name      = data.external.ministack_configuration.result.ministack_container_name
   ministack_container_ip        = data.external.ministack_configuration.result.ministack_container_ip
-  ministack_container_port      = data.external.ministack_configuration.result.ministack_container_port
-  ministack_container_host_port = data.external.ministack_configuration.result.ministack_container_host_port
+  ministack_container_port      = number(data.external.ministack_configuration.result.ministack_container_port)
+  ministack_container_host_port = number(data.external.ministack_configuration.result.ministack_container_host_port)
   # /urls
   ministack_host_url = data.external.ministack_configuration.result.ministack_host_url
   ministack_url      = data.external.ministack_configuration.result.ministack_url

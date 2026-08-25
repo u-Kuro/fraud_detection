@@ -1,6 +1,6 @@
 # IAM
 # /services
-variable "rds_role_name" { type = string }
+variable "iam_rds_role_name" { type = string }
 
 # Ministack
 # /network
@@ -8,6 +8,7 @@ variable "ministack_network_name" { type = string }
 variable "ministack_network_gateway" { type = string }
 
 # RDS
+# /service
 # /postgres
 variable "rds_postgres_admin_username" {
   type      = string
