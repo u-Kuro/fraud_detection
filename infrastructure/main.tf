@@ -1,6 +1,6 @@
 # TODO - 25/08/2026 - Continue here... Try running?
 module "iam" {
-  source = "./modules/aws_iam"
+  source = "modules/aws/iam"
 
   # IAM
   # /teams
@@ -8,7 +8,7 @@ module "iam" {
 }
 
 module "ecr" {
-  source = "./modules/aws_ecr"
+  source = "modules/aws/ecr"
 
   # IAM
   # /admin
@@ -25,7 +25,7 @@ module "ecr" {
 }
 
 module "secrets_manager" {
-  source = "./modules/aws_secrets_manager"
+  source = "modules/aws/secrets_manager"
 
   # IAM
   # /admin
@@ -43,7 +43,7 @@ module "secrets_manager" {
 }
 
 module "ssm" {
-  source = "modules/aws_ssm"
+  source = "modules/aws/ssm"
 
   # IAM
   # /admin
@@ -61,7 +61,7 @@ module "ssm" {
 }
 
 module "s3" {
-  source = "./modules/aws_s3"
+  source = "modules/aws/s3"
 
   # IAM
   # /teams
@@ -86,7 +86,7 @@ module "s3" {
 }
 
 module "rds" {
-  source = "./modules/aws_rds"
+  source = "modules/aws/rds"
 
   # IAM
   # /services
@@ -150,7 +150,7 @@ module "postgres" {
 }
 
 module "eks" {
-  source = "./modules/aws_eks"
+  source = "modules/aws/eks"
 
   # IAM
   # /admin
@@ -194,7 +194,7 @@ module "eks" {
 }
 
 module "traefik" {
-  source = "modules/traefik"
+  source = "modules/k8s/traefik"
 
   # EKS
   # /urls
@@ -207,7 +207,7 @@ module "traefik" {
 }
 
 module "mwaa" {
-  source = "./modules/aws_mwaa"
+  source = "modules/aws/mwaa"
 
   # IAM
   # /admin
@@ -257,7 +257,7 @@ module "mwaa" {
 }
 
 module "mlflow" {
-  source = "modules/mlflow"
+  source = "modules/k8s/mlflow"
 
   # IAM
   # /admin
@@ -316,8 +316,8 @@ module "mlflow" {
   ]
 }
 
-module "service_resources" {
-  source = "modules/service_resources"
+module "exports" {
+  source = "modules/exports"
 
   # IAM
   # /admin
