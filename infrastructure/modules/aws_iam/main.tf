@@ -15,8 +15,6 @@ resource "aws_iam_user" "teams" {
 resource "aws_iam_access_key" "teams" {
   for_each = aws_iam_user.teams
   user     = each.value.name
-
-  depends_on = [aws_iam_user.teams]
 }
 # Create roles for services
 resource "aws_iam_role" "ec2" {

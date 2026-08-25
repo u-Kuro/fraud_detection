@@ -66,11 +66,12 @@ locals {
       }
     }
   }
+  iam_teams             = keys(local.teams)
   ecr_teams             = [for key, team in local.teams : key if team.includes.ecr]
   eks_teams             = [for key, team in local.teams : key if team.includes.eks]
   mlflow_teams          = [for key, team in local.teams : key if team.includes.mlflow]
   mwaa_teams            = [for key, team in local.teams : key if team.includes.mwaa]
-  rds_postgres_teams    = [for key, team in local.teams : key if team.includes.postgres]
+  postgres_teams        = [for key, team in local.teams : key if team.includes.postgres]
   s3_teams              = [for key, team in local.teams : key if team.includes.s3]
   secrets_manager_teams = [for key, team in local.teams : key if team.includes.secrets_manager]
   ssm_teams             = [for key, team in local.teams : key if team.includes.ssm]

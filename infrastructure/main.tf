@@ -4,7 +4,38 @@ module "iam" {
 
   # IAM
   # /teams
-  iam_teams = keys(local.teams)
+  iam_teams = local.iam_teams
+}
+
+module "ecr" {
+  source = "./modules/aws_ecr"
+
+  # IAM
+  # /admin
+  iam_admin_account_id = module.iam.admin_account_id
+  iam_teams_names      = module.iam.teams_names
+
+  # ECR
+  # /teams
+  ecr_teams = local.ecr_teams
+
+  depends_on = [module.iam]
+}
+
+module "secrets_manager" {
+  source = "./modules/aws_secrets_manager"
+
+  # IAM
+  # /admin
+  iam_admin_account_id = module.iam.admin_account_id
+  # /teams
+  iam_teams_names = module.iam.teams_names
+
+  # Secrets Manager
+  # /teams
+  secrets_manager_teams = local.secrets_manager_teams
+
+  depends_on = [module.iam]
 }
 
 module "ssm" {
@@ -44,7 +75,7 @@ module "s3" {
 
   depends_on = [
     module.iam,
-    module.ssm
+    module.ssm,
   ]
 }
 
@@ -65,7 +96,7 @@ module "rds" {
   rds_postgres_admin_username = var.rds_postgres_admin_username
   rds_postgres_admin_password = var.rds_postgres_admin_password
   # /teams
-  postgres_teams = local.rds_postgres_teams
+  postgres_teams = local.postgres_teams
 
   # S3
   # /postgres
@@ -78,26 +109,12 @@ module "rds" {
   depends_on = [
     module.iam,
     module.s3,
-    module.ssm
+    module.ssm,
   ]
 }
-module "secrets_manager" {
-  source = "./modules/aws_secrets_manager"
 
-  # IAM
-  # /admin
-  iam_admin_account_id = module.iam.admin_account_id
-  # /teams
-  iam_teams_names = module.iam.teams_names
-
-  # Secrets Manager
-  # /teams
-  secrets_manager_teams = local.secrets_manager_teams
-
-  depends_on = [module.iam]
-}
 module "postgres" {
-  source = "./modules/postgresql"
+  source = "modules/postgres"
 
   # RDS
   # /postgres
@@ -109,7 +126,7 @@ module "postgres" {
   rds_postgres_mlflow_username = var.rds_postgres_mlflow_username
   rds_postgres_mlflow_password = var.rds_postgres_mlflow_password
   # /teams
-  rds_postgres_teams = local.rds_postgres_teams
+  rds_postgres_teams = local.postgres_teams
 
   # Secrets Manager
   # /teams
@@ -124,21 +141,6 @@ module "postgres" {
     module.secrets_manager,
     module.ssm
   ]
-}
-
-module "ecr" {
-  source = "./modules/aws_ecr"
-
-  # IAM
-  # /admin
-  iam_admin_account_id = module.iam.admin_account_id
-  iam_teams_names      = module.iam.teams_names
-
-  # ECR
-  # /teams
-  ecr_teams = local.ecr_teams
-
-  depends_on = [module.iam]
 }
 
 module "eks" {
@@ -187,7 +189,6 @@ module "eks" {
   secrets_manager_teams_secret_paths = module.secrets_manager.teams_secret_paths
 
   depends_on = [
-    terraform_data.configure_aws, # TODO - check if others should also depend on this
     module.iam,
     local_sensitive_file.kubeconfig_for_localhost,
     local_sensitive_file.eks_registries,
@@ -363,7 +364,7 @@ module "service_resources" {
   rds_postgres_port    = module.rds.postgres_port
   rds_postgres_db_name = module.rds.postgres_db_name
   # /teams
-  rds_postgres_teams           = local.rds_postgres_teams
+  rds_postgres_teams           = local.postgres_teams
   rds_postgres_teams_usernames = module.postgres.teams_usernames
   rds_postgres_teams_passwords = module.postgres.teams_passwords
 

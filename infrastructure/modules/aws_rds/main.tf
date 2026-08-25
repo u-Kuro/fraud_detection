@@ -26,11 +26,13 @@ resource "aws_iam_role_policy" "rds" {
       }
     ]
   })
+
+  depends_on = [
+    aws_db_instance.postgres # Waits until postgres is fully functional
+  ]
 }
 # Get Ministack's Postgres container configurations
 data "external" "postgres_configuration" {
-  depends_on = [aws_db_instance.postgres]
-
   program = ["powershell", "-File", "${path.module}/scripts/get-postgres-configurations.ps1"]
 
   query = {

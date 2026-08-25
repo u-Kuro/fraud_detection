@@ -9,8 +9,6 @@ resource "aws_s3_bucket_versioning" "postgres" {
   versioning_configuration {
     status = "Enabled"
   }
-
-  depends_on = [aws_s3_bucket.postgres]
 }
 resource "aws_s3_bucket_public_access_block" "postgres" {
   bucket                  = aws_s3_bucket.postgres.id
@@ -18,8 +16,6 @@ resource "aws_s3_bucket_public_access_block" "postgres" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-
-  depends_on = [aws_s3_bucket.postgres]
 }
 # Create bucket for MLflow
 resource "aws_s3_bucket" "mlflow" {
@@ -32,8 +28,6 @@ resource "aws_s3_bucket_versioning" "mlflow" {
   versioning_configuration {
     status = "Enabled"
   }
-
-  depends_on = [aws_s3_bucket.mlflow]
 }
 resource "aws_s3_bucket_public_access_block" "mlflow" {
   bucket                  = aws_s3_bucket.mlflow.id
@@ -41,8 +35,6 @@ resource "aws_s3_bucket_public_access_block" "mlflow" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-
-  depends_on = [aws_s3_bucket.mlflow]
 }
 # Create buckets for each team
 resource "aws_s3_bucket" "teams" {
@@ -57,8 +49,6 @@ resource "aws_s3_bucket_versioning" "teams" {
   versioning_configuration {
     status = "Enabled"
   }
-
-  depends_on = [aws_s3_bucket.teams]
 }
 resource "aws_s3_bucket_public_access_block" "teams" {
   for_each                = aws_s3_bucket.teams
@@ -67,8 +57,6 @@ resource "aws_s3_bucket_public_access_block" "teams" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-
-  depends_on = [aws_s3_bucket.teams]
 }
 # Allow teams to manage their own bucket
 resource "aws_iam_user_policy" "teams" {
@@ -95,8 +83,6 @@ resource "aws_iam_user_policy" "teams" {
       }
     ]
   })
-
-  depends_on = [aws_s3_bucket.teams]
 }
 # Create buckets for each team with MWAA
 resource "aws_s3_bucket" "teams_mwaa" {
@@ -111,8 +97,6 @@ resource "aws_s3_bucket_versioning" "teams_mwaa" {
   versioning_configuration {
     status = "Enabled"
   }
-
-  depends_on = [aws_s3_bucket.teams_mwaa]
 }
 # Allow teams to manage their own buckets used in MWAA
 resource "aws_iam_user_policy" "teams_mwaa" {
@@ -139,6 +123,4 @@ resource "aws_iam_user_policy" "teams_mwaa" {
       }
     ]
   })
-
-  depends_on = [aws_s3_bucket.teams_mwaa]
 }

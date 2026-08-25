@@ -345,7 +345,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_pas
 
   depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_password]
 }
-# Set Kubernetes policy to only allow each team to access their own namespace resources
+# Set Kubernetes policy to deny teams in editing infrastructure resources
 resource "kubernetes_manifest" "platform_resources_protection" {
   for_each = var.eks_teams
 

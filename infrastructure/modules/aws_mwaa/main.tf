@@ -42,6 +42,7 @@ resource "aws_mwaa_environment" "teams" {
   }
 
   depends_on = [
+    # Needs initial files for environment
     aws_s3_object.upload_requirements_for_mwaa,
     aws_s3_object.upload_kubeconfig_for_mwaa,
   ]
@@ -79,10 +80,14 @@ resource "aws_iam_user_policy" "teams" {
       }
     ]
   })
+
+  depends_on = [
+    # Needs proper environment before giving access to its resources
+    aws_mwaa_environment.teams[each.key]
+  ]
 }
 # Setup and get Ministack's EKS configurations
 data "external" "airflow_configuration" {
-  depends_on = [aws_mwaa_environment.teams]
   for_each   = aws_mwaa_environment.teams
 
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]

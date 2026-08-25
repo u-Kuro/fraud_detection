@@ -34,19 +34,19 @@ provider "aws" {
   # Prevents Terraform from calling STS GetCallerIdentity to lookup a real 12-digit AWS Account ID
   skip_requesting_account_id = true
 }
-# Set default AWS configurations for local script executions
-resource "terraform_data" "configure_aws" {
-  provisioner "local-exec" {
-    interpreter = ["powershell", "-File"]
-    command     = "${local.scripts_directory_path}/configure-aws.ps1"
-    environment = {
-      AWS_ACCESS_KEY_ID     = var.aws_admin_access_key
-      AWS_SECRET_ACCESS_KEY = var.aws_admin_secret_key
-      AWS_DEFAULT_REGION    = var.aws_admin_region
-      AWS_ENDPOINT_URL      = local.ministack_host_url
-    }
-  }
-}
+# # Set default AWS configurations for local script executions
+# resource "terraform_data" "configure_local_aws" {
+#   provisioner "local-exec" {
+#     interpreter = ["powershell", "-File"]
+#     command     = "${local.scripts_directory_path}/configure-aws.ps1"
+#     environment = {
+#       AWS_ACCESS_KEY_ID     = var.aws_admin_access_key
+#       AWS_SECRET_ACCESS_KEY = var.aws_admin_secret_key
+#       AWS_DEFAULT_REGION    = var.aws_admin_region
+#       AWS_ENDPOINT_URL      = local.ministack_host_url
+#     }
+#   }
+# }
 # Get ECR authorization token mocked by Ministack
 data "aws_ecr_authorization_token" "main" {}
 # Connect to Postgres spawned by RDS from Ministack

@@ -6,6 +6,8 @@ resource "aws_ssm_parameter" "teams_k8s_namespaces" {
   value    = aws_db_instance.postgres.engine_version_actual
 
   depends_on = [
-    aws_db_instance.postgres
+    # Waits until postgres is fully functional
+    aws_iam_role_policy.rds,
+    data.external.postgres_configuration,
   ]
 }

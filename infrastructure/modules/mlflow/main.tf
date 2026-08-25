@@ -52,7 +52,7 @@ resource "kubernetes_manifest" "ingress_route" {
     kind       = "IngressRoute"
     metadata = {
       name      = "${var.mlflow_host}-ingress-route"
-      namespace = var.eks_mlflow_namespace
+      namespace = helm_release.mlflow.namespace
     }
     spec = {
       entryPoints = ["web", var.traefik_eks_host_entry_point_name] # http 80 / 16443
@@ -80,16 +80,12 @@ resource "kubernetes_manifest" "ingress_route" {
       ]
     }
   }
-
-  depends_on = [
-    helm_release.mlflow,
-  ]
 }
 # Create script in cluster for creating MLflow workspace
 resource "kubernetes_config_map" "create_mlflow_workspace" {
   metadata {
     name      = local.create_mlflow_workspace_script_file_resource_name
-    namespace = var.eks_mlflow_namespace
+    namespace = helm_release.mlflow.namespace
   }
   data = {
     (local.create_mlflow_workspace_script_file_name) = file("${path.module}/${local.create_mlflow_workspace_script_file_relative_path}")
@@ -103,7 +99,7 @@ resource "kubernetes_job" "teams" {
 
   metadata {
     name      = "create-mlflow-workspace-for-${each.key}"
-    namespace = var.eks_mlflow_namespace
+    namespace = helm_release.mlflow.namespace
   }
 
   spec {
@@ -156,7 +152,6 @@ resource "kubernetes_job" "teams" {
   }
 
   depends_on = [
-    helm_release.mlflow,
-    kubernetes_config_map.create_mlflow_workspace
+    kubernetes_config_map.create_mlflow_workspace # Needs the script to create mlflow workspace
   ]
 }

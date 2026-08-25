@@ -10,8 +10,6 @@ resource "postgresql_role" "mlflow" {
   login               = true
   skip_reassign_owned = true
   search_path         = postgresql_schema.mlflow.name
-
-  depends_on = [postgresql_schema.mlflow]
 }
 # Grant MLflow permission to connect to the database
 resource "postgresql_grant" "mlflow_database" {
@@ -19,8 +17,6 @@ resource "postgresql_grant" "mlflow_database" {
   role        = postgresql_role.mlflow.name
   object_type = "database"
   privileges  = ["CONNECT"]
-
-  depends_on = [postgresql_role.mlflow]
 }
 # Grant MLflow full permission for its objects
 resource "postgresql_grant" "mlflow_schema" {
@@ -29,11 +25,6 @@ resource "postgresql_grant" "mlflow_schema" {
   role        = postgresql_role.mlflow.name
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
-
-  depends_on = [
-    postgresql_schema.mlflow,
-    postgresql_role.mlflow
-  ]
 }
 resource "postgresql_grant" "mlflow_table" {
   database    = var.rds_postgres_db_name
@@ -41,11 +32,6 @@ resource "postgresql_grant" "mlflow_table" {
   role        = postgresql_role.mlflow.name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
-
-  depends_on = [
-    postgresql_schema.mlflow,
-    postgresql_role.mlflow
-  ]
 }
 resource "postgresql_grant" "mlflow_sequence" {
   database    = var.rds_postgres_db_name
@@ -53,11 +39,6 @@ resource "postgresql_grant" "mlflow_sequence" {
   role        = postgresql_role.mlflow.name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT", "UPDATE"]
-
-  depends_on = [
-    postgresql_schema.mlflow,
-    postgresql_role.mlflow
-  ]
 }
 # Create teams schemas
 resource "postgresql_schema" "teams" {
@@ -73,8 +54,6 @@ resource "postgresql_role" "teams" {
   login               = true
   skip_reassign_owned = true
   search_path         = postgresql_schema.teams[each.key].name
-
-  depends_on = [postgresql_schema.teams]
 }
 # Grant teams permissions to connect to the database
 resource "postgresql_grant" "teams_database" {
@@ -83,8 +62,6 @@ resource "postgresql_grant" "teams_database" {
   role        = each.value.name
   object_type = "database"
   privileges  = ["CONNECT"]
-
-  depends_on = [postgresql_role.teams]
 }
 # Grant teams permissions to use objects in their schema
 resource "postgresql_grant" "teams_schema" {
@@ -94,11 +71,6 @@ resource "postgresql_grant" "teams_schema" {
   role        = postgresql_role.teams[each.key].name
   object_type = "schema"
   privileges  = ["USAGE"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams
-  ]
 }
 resource "postgresql_grant" "teams_table" {
   for_each    = postgresql_schema.teams
@@ -107,11 +79,6 @@ resource "postgresql_grant" "teams_table" {
   role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams
-  ]
 }
 resource "postgresql_grant" "teams_sequence" {
   for_each    = postgresql_schema.teams
@@ -120,11 +87,6 @@ resource "postgresql_grant" "teams_sequence" {
   role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams
-  ]
 }
 # Create Postgres roles for each teams' schema for migration
 resource "postgresql_role" "teams_migration" {
@@ -134,8 +96,6 @@ resource "postgresql_role" "teams_migration" {
   login               = true
   skip_reassign_owned = true
   search_path         = postgresql_schema.teams[each.key].name
-
-  depends_on = [postgresql_schema.teams]
 }
 # Grant teams' migration roles permissions to connect to the database
 resource "postgresql_grant" "teams_migration_database" {
@@ -144,8 +104,6 @@ resource "postgresql_grant" "teams_migration_database" {
   role        = each.value.name
   object_type = "database"
   privileges  = ["CONNECT"]
-
-  depends_on = [postgresql_role.teams_migration]
 }
 # Grant teams permissions to manage objects in their schema
 resource "postgresql_grant" "teams_migration_schema" {
@@ -155,11 +113,6 @@ resource "postgresql_grant" "teams_migration_schema" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams_migration
-  ]
 }
 resource "postgresql_grant" "teams_migration_table" {
   for_each    = postgresql_schema.teams
@@ -168,11 +121,6 @@ resource "postgresql_grant" "teams_migration_table" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams_migration
-  ]
 }
 resource "postgresql_grant" "teams_migration_sequence" {
   for_each    = postgresql_schema.teams
@@ -181,11 +129,6 @@ resource "postgresql_grant" "teams_migration_sequence" {
   role        = postgresql_role.teams_migration[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT", "UPDATE"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams_migration
-  ]
 }
 # Grant teams permissions for future objects in their schema
 resource "postgresql_default_privileges" "teams_future_tables" {
@@ -196,12 +139,6 @@ resource "postgresql_default_privileges" "teams_future_tables" {
   role        = postgresql_role.teams[each.key].name
   object_type = "table"
   privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams_migration,
-    postgresql_role.teams
-  ]
 }
 resource "postgresql_default_privileges" "teams_future_sequences" {
   for_each    = postgresql_schema.teams
@@ -211,10 +148,4 @@ resource "postgresql_default_privileges" "teams_future_sequences" {
   role        = postgresql_role.teams[each.key].name
   object_type = "sequence"
   privileges  = ["USAGE", "SELECT"]
-
-  depends_on = [
-    postgresql_schema.teams,
-    postgresql_role.teams_migration,
-    postgresql_role.teams
-  ]
 }

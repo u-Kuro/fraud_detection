@@ -5,7 +5,11 @@ resource "aws_ssm_parameter" "teams_mwaa_environment_names" {
   type     = "String"
   value    = local.mwaa_teams_environment_names[each.key]
 
-  depends_on = [aws_mwaa_environment.teams]
+  depends_on = [
+    # Waits until teams mwaa resources are fully functional
+    data.external.airflow_configuration[each.key],
+    aws_iam_user_policy.teams[each.key]
+  ]
 }
 # > Not working with current setup
 resource "aws_ssm_parameter" "teams_mwaa_environment_dag_s3_uris" {
@@ -14,7 +18,11 @@ resource "aws_ssm_parameter" "teams_mwaa_environment_dag_s3_uris" {
   type     = "String"
   value    = "s3://${var.s3_teams_mwaa_bucket_names[each.key]}/${local.mwaa_teams_environment_dag_s3_paths[each.key]}"
 
-  depends_on = [aws_mwaa_environment.teams]
+  depends_on = [
+    # Waits until teams mwaa resources are fully functional
+    data.external.airflow_configuration[each.key],
+    aws_iam_user_policy.teams[each.key]
+  ]
 }
 # Replacements for the current setup
 resource "aws_ssm_parameter" "teams_airflow_container_name" {
@@ -23,7 +31,10 @@ resource "aws_ssm_parameter" "teams_airflow_container_name" {
   type     = "String"
   value    = data.external.airflow_configuration.result.airflow_container_name
 
-  depends_on = [aws_mwaa_environment.teams]
+  depends_on = [
+    # Waits until teams mwaa resources are fully functional
+    aws_iam_user_policy.teams[each.key]
+  ]
 }
 resource "aws_ssm_parameter" "teams_airflow_container_dag_directory_path" {
   for_each = aws_mwaa_environment.teams
@@ -31,5 +42,8 @@ resource "aws_ssm_parameter" "teams_airflow_container_dag_directory_path" {
   type     = "String"
   value    = data.external.airflow_configuration.result.airflow_container_dag_directory_path
 
-  depends_on = [aws_mwaa_environment.teams]
+  depends_on = [
+    # Waits until teams mwaa resources are fully functional
+    aws_iam_user_policy.teams[each.key]
+  ]
 }

@@ -5,7 +5,10 @@ resource "aws_ssm_parameter" "teams_bucket_name" {
   type     = "String"
   value    = each.value.id
 
-  depends_on = [aws_s3_bucket.teams]
+  depends_on = [
+    # Waits until teams S3 resources are fully functional
+    aws_s3_bucket.teams_mwaa[each.key]
+  ]
 }
 resource "aws_ssm_parameter" "teams_mwaa_bucket_name" {
   for_each = aws_s3_bucket.teams_mwaa
@@ -13,5 +16,8 @@ resource "aws_ssm_parameter" "teams_mwaa_bucket_name" {
   type     = "String"
   value    = each.value.id
 
-  depends_on = [aws_s3_bucket.teams]
+  depends_on = [
+    # Waits until teams S3 resources are fully functional
+    aws_s3_bucket.teams[each.key]
+  ]
 }

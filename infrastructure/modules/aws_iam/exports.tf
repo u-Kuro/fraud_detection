@@ -4,7 +4,9 @@ resource "aws_secretsmanager_secret" "teams_iam_credentials" {
   name                    = "admin/iam/users/${each.key}/credential"
   recovery_window_in_days = 0
 
-  depends_on = [aws_iam_access_key.teams]
+  depends_on = [
+    aws_iam_access_key.teams[each.key]
+  ]
 }
 resource "aws_secretsmanager_secret_version" "teams_iam_credentials" {
   for_each  = aws_secretsmanager_secret.teams_iam_credentials
@@ -15,6 +17,4 @@ resource "aws_secretsmanager_secret_version" "teams_iam_credentials" {
     secret_access_key = aws_iam_access_key.teams[each.key].secret
   })
   secret_string_wo_version = 1
-
-  depends_on = [aws_secretsmanager_secret.teams_iam_credentials]
 }

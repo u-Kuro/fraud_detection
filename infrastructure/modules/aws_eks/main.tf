@@ -40,7 +40,9 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = ["subnet-00000000000000000", "subnet-00000000000000001"]
   }
 
-  depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_cluster_policy
+  ]
 }
 # Initialize EKS worker node
 resource "aws_eks_node_group" "main" {
@@ -56,10 +58,26 @@ resource "aws_eks_node_group" "main" {
   subnet_ids = ["subnet-00000000000000000", "subnet-00000000000000001"]
 
   depends_on = [
-    aws_eks_cluster.main,
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_iam_role_policy_attachment.eks_cni_policy,
     aws_iam_role_policy_attachment.ecr_read_only,
+  ]
+}
+# Setup and get Ministack's EKS configurations
+data "external" "k3s_configuration" {
+  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
+
+  query = {
+    ministack_network_name             = var.ministack_network_name
+    ministack_network_gateway          = var.ministack_network_gateway
+    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
+    k3s_registries_file_path           = var.local_files_eks_registries_file_path
+    kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
+    kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
+  }
+
+  depends_on = [
+    aws_eks_node_group.main, # Nodes must exist to confirm proper recovery after K3s restarts.
   ]
 }
 # Register admin to EKS cluster
@@ -67,8 +85,6 @@ resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.main.id
   principal_arn = var.iam_admin_arn
   type          = "STANDARD"
-
-  depends_on = [aws_eks_cluster.main]
 }
 # Allow admin full access to EKS cluster
 resource "aws_eks_access_policy_association" "admin" {
@@ -78,7 +94,9 @@ resource "aws_eks_access_policy_association" "admin" {
 
   access_scope { type = "cluster" }
 
-  depends_on = [aws_eks_cluster.main]
+  depends_on = [
+    aws_eks_access_entry.admin # Needs access entry to associate policy for admin
+  ]
 }
 # Register teams to EKS cluster
 resource "aws_eks_access_entry" "teams" {
@@ -86,8 +104,7 @@ resource "aws_eks_access_entry" "teams" {
   cluster_name  = aws_eks_cluster.main.id
   principal_arn = var.iam_teams_role_arns[each.key]
   type          = "STANDARD"
-
-  depends_on = [aws_eks_cluster.main]
+  kubernetes_groups = [each.key]
 }
 # Allow teams to edit their own resources in EKS cluster
 resource "kubernetes_role_binding" "teams" {
@@ -107,25 +124,13 @@ resource "kubernetes_role_binding" "teams" {
   subject {
     api_group = "rbac.authorization.k8s.io"
     kind      = "Group"
-    name      = "${each.key}:team"
+    name      = each.key
   }
 
-  depends_on = [aws_eks_cluster.main]
-}
-# Setup and get Ministack's EKS configurations
-data "external" "k3s_configuration" {
-  depends_on = [aws_eks_cluster.main]
-
-  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
-
-  query = {
-    ministack_network_name             = var.ministack_network_name
-    ministack_network_gateway          = var.ministack_network_gateway
-    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
-    k3s_registries_file_path           = var.local_files_eks_registries_file_path
-    kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
-    kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
-  }
+  depends_on = [
+    data.external.k3s_configuration, # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
+    aws_eks_access_entry.teams[each.key], # Needs access entry to bind role for teams' K8s group
+  ]
 }
 # {
 #    "cluster": {
