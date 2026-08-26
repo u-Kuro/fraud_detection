@@ -1,9 +1,9 @@
 # Create MetalLB release
 resource "helm_release" "metallb" {
   name             = "metallb"
-  repository       = "https://charts.bitnami.com/bitnami"
+  repository       = "https://metallb.github.io/metallb"
   chart            = "metallb"
-  version          = "6.4.22" # v0.15.2 https://artifacthub.io/packages/helm/bitnami/metallb/6.4.22
+  version          = "0.16.1"
   namespace        = var.eks_metallb_namespace
   create_namespace = true
   wait             = true
