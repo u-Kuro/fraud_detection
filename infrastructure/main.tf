@@ -195,6 +195,14 @@ module "eks" {
   ]
 }
 
+module "kyverno" {
+  source = "./modules/k8s/kyverno"
+
+  depends_on = [
+    module.eks,
+  ]
+}
+
 module "metallb" {
   source = "./modules/k8s/metallb"
 
@@ -336,10 +344,6 @@ module "mlflow" {
     module.ssm,
     module.traefik,
   ]
-}
-
-module "kyverno" {
-  source = "./modules/k8s/kyverno"
 }
 
 module "exports" {
