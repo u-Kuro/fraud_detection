@@ -27,16 +27,16 @@ resource "aws_secretsmanager_secret" "teams_postgres_credentials" {
   recovery_window_in_days = 0
 
   depends_on = [
-    postgresql_grant.teams_database[each.key],
-    postgresql_grant.teams_schema[each.key],
-    postgresql_grant.teams_table[each.key],
-    postgresql_grant.teams_sequence[each.key],
-    postgresql_grant.teams_migration_database[each.key],
-    postgresql_grant.teams_migration_schema[each.key],
-    postgresql_grant.teams_migration_table[each.key],
-    postgresql_grant.teams_migration_sequence[each.key],
-    postgresql_default_privileges.teams_future_tables[each.key],
-    postgresql_default_privileges.teams_future_sequences[each.key],
+    postgresql_grant.teams_database,
+    postgresql_grant.teams_schema,
+    postgresql_grant.teams_table,
+    postgresql_grant.teams_sequence,
+    postgresql_grant.teams_migration_database,
+    postgresql_grant.teams_migration_schema,
+    postgresql_grant.teams_migration_table,
+    postgresql_grant.teams_migration_sequence,
+    postgresql_default_privileges.teams_future_tables,
+    postgresql_default_privileges.teams_future_sequences,
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_postgres_credentials" {
@@ -57,7 +57,7 @@ resource "aws_ssm_parameter" "teams_postgres_credentials" {
   value    = each.value.name
 
   depends_on = [
-    aws_secretsmanager_secret_version.teams_postgres_credentials[each.key]
+    aws_secretsmanager_secret_version.teams_postgres_credentials
   ]
 }
 # Allow teams to see their Postgres migration credentials
@@ -68,16 +68,16 @@ resource "aws_secretsmanager_secret" "teams_postgres_migration_credentials" {
   recovery_window_in_days = 0
 
   depends_on = [
-    postgresql_grant.teams_database[each.key],
-    postgresql_grant.teams_schema[each.key],
-    postgresql_grant.teams_table[each.key],
-    postgresql_grant.teams_sequence[each.key],
-    postgresql_grant.teams_migration_database[each.key],
-    postgresql_grant.teams_migration_schema[each.key],
-    postgresql_grant.teams_migration_table[each.key],
-    postgresql_grant.teams_migration_sequence[each.key],
-    postgresql_default_privileges.teams_future_tables[each.key],
-    postgresql_default_privileges.teams_future_sequences[each.key],
+    postgresql_grant.teams_database,
+    postgresql_grant.teams_schema,
+    postgresql_grant.teams_table,
+    postgresql_grant.teams_sequence,
+    postgresql_grant.teams_migration_database,
+    postgresql_grant.teams_migration_schema,
+    postgresql_grant.teams_migration_table,
+    postgresql_grant.teams_migration_sequence,
+    postgresql_default_privileges.teams_future_tables,
+    postgresql_default_privileges.teams_future_sequences,
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_postgres_migration_credentials" {
@@ -98,7 +98,7 @@ resource "aws_ssm_parameter" "teams_postgres_migration_credentials" {
   value    = each.value.name
 
   depends_on = [
-    aws_secretsmanager_secret_version.teams_postgres_migration_credentials[each.key]
+    aws_secretsmanager_secret_version.teams_postgres_migration_credentials
   ]
 }
 # Allow teams to see their Postgres URI with credentials
@@ -109,16 +109,16 @@ resource "aws_secretsmanager_secret" "teams_postgres_migration_database_url" {
   recovery_window_in_days = 0
 
   depends_on = [
-    postgresql_grant.teams_database[each.key],
-    postgresql_grant.teams_schema[each.key],
-    postgresql_grant.teams_table[each.key],
-    postgresql_grant.teams_sequence[each.key],
-    postgresql_grant.teams_migration_database[each.key],
-    postgresql_grant.teams_migration_schema[each.key],
-    postgresql_grant.teams_migration_table[each.key],
-    postgresql_grant.teams_migration_sequence[each.key],
-    postgresql_default_privileges.teams_future_tables[each.key],
-    postgresql_default_privileges.teams_future_sequences[each.key],
+    postgresql_grant.teams_database,
+    postgresql_grant.teams_schema,
+    postgresql_grant.teams_table,
+    postgresql_grant.teams_sequence,
+    postgresql_grant.teams_migration_database,
+    postgresql_grant.teams_migration_schema,
+    postgresql_grant.teams_migration_table,
+    postgresql_grant.teams_migration_sequence,
+    postgresql_default_privileges.teams_future_tables,
+    postgresql_default_privileges.teams_future_sequences,
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_postgres_migration_database_url" {
@@ -136,6 +136,6 @@ resource "aws_ssm_parameter" "teams_postgres_migration_database_url" {
   value    = each.value.name
 
   depends_on = [
-    aws_secretsmanager_secret_version.teams_postgres_migration_database_url[each.key]
+    aws_secretsmanager_secret_version.teams_postgres_migration_database_url
   ]
 }

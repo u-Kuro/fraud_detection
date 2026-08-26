@@ -7,7 +7,7 @@ resource "aws_ssm_parameter" "teams_k8s_namespaces" {
 
   depends_on = [
     # Waits until teams eks resources are fully functional
-    kubernetes_role_binding.teams[each.key]
+    kubectl_manifest.teams
   ]
 }
 # Allow teams to see access kubeconfig for accessing K8s API
@@ -19,7 +19,7 @@ resource "aws_secretsmanager_secret" "teams_base64_kubeconfig" {
 
   depends_on = [
     # Waits until teams eks resources are fully functional
-    kubernetes_role_binding.teams[each.key]
+    kubectl_manifest.teams
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_base64_kubeconfig" {
@@ -37,6 +37,6 @@ resource "aws_ssm_parameter" "teams_base64_kubeconfig" {
   value    = each.value.name
 
   depends_on = [
-    aws_secretsmanager_secret_version.teams_base64_kubeconfig[each.key]
+    aws_secretsmanager_secret_version.teams_base64_kubeconfig
   ]
 }

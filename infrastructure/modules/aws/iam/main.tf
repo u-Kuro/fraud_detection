@@ -1,11 +1,6 @@
 # Initialize admin role
 data "aws_caller_identity" "admin" {}
 data "aws_region" "admin" {}
-# Give full access to admin
-resource "aws_iam_user_policy_attachment" "admin" {
-  user       = split("/", data.aws_caller_identity.admin.arn)[1]
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-}
 # Create IAM user per team
 resource "aws_iam_user" "teams" {
   for_each = var.iam_teams

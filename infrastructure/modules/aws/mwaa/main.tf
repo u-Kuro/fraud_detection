@@ -4,7 +4,7 @@ resource "aws_s3_object" "upload_requirements_for_mwaa" {
   bucket   = var.s3_teams_mwaa_bucket_names[each.key]
   key      = var.s3_teams_mwaa_requirements_file_path
   source   = var.local_files_mwaa_requirements_file_path
-  etag     = filemd5(var.local_files_mwaa_requirements_file_path)
+  etag     = var.local_files_mwaa_requirements_file_md5
 }
 # Upload K8s cluster credential file in MWAA environments for authentication (not working with current setup)
 resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
@@ -12,7 +12,7 @@ resource "aws_s3_object" "upload_kubeconfig_for_mwaa" {
   bucket   = var.s3_teams_mwaa_bucket_names[each.key]
   key      = "${var.s3_teams_mwaa_dag_path}/${var.s3_teams_mwaa_kubeconfig_file_path}"
   source   = var.local_files_kubeconfig_for_docker_file_path
-  etag     = filemd5(var.local_files_kubeconfig_for_docker_file_path)
+  etag     = var.local_files_kubeconfig_for_docker_file_md5
 }
 # Create MWAA environments for each team
 resource "aws_mwaa_environment" "teams" {
@@ -83,7 +83,7 @@ resource "aws_iam_user_policy" "teams" {
 
   depends_on = [
     # Needs proper environment before giving access to its resources
-    aws_mwaa_environment.teams[each.key]
+    aws_mwaa_environment.teams
   ]
 }
 # Setup and get Ministack's EKS configurations

@@ -9,7 +9,7 @@ resource "postgresql_role" "mlflow" {
   password            = var.rds_postgres_mlflow_password
   login               = true
   skip_reassign_owned = true
-  search_path         = postgresql_schema.mlflow.name
+  search_path         = [postgresql_schema.mlflow.name]
 }
 # Grant MLflow permission to connect to the database
 resource "postgresql_grant" "mlflow_database" {
@@ -53,7 +53,7 @@ resource "postgresql_role" "teams" {
   password            = local.rds_postgres_teams_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
   login               = true
   skip_reassign_owned = true
-  search_path         = postgresql_schema.teams[each.key].name
+  search_path         = [postgresql_schema.teams[each.key].name]
 }
 # Grant teams permissions to connect to the database
 resource "postgresql_grant" "teams_database" {
@@ -95,7 +95,7 @@ resource "postgresql_role" "teams_migration" {
   password            = local.rds_postgres_teams_migration_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
   login               = true
   skip_reassign_owned = true
-  search_path         = postgresql_schema.teams[each.key].name
+  search_path         = [postgresql_schema.teams[each.key].name]
 }
 # Grant teams' migration roles permissions to connect to the database
 resource "postgresql_grant" "teams_migration_database" {

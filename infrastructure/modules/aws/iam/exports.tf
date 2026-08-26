@@ -5,7 +5,7 @@ resource "aws_secretsmanager_secret" "teams_iam_credentials" {
   recovery_window_in_days = 0
 
   depends_on = [
-    aws_iam_access_key.teams[each.key]
+    aws_iam_access_key.teams
   ]
 }
 resource "aws_secretsmanager_secret_version" "teams_iam_credentials" {

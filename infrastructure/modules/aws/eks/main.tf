@@ -107,29 +107,33 @@ resource "aws_eks_access_entry" "teams" {
   kubernetes_groups = [each.key]
 }
 # Allow teams to edit their own resources in EKS cluster
-resource "kubernetes_role_binding" "teams" {
+resource "kubectl_manifest" "teams" {
   for_each = var.eks_teams
 
-  metadata {
-    name      = "${each.key}-role-binding"
-    namespace = local.eks_teams_namespaces[each.key]
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "edit"
-  }
-
-  subject {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "Group"
-    name      = each.key
-  }
+  yaml_body = yamlencode({
+    apiVersion = "rbac.authorization.k8s.io/v1"
+    kind       = "RoleBinding"
+    metadata = {
+      name      = "${each.key}-role-binding"
+      namespace = local.eks_teams_namespaces[each.key]
+    }
+    roleRef = {
+      apiGroup = "rbac.authorization.k8s.io"
+      kind     = "ClusterRole"
+      name     = "edit"
+    }
+    subjects = [
+      {
+        apiGroup = "rbac.authorization.k8s.io"
+        kind     = "Group"
+        name     = each.key
+      }
+    ]
+  })
 
   depends_on = [
-    data.external.k3s_configuration,      # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
-    aws_eks_access_entry.teams[each.key], # Needs access entry to bind role for teams' K8s group
+    data.external.k3s_configuration, # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
+    aws_eks_access_entry.teams,       # Needs access entry to bind role for teams' K8s group
   ]
 }
 # {

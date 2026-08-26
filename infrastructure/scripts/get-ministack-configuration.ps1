@@ -32,13 +32,13 @@ if (-not $ministack_container_networks.PSObject.Properties[$ministack_network_na
 }
 
 # Get Ministack network gateway
-$ministack_network_gateway = $ministack_container_networks_configurations.$ministack_network.Gateway
+$ministack_network_gateway = $ministack_container_networks.$ministack_network_name.Gateway
 if (-not $ministack_network_gateway) {
     throw "'$ministack_network_name' gateway has invalid value of '$ministack_network_gateway'."
 }
 
 # Get Ministack container ip
-$ministack_container_ip = $ministack_container_networks_configurations.$ministack_network.IPAddress
+$ministack_container_ip = $ministack_container_networks.$ministack_network_name.IPAddress
 if (-not $ministack_container_ip) {
     throw "'$ministack_container_name' IP has invalid value of '$ministack_container_ip'."
 }

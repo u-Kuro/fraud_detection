@@ -28,8 +28,8 @@ locals {
   # /container
   ministack_container_name      = data.external.ministack_configuration.result.ministack_container_name
   ministack_container_ip        = data.external.ministack_configuration.result.ministack_container_ip
-  ministack_container_port      = number(data.external.ministack_configuration.result.ministack_container_port)
-  ministack_container_host_port = number(data.external.ministack_configuration.result.ministack_container_host_port)
+  ministack_container_port      = tonumber(data.external.ministack_configuration.result.ministack_container_port)
+  ministack_container_host_port = tonumber(data.external.ministack_configuration.result.ministack_container_host_port)
   # /urls
   ministack_host_url = data.external.ministack_configuration.result.ministack_host_url
   ministack_url      = data.external.ministack_configuration.result.ministack_url
@@ -81,7 +81,6 @@ locals {
 resource "local_sensitive_file" "eks_registries" {
   filename        = "${local.local_files_directory_path}/registries.yaml"
   file_permission = "0600"
-
   content = yamlencode({
     mirrors = {
       (local.ecr_aws_endpoint) = {
@@ -102,11 +101,13 @@ resource "local_sensitive_file" "eks_registries" {
 resource "local_sensitive_file" "kubeconfig_for_localhost" {
   filename        = "${local.local_files_directory_path}/kubeconfig_for_localhost.yaml"
   file_permission = "0600"
+  source          = "${local.local_files_directory_path}/kubeconfig_for_localhost.yaml"
 }
 # Initialize kubeconfig file to access K8s cluster in docker network
 resource "local_sensitive_file" "kubeconfig_for_docker" {
   filename        = "${local.local_files_directory_path}/kubeconfig.yaml"
   file_permission = "0600"
+  source          = "${local.local_files_directory_path}/kubeconfig.yaml"
 }
 # Initialize MWAA python package requirements
 resource "local_sensitive_file" "mwaa_requirements" {

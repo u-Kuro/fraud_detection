@@ -1,6 +1,6 @@
 # TODO - 25/08/2026 - Continue here... Try running?
 module "iam" {
-  source = "modules/aws/iam"
+  source = "./modules/aws/iam"
 
   # IAM
   # /teams
@@ -8,7 +8,7 @@ module "iam" {
 }
 
 module "ecr" {
-  source = "modules/aws/ecr"
+  source = "./modules/aws/ecr"
 
   # IAM
   # /admin
@@ -25,7 +25,7 @@ module "ecr" {
 }
 
 module "secrets_manager" {
-  source = "modules/aws/secrets_manager"
+  source = "./modules/aws/secrets_manager"
 
   # IAM
   # /admin
@@ -43,7 +43,7 @@ module "secrets_manager" {
 }
 
 module "ssm" {
-  source = "modules/aws/ssm"
+  source = "./modules/aws/ssm"
 
   # IAM
   # /admin
@@ -61,7 +61,7 @@ module "ssm" {
 }
 
 module "s3" {
-  source = "modules/aws/s3"
+  source = "./modules/aws/s3"
 
   # IAM
   # /teams
@@ -86,7 +86,7 @@ module "s3" {
 }
 
 module "rds" {
-  source = "modules/aws/rds"
+  source = "./modules/aws/rds"
 
   # IAM
   # /services
@@ -120,7 +120,7 @@ module "rds" {
 }
 
 module "postgres" {
-  source = "modules/postgres"
+  source = "./modules/postgres"
 
   # RDS
   # /postgres
@@ -150,7 +150,7 @@ module "postgres" {
 }
 
 module "eks" {
-  source = "modules/aws/eks"
+  source = "./modules/aws/eks"
 
   # IAM
   # /admin
@@ -188,13 +188,16 @@ module "eks" {
 
   depends_on = [
     module.iam,
+    local_sensitive_file.kubeconfig_for_localhost,
+    local_sensitive_file.kubeconfig_for_docker,
+    local_sensitive_file.eks_registries,
     module.ssm,
     module.secrets_manager,
   ]
 }
 
 module "traefik" {
-  source = "modules/k8s/traefik"
+  source = "./modules/k8s/traefik"
 
   # EKS
   # /urls
@@ -207,7 +210,7 @@ module "traefik" {
 }
 
 module "mwaa" {
-  source = "modules/aws/mwaa"
+  source = "./modules/aws/mwaa"
 
   # IAM
   # /admin
@@ -223,6 +226,9 @@ module "mwaa" {
   # /paths
   local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_localhost_file_path
   local_files_mwaa_requirements_file_path     = local_sensitive_file.mwaa_requirements.filename
+  # /content
+  local_files_kubeconfig_for_docker_file_md5 = local_sensitive_file.kubeconfig_for_docker.content_md5
+  local_files_mwaa_requirements_file_md5     = local_sensitive_file.mwaa_requirements.content_md5
 
   # Ministack
   # /container
@@ -251,13 +257,14 @@ module "mwaa" {
   depends_on = [
     module.iam,
     module.eks,
+    local_sensitive_file.mwaa_requirements,
     module.s3,
     module.ssm,
   ]
 }
 
 module "mlflow" {
-  source = "modules/k8s/mlflow"
+  source = "./modules/k8s/mlflow"
 
   # IAM
   # /admin
@@ -317,7 +324,7 @@ module "mlflow" {
 }
 
 module "exports" {
-  source = "modules/exports"
+  source = "./modules/exports"
 
   # IAM
   # /admin

@@ -59,8 +59,9 @@ provider "postgresql" {
   expected_version = module.rds.postgres_version
 }
 # Connect to K3s spawned by EKS from Ministack
-provider "kubernetes" {
+provider "kubectl" {
   config_path = local_sensitive_file.kubeconfig_for_localhost.filename
+  lazy_load = true
 }
 provider "helm" {
   kubernetes = {
