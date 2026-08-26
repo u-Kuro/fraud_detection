@@ -57,6 +57,7 @@ provider "postgresql" {
   username         = module.rds.postgres_admin_username
   password         = module.rds.postgres_admin_password
   expected_version = module.rds.postgres_version
+  sslmode          = "disable"
 }
 # Connect to K3s spawned by EKS from Ministack
 provider "kubectl" {

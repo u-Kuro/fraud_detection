@@ -94,7 +94,7 @@ module "rds" {
 
   # Ministack
   # /network
-  ministack_network_name    = local.ministack_network_name
+  ministack_network_name = local.ministack_network_name
 
   # RDS
   # /postgres

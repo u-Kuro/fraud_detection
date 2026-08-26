@@ -101,13 +101,13 @@ resource "local_sensitive_file" "eks_registries" {
 resource "local_sensitive_file" "kubeconfig_for_localhost" {
   filename        = "${local.local_files_directory_path}/kubeconfig_for_localhost.yaml"
   file_permission = "0600"
-  source          = ""
+  content         = ""
 }
 # Initialize kubeconfig file to access K8s cluster in docker network
 resource "local_sensitive_file" "kubeconfig_for_docker" {
   filename        = "${local.local_files_directory_path}/kubeconfig.yaml"
   file_permission = "0600"
-  source          = ""
+  content         = ""
 }
 # Initialize MWAA python package requirements
 resource "local_sensitive_file" "mwaa_requirements" {

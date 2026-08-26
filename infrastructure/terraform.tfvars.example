@@ -34,7 +34,7 @@ Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 docker compose up --wait
 # cd infrastructure
 terraform init
-New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
+# New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
 terraform validate
 terraform apply -auto-approve
 
