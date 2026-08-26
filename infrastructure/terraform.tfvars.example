@@ -1,3 +1,11 @@
+docker compose up --wait
+# cd infrastructure
+terraform init
+New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
+terraform validate
+terraform plan
+terraform apply
+
 # TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack-network
 docker volume rm ministack
