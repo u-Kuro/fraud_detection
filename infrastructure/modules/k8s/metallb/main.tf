@@ -8,6 +8,7 @@ resource "helm_release" "metallb" {
   create_namespace = true
   wait             = true
   wait_for_jobs    = true
+  timeout          = 600
 }
 # Create pool with K3s IP for Traefik
 resource "kubectl_manifest" "eks_ip_address_pool" {

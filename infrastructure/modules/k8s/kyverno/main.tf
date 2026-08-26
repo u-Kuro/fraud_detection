@@ -8,4 +8,5 @@ resource "helm_release" "kyverno" {
   create_namespace = true
   wait             = true
   wait_for_jobs    = true
+  timeout          = 600
 }
