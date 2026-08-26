@@ -59,12 +59,15 @@ $airflow_container_dag_directory_path  = "$airflow_container_persisted_directory
 
 # Install additional package and dependencies in Airflow container
 $airflow_container_requirements_file_path = "${airflow_container_persisted_directory}/requirements.txt"
-docker cp $airflow_requirements_file_path "${airflow_container_name}:${airflow_container_requirements_file_path}"
-docker exec $airflow_container_name sh -c "pip install -r ${airflow_container_requirements_file_path} --constraint '$airflow_python_packages_constraint_url' || exit 1"
+docker cp $airflow_requirements_file_path "${airflow_container_name}:${airflow_container_requirements_file_path}" `
+    *>&1 | Out-Null
+docker exec $airflow_container_name sh -c "pip install -r ${airflow_container_requirements_file_path} --constraint '$airflow_python_packages_constraint_url' || exit 1" `
+    *>&1 | Out-Null
 
 # Copy kubeconfig to Airflow container for K3s access
 $airflow_container_kubeconfig_file_path = "${airflow_container_persisted_directory}/kubeconfig.yaml"
-docker cp $kubeconfig_for_docker_file_path "${airflow_container_name}:${airflow_container_kubeconfig_file_path}"
+docker cp $kubeconfig_for_docker_file_path "${airflow_container_name}:${airflow_container_kubeconfig_file_path}" `
+    *>&1 | Out-Null
 
 # Initialize AWS credentials for Airflow's secrets backend (secrets manager)
 docker exec $airflow_container_name sh -c @"
@@ -86,7 +89,7 @@ cat > ~/.aws/credentials << EOF
 aws_access_key_id = $aws_access_key_id
 aws_secret_access_key = $aws_secret_access_key
 EOF
-"@
+"@ *>&1 | Out-Null
 
 # Get Airflow container host port
 $airflow_container_host_port = $airflow_container_ports[0].PSobject.Properties.Value[0].HostPort

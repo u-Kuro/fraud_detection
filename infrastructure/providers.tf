@@ -58,11 +58,15 @@ provider "postgresql" {
   password         = module.rds.postgres_admin_password
   expected_version = module.rds.postgres_version
   sslmode          = "disable"
+  max_connections  = 1
 }
 # Connect to K3s spawned by EKS from Ministack
-provider "kubectl" {
+provider "kubernetes" {
   config_path = local_sensitive_file.kubeconfig_for_localhost.filename
-  lazy_load   = true
+}
+provider "kubectl" {
+  config_path      = local_sensitive_file.kubeconfig_for_localhost.filename
+  load_config_file = true
 }
 provider "helm" {
   kubernetes = {

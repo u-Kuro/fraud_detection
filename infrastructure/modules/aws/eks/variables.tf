@@ -2,7 +2,7 @@
 # /admin
 variable "iam_admin_arn" { type = string }
 # /teams
-variable "iam_teams_role_arns" { type = map(string) }
+variable "iam_teams_arns" { type = map(string) }
 # /services
 variable "iam_ec2_role_arn" { type = string }
 variable "iam_ec2_role_name" { type = string }

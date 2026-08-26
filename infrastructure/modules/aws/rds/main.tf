@@ -1,14 +1,15 @@
 # Create Postgres in RDS
 resource "aws_db_instance" "postgres" {
-  identifier          = "rds"
-  engine              = "postgres"
-  instance_class      = "db.t3.micro"
-  allocated_storage   = 20
-  engine_version      = "15"
-  username            = var.rds_postgres_admin_username
-  password            = var.rds_postgres_admin_password
-  db_name             = "main"
-  skip_final_snapshot = true
+  identifier            = "rds"
+  engine                = "postgres"
+  instance_class        = "db.t3.micro"
+  allocated_storage     = 20
+  max_allocated_storage = 20
+  engine_version        = "15"
+  username              = var.rds_postgres_admin_username
+  password              = var.rds_postgres_admin_password
+  db_name               = "main"
+  skip_final_snapshot   = true
 }
 # Allow snapshots/backup in RDS
 resource "aws_iam_role_policy" "rds" {
@@ -39,6 +40,8 @@ data "external" "postgres_configuration" {
     ministack_network_name = var.ministack_network_name
     postgres_container_ip  = aws_db_instance.postgres.address
   }
+
+  depends_on = [aws_db_instance.postgres]
 }
 # {
 #    "DBInstance": {

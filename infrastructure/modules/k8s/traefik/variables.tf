@@ -1,8 +1,5 @@
 # EKS
 # /urls
-variable "eks_container_ip" {
-  type = string
-}
 variable "eks_container_host_port" {
   type = number
 }
@@ -12,12 +9,14 @@ variable "eks_traefik_namespace" {
   default = "traefik"
 }
 
+# MetalLB
+# /ip
+variable "metallb_eks_ip" { type = string }
+# /resources
+variable "metallb_eks_ip_address_pool_name" { type = string }
+
 # Traefik
 # /deployment
-variable "traefik_web_node_port" {
-  type    = number
-  default = 30000
-}
 variable "traefik_host_entry_point_name" {
   type    = string
   default = "eks-host"

@@ -5,15 +5,15 @@ accessLog:
   enabled: true
 
 # ports:
-# web:
-#   nodePort: [dynamic]
 # [dynamic]: # Localhost entrypoint
-#   port: [dynamic] # To be matched
-#   nodePort: [dynamic] # To be called
+#   port: [dynamic]
 
 deployment:
   replicas: 1
 
 service:
   type: LoadBalancer
-# externalIPs: [dynamic] # K3s container IP
+# spec:
+#   loadBalancerIP: [dynamic] # K3s container IP
+# annotations:
+#   "metallb.io/address-pool": [dynamic]

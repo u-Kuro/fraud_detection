@@ -4,7 +4,7 @@ variable "iam_admin_account_id" { type = string }
 variable "iam_admin_region" { type = string }
 # /teams
 variable "iam_teams_names" { type = map(string) }
-variable "iam_teams_role_arns" { type = map(string) }
+variable "iam_teams_arns" { type = map(string) }
 variable "iam_teams_usernames" {
   type      = map(string)
   sensitive = true

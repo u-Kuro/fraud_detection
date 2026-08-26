@@ -1,10 +1,10 @@
 docker compose up --wait
 # cd infrastructure
 terraform init
-New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
+# New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
 terraform validate
-terraform plan
-terraform apply
+terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve
+terraform apply -auto-approve
 
 # TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack-network
@@ -30,13 +30,6 @@ docker run -d `
 Start-Sleep -Seconds 5
 Invoke-RestMethod -Uri "http://localhost:4566/_ministack/health"
 .\test-eks-traefik-ingressroute.ps1
-
-docker compose up --wait
-# cd infrastructure
-terraform init
-# New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
-terraform validate
-terraform apply -auto-approve
 
 steps:
   - name: Checkout

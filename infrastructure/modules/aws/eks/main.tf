@@ -1,34 +1,22 @@
 # Allow Kubernetes to manage resources
-data "aws_iam_policy" "eks_cluster_policy" {
-  name = "AmazonEKSClusterPolicy"
-}
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = var.iam_eks_role_name
-  policy_arn = data.aws_iam_policy.eks_cluster_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 # Allow EKS worker node to connect to EKS Cluster
-data "aws_iam_policy" "eks_worker_node_policy" {
-  name = "AmazonEKSWorkerNodePolicy"
-}
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = var.iam_ec2_role_name
-  policy_arn = data.aws_iam_policy.eks_worker_node_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 # Allow CNI to modify the IP configuration for EKS worker node
-data "aws_iam_policy" "eks_cni_policy" {
-  name = "AmazonEKS_CNI_Policy"
-}
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = var.iam_ec2_role_name
-  policy_arn = data.aws_iam_policy.eks_cni_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 # Allow EC2 worker node to read from ECR
-data "aws_iam_policy" "ecr_read_only" {
-  name = "AmazonEC2ContainerRegistryReadOnly"
-}
 resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   role       = var.iam_ec2_role_name
-  policy_arn = data.aws_iam_policy.ecr_read_only.arn
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 # Initialize EKS
 resource "aws_eks_cluster" "main" {
@@ -70,13 +58,14 @@ data "external" "k3s_configuration" {
   query = {
     ministack_network_name             = var.ministack_network_name
     ministack_network_gateway          = var.ministack_network_gateway
-    k3s_container_host_url             = aws_eks_cluster.main.endpoint # https://localhost:16443
+    k3s_container_url                  = aws_eks_cluster.main.endpoint # https://172.19.0.3:6443
     k3s_registries_file_path           = var.local_files_eks_registries_file_path
     kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = var.local_files_kubeconfig_for_docker_file_path
   }
 
   depends_on = [
+    aws_eks_cluster.main,
     aws_eks_node_group.main, # Nodes must exist to confirm proper recovery after K3s restarts.
   ]
 }
@@ -100,40 +89,25 @@ resource "aws_eks_access_policy_association" "admin" {
 }
 # Register teams to EKS cluster
 resource "aws_eks_access_entry" "teams" {
-  for_each          = var.eks_teams
-  cluster_name      = aws_eks_cluster.main.id
-  principal_arn     = var.iam_teams_role_arns[each.key]
-  type              = "STANDARD"
-  kubernetes_groups = [each.key]
+  for_each      = var.eks_teams
+  cluster_name  = aws_eks_cluster.main.id
+  principal_arn = var.iam_teams_arns[each.key]
+  type          = "STANDARD"
 }
 # Allow teams to edit their own resources in EKS cluster
-resource "kubectl_manifest" "teams" {
-  for_each = var.eks_teams
+resource "aws_eks_access_policy_association" "teams" {
+  for_each      = var.eks_teams
+  cluster_name  = aws_eks_cluster.main.id
+  principal_arn = var.iam_teams_arns[each.key]
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
 
-  yaml_body = yamlencode({
-    apiVersion = "rbac.authorization.k8s.io/v1"
-    kind       = "RoleBinding"
-    metadata = {
-      name      = "${each.key}-role-binding"
-      namespace = local.eks_teams_namespaces[each.key]
-    }
-    roleRef = {
-      apiGroup = "rbac.authorization.k8s.io"
-      kind     = "ClusterRole"
-      name     = "edit"
-    }
-    subjects = [
-      {
-        apiGroup = "rbac.authorization.k8s.io"
-        kind     = "Group"
-        name     = each.key
-      }
-    ]
-  })
+  access_scope {
+    type       = "namespace"
+    namespaces = [local.eks_teams_namespaces[each.key]]
+  }
 
   depends_on = [
-    data.external.k3s_configuration, # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
-    aws_eks_access_entry.teams,      # Needs access entry to bind role for teams' K8s group
+    aws_eks_access_entry.teams # Needs access entry to associate policy for each team
   ]
 }
 # {

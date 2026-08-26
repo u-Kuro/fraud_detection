@@ -1,6 +1,6 @@
 # Allow teams to see info of their MLflow workspace
 resource "aws_ssm_parameter" "teams_mlflow_workspace" {
-  for_each = kubectl_manifest.teams
+  for_each = kubernetes_job_v1.teams
   name     = "/${var.ssm_teams_parameter_paths[each.key]}/eks/cluster/mlflow/workspace"
   type     = "String"
   value    = local.mlflow_teams_workspace_names[each.key]
@@ -13,7 +13,7 @@ resource "aws_ssm_parameter" "teams_mlflow_workspace" {
 # Allow teams to see their credentials for their MLflow workspace
 locals { secrets_manager_teams_mlflow_credentials_path = "eks/cluster/mlflow/credential" }
 resource "aws_secretsmanager_secret" "teams_mlflow_credentials" {
-  for_each                = kubectl_manifest.teams
+  for_each                = kubernetes_job_v1.teams
   name                    = "${var.secrets_manager_teams_secret_paths[each.key]}/${local.secrets_manager_teams_mlflow_credentials_path}"
   recovery_window_in_days = 0
 

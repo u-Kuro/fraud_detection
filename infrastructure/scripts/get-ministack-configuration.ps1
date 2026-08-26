@@ -59,7 +59,7 @@ if (-not $ministack_container_host_port) {
     ministack_container_ip        = $ministack_container_ip
     ministack_container_port      = $ministack_container_port
     ministack_container_host_port = $ministack_container_host_port
-    ministack_host_url            = "http://127.0.0.1:${ministack_container_host_port}"
+    ministack_host_url            = "http://localhost:${ministack_container_host_port}"
     ministack_url                 = "http://${ministack_container_name}:${ministack_container_port}"
     ministack_endpoint            = "${ministack_container_name}:${ministack_container_port}"
 } | ConvertTo-Json -Compress

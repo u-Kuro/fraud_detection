@@ -62,90 +62,81 @@
 # 4) cd runs for deployment
 
 # Create base kubernetes config map for each teams' namespace
-resource "kubectl_manifest" "eks_teams_base_config_map" {
+resource "kubernetes_config_map_v1" "eks_teams_base_config_map" {
   for_each = var.eks_teams
 
-  yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "ConfigMap"
-    metadata = {
-      name      = local.eks_k8s_base_config_map_name
-      namespace = var.eks_teams_namespaces[each.key]
-    }
-    data = {
-      # Postgres
-      PGHOST     = var.rds_postgres_host
-      PGPORT     = var.rds_postgres_port
-      PGDATABASE = var.rds_postgres_db_name
-      # AWS
-      AWS_DEFAULT_REGION = var.iam_admin_region
-      # S3
-      AWS_ENDPOINT_URL_S3 = var.s3_url
-      S3_BUCKET_NAME      = var.s3_teams_bucket_names[each.key]
-      # MWAA
-      AWS_ENDPOINT_URL_MWAA = var.mwaa_url
-      MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
-      # MLflow
-      MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
-      # Slack (team created)
-      # SLACK_CHANNEL_ID = ""
-    }
-  })
+  metadata {
+    name      = local.eks_k8s_base_config_map_name
+    namespace = var.eks_teams_namespaces[each.key]
+  }
+
+  data = {
+    # Postgres
+    PGHOST     = var.rds_postgres_host
+    PGPORT     = var.rds_postgres_port
+    PGDATABASE = var.rds_postgres_db_name
+    # AWS
+    AWS_DEFAULT_REGION = var.iam_admin_region
+    # S3
+    AWS_ENDPOINT_URL_S3 = var.s3_url
+    S3_BUCKET_NAME      = var.s3_teams_bucket_names[each.key]
+    # MWAA
+    AWS_ENDPOINT_URL_MWAA = var.mwaa_url
+    MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
+    # MLflow
+    MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
+    # Slack (team created)
+    # SLACK_CHANNEL_ID = ""
+  }
 }
 # Create base kubernetes secret for each teams' namespace
-resource "kubectl_manifest" "eks_teams_base_secret" {
+resource "kubernetes_secret_v1" "eks_teams_base_secret" {
   for_each = var.eks_teams
+  type     = "Opaque"
 
-  yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "Secret"
-    type       = "Opaque"
-    metadata = {
-      name      = local.eks_k8s_base_secret_name
-      namespace = var.eks_teams_namespaces[each.key]
-    }
-    stringData = {
-      # Postgres
-      PGUSER     = var.rds_postgres_teams_usernames[each.key]
-      PGPASSWORD = var.rds_postgres_teams_passwords[each.key]
-      # AWS
-      AWS_ACCESS_KEY_ID     = var.iam_teams_usernames[each.key]
-      AWS_SECRET_ACCESS_KEY = var.iam_teams_passwords[each.key]
-      # MLflow
-      MLFLOW_TRACKING_USERNAME = var.mlflow_teams_usernames[each.key]
-      MLFLOW_TRACKING_PASSWORD = var.mlflow_teams_passwords[each.key]
-      # Slack (team created)
-      # SLACK_BOT_TOKEN = ""
-      # SLACK_APP_TOKEN = ""
-      # SLACK_SIGNING_SECRET = ""
-    }
-  })
+  metadata {
+    name      = local.eks_k8s_base_secret_name
+    namespace = var.eks_teams_namespaces[each.key]
+  }
+
+  data = {
+    # Postgres
+    PGUSER     = var.rds_postgres_teams_usernames[each.key]
+    PGPASSWORD = var.rds_postgres_teams_passwords[each.key]
+    # AWS
+    AWS_ACCESS_KEY_ID     = var.iam_teams_usernames[each.key]
+    AWS_SECRET_ACCESS_KEY = var.iam_teams_passwords[each.key]
+    # MLflow
+    MLFLOW_TRACKING_USERNAME = var.mlflow_teams_usernames[each.key]
+    MLFLOW_TRACKING_PASSWORD = var.mlflow_teams_passwords[each.key]
+    # Slack (team created)
+    # SLACK_BOT_TOKEN = ""
+    # SLACK_APP_TOKEN = ""
+    # SLACK_SIGNING_SECRET = ""
+  }
 }
 # Create kubernetes docker registry for each teams' namespace
-resource "kubectl_manifest" "eks_teams_docker_registry" {
+resource "kubernetes_secret_v1" "eks_teams_docker_registry" {
   for_each = var.eks_teams
+  type     = "kubernetes.io/dockerconfigjson"
 
-  yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "Secret"
-    type       = "kubernetes.io/dockerconfigjson"
-    metadata = {
-      name      = local.eks_k8s_docker_registry_secret_name
-      namespace = var.eks_teams_namespaces[each.key]
-    }
-    data = {
-      ".dockerconfigjson" = base64encode(jsonencode({
-        auths = {
-          # Matches to original endpoint in EKS. In MiniStack's EKS (registries.yaml), it's set to redirect to MiniStack's ECR endpoint.
-          (var.ecr_aws_endpoint) = {
-            username = var.ecr_aws_authorization_token_username
-            password = var.ecr_aws_authorization_token_password
-            auth     = var.ecr_aws_authorization_token
-          }
+  metadata {
+    name      = local.eks_k8s_docker_registry_secret_name
+    namespace = var.eks_teams_namespaces[each.key]
+  }
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        # Matches to original endpoint in EKS. In MiniStack's EKS (registries.yaml), it's set to redirect to MiniStack's ECR endpoint.
+        (var.ecr_aws_endpoint) = {
+          username = var.ecr_aws_authorization_token_username
+          password = var.ecr_aws_authorization_token_password
+          auth     = var.ecr_aws_authorization_token
         }
-      }))
-    }
-  })
+      }
+    })
+  }
 }
 # Create Kubernetes connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_k8s_connection_id" {
@@ -209,10 +200,8 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_s3_connection_id"
 }
 # Create name variable of the base Kubernetes config map for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_config_map_name" {
-  for_each = kubectl_manifest.eks_teams_base_config_map
+  for_each = kubernetes_config_map_v1.eks_teams_base_config_map
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_config_map_name}"
-
-  depends_on = [kubectl_manifest.eks_teams_base_config_map]
 }
 resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_config_map_name" {
   for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_base_config_map_name
@@ -221,16 +210,14 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_config_map
   secret_string = local.eks_k8s_base_config_map_name
 
   depends_on = [
-    kubectl_manifest.eks_teams_base_config_map,
+    kubernetes_config_map_v1.eks_teams_base_config_map,
     aws_secretsmanager_secret.mwaa_variables_k8s_base_config_map_name
   ]
 }
 # Create name variable of the base Kubernetes secret for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_base_secret_name" {
-  for_each = kubectl_manifest.eks_teams_base_secret
+  for_each = kubernetes_secret_v1.eks_teams_base_secret
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_base_secret_name}"
-
-  depends_on = [kubectl_manifest.eks_teams_base_secret]
 }
 resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_secret_name" {
   for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_base_secret_name
@@ -239,16 +226,14 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_base_secret_nam
   secret_string = local.eks_k8s_base_secret_name
 
   depends_on = [
-    kubectl_manifest.eks_teams_base_secret,
+    kubernetes_secret_v1.eks_teams_base_secret,
     aws_secretsmanager_secret.mwaa_variables_k8s_base_secret_name
   ]
 }
 # Create variable name of Kubernetes docker registry for each team
 resource "aws_secretsmanager_secret" "mwaa_variables_k8s_docker_registry_secret_name" {
-  for_each = kubectl_manifest.eks_teams_docker_registry
+  for_each = kubernetes_secret_v1.eks_teams_docker_registry
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_k8s_docker_registry_secret_name}"
-
-  depends_on = [kubectl_manifest.eks_teams_docker_registry]
 }
 resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_docker_registry_secret_name" {
   for_each  = aws_secretsmanager_secret.mwaa_variables_k8s_docker_registry_secret_name
@@ -257,7 +242,7 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_k8s_docker_registry
   secret_string = local.eks_k8s_docker_registry_secret_name
 
   depends_on = [
-    kubectl_manifest.eks_teams_docker_registry,
+    kubernetes_secret_v1.eks_teams_docker_registry,
     aws_secretsmanager_secret.mwaa_variables_k8s_docker_registry_secret_name
   ]
 }
@@ -417,8 +402,8 @@ resource "kubectl_manifest" "platform_resources_protection" {
   })
 
   depends_on = [
-    kubectl_manifest.eks_teams_base_config_map,
-    kubectl_manifest.eks_teams_base_secret,
-    kubectl_manifest.eks_teams_docker_registry,
+    kubernetes_config_map_v1.eks_teams_base_config_map,
+    kubernetes_secret_v1.eks_teams_base_secret,
+    kubernetes_secret_v1.eks_teams_docker_registry,
   ]
 }

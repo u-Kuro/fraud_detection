@@ -19,7 +19,7 @@ resource "aws_mwaa_environment" "teams" {
   for_each           = var.mwaa_teams
   name               = local.mwaa_teams_environment_names[each.key]
   airflow_version    = local.mwaa_airflow_version
-  execution_role_arn = var.iam_teams_role_arns[each.key]
+  execution_role_arn = var.iam_teams_arns[each.key]
 
   source_bucket_arn    = var.s3_teams_mwaa_bucket_arns[each.key]
   requirements_s3_path = var.s3_teams_mwaa_requirements_file_path
@@ -103,6 +103,8 @@ data "external" "airflow_configuration" {
     aws_access_key_id                      = var.iam_teams_usernames[each.key]
     aws_secret_access_key                  = var.iam_teams_passwords[each.key]
   }
+
+  depends_on = [aws_mwaa_environment.teams]
 }
 # {
 #    "Environment": {

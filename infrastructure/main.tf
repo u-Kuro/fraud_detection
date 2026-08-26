@@ -155,7 +155,7 @@ module "eks" {
   # /admin
   iam_admin_arn = module.iam.admin_arn
   # /teams
-  iam_teams_role_arns = module.iam.teams_role_arns
+  iam_teams_arns = module.iam.teams_arns
   # /services
   iam_ec2_role_arn  = module.iam.ec2_role_arn
   iam_ec2_role_name = module.iam.ec2_role_name
@@ -195,16 +195,32 @@ module "eks" {
   ]
 }
 
+module "metallb" {
+  source = "./modules/k8s/metallb"
+
+  eks_container_ip = module.eks.container_ip
+
+  depends_on = [
+    module.eks,
+  ]
+}
+
 module "traefik" {
   source = "./modules/k8s/traefik"
 
   # EKS
   # /urls
-  eks_container_ip        = module.eks.container_ip
   eks_container_host_port = module.eks.container_host_port
 
+  # MetalLB
+  # /ip
+  metallb_eks_ip = module.metallb.eks_ip
+  # /resources
+  metallb_eks_ip_address_pool_name = module.metallb.eks_ip_address_pool_name
+
   depends_on = [
-    module.eks
+    module.eks,
+    module.metallb
   ]
 }
 
@@ -217,7 +233,7 @@ module "mwaa" {
   iam_admin_region     = module.iam.admin_region
   # /teams
   iam_teams_names     = module.iam.teams_names
-  iam_teams_role_arns = module.iam.teams_role_arns
+  iam_teams_arns      = module.iam.teams_arns
   iam_teams_usernames = module.iam.teams_usernames
   iam_teams_passwords = module.iam.teams_passwords
 
@@ -322,6 +338,10 @@ module "mlflow" {
   ]
 }
 
+module "kyverno" {
+  source = "./modules/k8s/kyverno"
+}
+
 module "exports" {
   source = "./modules/exports"
 
@@ -383,6 +403,7 @@ module "exports" {
   depends_on = [
     module.iam,
     module.eks,
+    module.kyverno,
     module.mlflow,
     module.mwaa,
     module.rds,

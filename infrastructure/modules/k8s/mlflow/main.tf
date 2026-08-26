@@ -8,8 +8,6 @@ resource "helm_release" "mlflow" {
   create_namespace = true
   wait             = true
   wait_for_jobs    = true
-  atomic           = true
-  cleanup_on_fail  = true
 
   values = [file("${path.module}/configurations/values.yaml")]
 
@@ -81,80 +79,79 @@ resource "kubectl_manifest" "ingress_route" {
   })
 }
 # Create script in cluster for creating MLflow workspace
-resource "kubectl_manifest" "create_mlflow_workspace" {
-  yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "ConfigMap"
-    metadata = {
-      name      = local.create_mlflow_workspace_script_file_resource_name
-      namespace = helm_release.mlflow.namespace
-    }
-    data = {
-      (local.create_mlflow_workspace_script_file_name) = file("${path.module}/${local.create_mlflow_workspace_script_file_relative_path}")
-    }
-    immutable = true
-  })
+resource "kubernetes_config_map_v1" "create_mlflow_workspace" {
+  metadata {
+    name      = local.create_mlflow_workspace_script_file_resource_name
+    namespace = helm_release.mlflow.namespace
+  }
+  data = {
+    (local.create_mlflow_workspace_script_file_name) = file("${path.module}/${local.create_mlflow_workspace_script_file_relative_path}")
+  }
+  immutable = true
 }
 # Runs the job to create MLflow workspaces for each team
-resource "kubectl_manifest" "teams" {
-  for_each = var.mlflow_teams
+resource "kubernetes_job_v1" "teams" {
+  for_each            = var.mlflow_teams
+  wait_for_completion = true
 
-  yaml_body = yamlencode({
-    apiVersion = "batch/v1"
-    kind       = "Job"
-    metadata = {
-      name      = "create-mlflow-workspace-for-${each.key}"
-      namespace = helm_release.mlflow.namespace
-    }
-    spec = {
-      template = {
-        metadata = {
-          name = "create-mlflow-workspace-for-${each.key}"
+  metadata {
+    name      = "create-mlflow-workspace-for-${each.key}"
+    namespace = helm_release.mlflow.namespace
+  }
+
+  spec {
+    template {
+      metadata {
+        name = "create-mlflow-workspace-for-${each.key}"
+      }
+      spec {
+        restart_policy = "OnFailure"
+
+        volume {
+          name = local.create_mlflow_workspace_script_file_resource_name
+          config_map {
+            name         = local.create_mlflow_workspace_script_file_resource_name
+            default_mode = "0755" # rwx r-x r-x
+          }
         }
-        spec = {
-          restartPolicy = "OnFailure"
-          volumes = [
-            {
-              name = local.create_mlflow_workspace_script_file_resource_name
-              configMap = {
-                name        = local.create_mlflow_workspace_script_file_resource_name
-                defaultMode = 493 # rwx r-x r-x (0755)
-              }
-            }
-          ]
-          containers = [
-            {
-              name    = "create-mlflow-workspace-for-${each.key}"
-              image   = "alpine:3"
-              command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
-              env = [
-                { name = "MLFLOW_URL", value = local.mlflow_intra_url },
-                { name = "WORKSPACE_NAME", value = local.mlflow_teams_workspace_names[each.key] },
-                { name = "USERNAME", value = local.mlflow_teams_usernames[each.key] },
-                { name = "PASSWORD", value = local.mlflow_teams_passwords[each.key] }, # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
-                { name = "ADMIN", value = "${var.mlflow_admin_username}:${var.mlflow_admin_password}" }
-              ]
-              volumeMounts = [
-                {
-                  name      = local.create_mlflow_workspace_script_file_resource_name
-                  mountPath = "/${local.scripts_relative_path}"
-                }
-              ]
-            }
-          ]
+
+        container {
+          name  = "create-mlflow-workspace-for-${each.key}"
+          image = "alpine:3"
+
+          command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
+
+          env {
+            name  = "MLFLOW_URL"
+            value = local.mlflow_intra_url
+          }
+          env {
+            name  = "WORKSPACE_NAME"
+            value = local.mlflow_teams_workspace_names[each.key]
+          }
+          env {
+            name  = "USERNAME"
+            value = local.mlflow_teams_usernames[each.key]
+          }
+          env {
+            name  = "PASSWORD"
+            value = local.mlflow_teams_passwords[each.key] # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
+          }
+          env {
+            name  = "ADMIN"
+            value = "${var.mlflow_admin_username}:${var.mlflow_admin_password}"
+          }
+
+          volume_mount {
+            name       = local.create_mlflow_workspace_script_file_resource_name
+            mount_path = "/${local.scripts_relative_path}"
+          }
         }
       }
-    }
-  })
-
-  wait_for {
-    field {
-      key   = "status.succeeded"
-      value = "1"
     }
   }
 
   depends_on = [
-    kubectl_manifest.create_mlflow_workspace # Needs the script to create mlflow workspace
+    kubernetes_config_map_v1.create_mlflow_workspace # Needs the script to create mlflow workspace
   ]
 }
