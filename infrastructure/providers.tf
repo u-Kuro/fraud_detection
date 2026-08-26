@@ -61,7 +61,7 @@ provider "postgresql" {
 # Connect to K3s spawned by EKS from Ministack
 provider "kubectl" {
   config_path = local_sensitive_file.kubeconfig_for_localhost.filename
-  lazy_load = true
+  lazy_load   = true
 }
 provider "helm" {
   kubernetes = {

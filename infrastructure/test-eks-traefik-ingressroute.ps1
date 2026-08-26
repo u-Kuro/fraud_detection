@@ -120,7 +120,7 @@ if (-not $ministack_ip)        { throw "Ministack container IP is empty." }
 if (-not $ministack_host_port) { throw "Ministack host port is empty." }
 
 # Endpoint references used throughout
-$EP_HOST    = "http://localhost:${ministack_host_port}"          # Windows -> ministack
+$EP_HOST    = "http://127.0.0.1:${ministack_host_port}"          # Windows -> ministack
 $EP_DOCKER  = "http://${ministack_ip}:${MINISTACK_PORT}"         # pods -> ministack direct
 $EP_GATEWAY = "http://${ministack_gw}:${ministack_host_port}"    # pods -> host gateway
 
@@ -306,7 +306,7 @@ OK "k3s container IP : $k3sContainerIP"
 OK "k3s API host port: $K3S_API_PORT"
 
 $rawKubeconfig = docker exec $k3sContainer cat /etc/rancher/k3s/k3s.yaml
-$rawKubeconfig -replace 'https://127\.0\.0\.1:6443', "https://localhost:$K3S_API_PORT" |
+$rawKubeconfig -replace 'https://127\.0\.0\.1:6443', "https://127.0.0.1:$K3S_API_PORT" |
     Set-Content $KUBECONFIG_PATH
 $env:KUBECONFIG = $KUBECONFIG_PATH
 OK "Kubeconfig patched: $KUBECONFIG_PATH"

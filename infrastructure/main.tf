@@ -95,7 +95,6 @@ module "rds" {
   # Ministack
   # /network
   ministack_network_name    = local.ministack_network_name
-  ministack_network_gateway = local.ministack_network_gateway
 
   # RDS
   # /postgres
@@ -224,7 +223,7 @@ module "mwaa" {
 
   # Local Files
   # /paths
-  local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_localhost_file_path
+  local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_docker_file_path
   local_files_mwaa_requirements_file_path     = local_sensitive_file.mwaa_requirements.filename
   # /content
   local_files_kubeconfig_for_docker_file_md5 = local_sensitive_file.kubeconfig_for_docker.content_md5

@@ -36,8 +36,7 @@ docker compose up --wait
 terraform init
 New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
 terraform validate
-terraform plan
-terraform apply
+terraform apply -auto-approve
 
 steps:
   - name: Checkout

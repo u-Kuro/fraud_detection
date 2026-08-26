@@ -128,11 +128,11 @@ resource "kubectl_manifest" "teams" {
               image   = "alpine:3"
               command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
               env = [
-                { name = "MLFLOW_URL",      value = local.mlflow_intra_url },
-                { name = "WORKSPACE_NAME",  value = local.mlflow_teams_workspace_names[each.key] },
-                { name = "USERNAME",        value = local.mlflow_teams_usernames[each.key] },
-                { name = "PASSWORD",        value = local.mlflow_teams_passwords[each.key] }, # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
-                { name = "ADMIN",           value = "${var.mlflow_admin_username}:${var.mlflow_admin_password}" }
+                { name = "MLFLOW_URL", value = local.mlflow_intra_url },
+                { name = "WORKSPACE_NAME", value = local.mlflow_teams_workspace_names[each.key] },
+                { name = "USERNAME", value = local.mlflow_teams_usernames[each.key] },
+                { name = "PASSWORD", value = local.mlflow_teams_passwords[each.key] }, # Team can change it themselves (PATCH /api/2.0/mlflow/users/update-password)
+                { name = "ADMIN", value = "${var.mlflow_admin_username}:${var.mlflow_admin_password}" }
               ]
               volumeMounts = [
                 {

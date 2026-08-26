@@ -133,7 +133,7 @@ resource "kubectl_manifest" "teams" {
 
   depends_on = [
     data.external.k3s_configuration, # Needs kubeconfig for localhost and K8s API after K3s restarts successfully.
-    aws_eks_access_entry.teams,       # Needs access entry to bind role for teams' K8s group
+    aws_eks_access_entry.teams,      # Needs access entry to bind role for teams' K8s group
   ]
 }
 # {
