@@ -3,7 +3,7 @@ resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
   chart            = "metallb"
-  version          = "0.16.1"
+  version          = "0.16.1" # v0.16.1 https://artifacthub.io/packages/helm/metallb/metallb/0.16.1
   namespace        = var.eks_metallb_namespace
   create_namespace = true
   wait             = true
