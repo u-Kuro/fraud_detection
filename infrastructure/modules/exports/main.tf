@@ -407,3 +407,88 @@ resource "kubectl_manifest" "platform_resources_protection" {
     kubernetes_secret_v1.eks_teams_docker_registry,
   ]
 }
+# Set Kubernetes policy to deny teams in editing infrastructure config maps
+resource "kubectl_manifest" "platform_configmap_protection" {
+  for_each = var.eks_teams
+
+  yaml_body = yamlencode({
+    apiVersion = "policies.kyverno.io/v1"
+    kind       = "NamespacedValidatingPolicy"
+    metadata = {
+      name      = "${each.key}-platform-configmap-protection"
+      namespace = var.eks_teams_namespaces[each.key]
+    }
+    spec = {
+      validationActions = ["Deny"]
+      matchConstraints = {
+        resourceRules = [{
+          apiGroups   = [""]
+          apiVersions = ["v1"]
+          operations  = ["UPDATE", "DELETE"]
+          resources   = ["configmaps"]
+        }]
+      }
+      matchConditions = [
+        {
+          name       = "is-platform-configmap"
+          expression = "(object != null ? object : oldObject).metadata.name == '${local.eks_k8s_base_config_map_name}'"
+        },
+        {
+          name       = "not-cluster-admin"
+          expression = "!('system:masters' in request.userInfo.groups)"
+        }
+      ]
+      validations = [{
+        message    = "Platform-managed ConfigMap cannot be modified."
+        expression = "false"
+      }]
+    }
+  })
+
+  depends_on = [
+    kubernetes_config_map_v1.eks_teams_base_config_map,
+  ]
+}
+# Set Kubernetes policy to deny teams in editing infrastructure secrets
+resource "kubectl_manifest" "platform_secret_protection" {
+  for_each = var.eks_teams
+
+  yaml_body = yamlencode({
+    apiVersion = "policies.kyverno.io/v1"
+    kind       = "NamespacedValidatingPolicy"
+    metadata = {
+      name      = "${each.key}-platform-secret-protection"
+      namespace = var.eks_teams_namespaces[each.key]
+    }
+    spec = {
+      validationActions = ["Deny"]
+      matchConstraints = {
+        resourceRules = [{
+          apiGroups   = [""]
+          apiVersions = ["v1"]
+          operations  = ["UPDATE", "DELETE"]
+          resources   = ["secrets"]
+        }]
+      }
+      matchConditions = [
+        {
+          name       = "is-platform-secret"
+          expression = "(object != null ? object : oldObject).metadata.name in ['${local.eks_k8s_base_secret_name}', '${local.eks_k8s_docker_registry_secret_name}']"
+        },
+        {
+          name       = "not-cluster-admin"
+          expression = "!('system:masters' in request.userInfo.groups)"
+        }
+      ]
+      validations = [{
+        message    = "Platform-managed Secret cannot be modified."
+        expression = "false"
+      }]
+    }
+  })
+
+  depends_on = [
+    kubernetes_secret_v1.eks_teams_base_secret,
+    kubernetes_secret_v1.eks_teams_docker_registry,
+  ]
+}

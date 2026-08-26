@@ -9,4 +9,8 @@ resource "helm_release" "kyverno" {
   wait             = true
   wait_for_jobs    = true
   timeout          = 600
+
+  set = [
+    { name = "crds.install", value = "true" },
+  ]
 }
