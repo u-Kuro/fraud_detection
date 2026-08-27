@@ -5,9 +5,11 @@ data "external" "ministack_configuration" {
 }
 # Connect AWS with Ministack
 provider "aws" {
-  access_key = var.aws_admin_access_key
-  secret_key = var.aws_admin_secret_key
-  region     = var.aws_admin_region
+  access_key               = var.aws_admin_access_key
+  secret_key               = var.aws_admin_secret_key
+  region                   = var.aws_admin_region
+  shared_config_files      = []
+  shared_credentials_files = []
 
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
@@ -69,6 +71,10 @@ provider "kubectl" {
   load_config_file = true
 }
 provider "helm" {
+  plugins_path           = "${local.helm_directory_path}/plugins"
+  registry_config_path   = "${local.helm_directory_path}/registry.json"
+  repository_config_path = "${local.helm_directory_path}/repositories.yaml"
+  repository_cache       = "${local.helm_directory_path}/cache"
   kubernetes = {
     config_path = local_sensitive_file.kubeconfig_for_localhost.filename
   }

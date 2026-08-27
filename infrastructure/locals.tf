@@ -18,8 +18,9 @@ locals {
   eks_ingress_domain_from_host = "127.0.0.1.${var.sslip_io_public_wildcard_dns_domain}"
 
   # Local files
-  # /path
+  # /paths
   local_files_directory_path = "${path.root}/local_files"
+  helm_directory_path        = "${path.root}/.helm"
 
   # Ministack
   # /network

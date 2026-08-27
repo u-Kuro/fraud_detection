@@ -12,6 +12,7 @@
 
 # Terraform
 infrastructure/local_files
+infrastructure/.helm
 infrastructure/.terraform
 infrastructure/.terraform.lock.hcl
 infrastructure/*.tfstate

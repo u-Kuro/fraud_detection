@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
@@ -44,6 +45,6 @@ if (-not $postgres_container_host_port) {
     throw "'$postgres_container_name' port has invalid value of '$postgres_container_host_port'."
 }
 
-@{
+Write-Output @{
     postgres_container_host_port = $postgres_container_host_port
 } | ConvertTo-Json -Compress

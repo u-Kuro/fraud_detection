@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
 # Get Ministack container name
 $ministack_container_name = docker ps --filter "ancestor=ministackorg/ministack" --format '{{.Names}}' | Select-Object -First 1
@@ -52,7 +53,7 @@ if (-not $ministack_container_host_port) {
     throw "'$ministack_container_name' port has invalid value of '$ministack_container_host_port'."
 }
 
-@{
+Write-Output @{
     ministack_container_name      = $ministack_container_name
     ministack_network_name        = $ministack_network_name
     ministack_network_gateway     = $ministack_network_gateway

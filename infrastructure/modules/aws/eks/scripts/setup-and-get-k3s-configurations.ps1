@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
@@ -87,13 +88,12 @@ $raw_kubeconfig -replace `
     | Out-File $kubeconfig_for_docker_file_path -Encoding utf8
 
 # Copy registries.yaml into K3s container to redirect requests to ECR
-docker cp `
+$null = docker cp `
     $k3s_registries_file_path `
-    "${k3s_container_name}:${k3s_container_configuration_files_directory_path}/registries.yaml" `
-    *>&1 | Out-Null
+    "${k3s_container_name}:${k3s_container_configuration_files_directory_path}/registries.yaml"
 
 # Restart K3s container to apply registries.yaml
-docker restart $k3s_container_name *>&1 | Out-Null
+$null = docker restart $k3s_container_name
 
 # Wait until it restarts successfully
 $env:KUBECONFIG = $kubeconfig_for_localhost_file_path
@@ -101,7 +101,7 @@ $max_wait = 300; $elapsed = 0;
 do {
     Start-Sleep -Seconds 5
     $elapsed += 5
-    try { kubectl get nodes --request-timeout=5s *>&1 | Out-Null } catch {}
+    kubectl get nodes --request-timeout=5s *> $null
 } until ($LASTEXITCODE -eq 0 -or $elapsed -ge $max_wait)
 
 # Inform K3s status
@@ -110,9 +110,9 @@ if ($elapsed -ge $max_wait) {
 }
 
 # Wait until its safe for deployment
-kubectl wait --for=condition=Ready nodes --all --timeout=5m *>&1 | Out-Null
+$null = kubectl wait --for=condition=Ready nodes --all --timeout=5m
 
-@{
+Write-Output @{
     k3s_container_ip                   = $k3s_container_ip
     k3s_container_host_port            = $k3s_container_host_port
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
