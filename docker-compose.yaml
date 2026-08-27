@@ -9,13 +9,13 @@ services:
       - "4566:4566"
     environment:
       DOCKER_NETWORK: ministack_network
-      PERSIST_STATE: 1
-      LOCALSTACK_PERSISTENCE: 1
-      S3_PERSIST: 1
-      RDS_PERSIST: 1
-      MWAA_PERSIST: 1
-      DSQL_PERSIST: 1
-      DSQL_STRICT: 1
+#      PERSIST_STATE: 1
+#      LOCALSTACK_PERSISTENCE: 1
+#      S3_PERSIST: 1
+#      RDS_PERSIST: 1
+#      MWAA_PERSIST: 1
+#      DSQL_PERSIST: 1
+#      DSQL_STRICT: 1
       LOG_LEVEL: DEBUG
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

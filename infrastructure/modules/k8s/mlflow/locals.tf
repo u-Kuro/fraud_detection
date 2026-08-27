@@ -24,6 +24,6 @@ locals {
   # /workspace-names
   mlflow_teams_workspace_names = { for v in var.mlflow_teams : v => v }
   # /credentials
-  mlflow_teams_usernames = { for v in var.mlflow_teams : v => "${v}-0123456789" }
-  mlflow_teams_passwords = { for v in var.mlflow_teams : v => "${v}-0123456789" }
+  mlflow_teams_usernames = { for v in var.mlflow_teams : v => "${v}_0123456789" }
+  mlflow_teams_passwords = { for v in var.mlflow_teams : v => "${v}_0123456789" }
 }

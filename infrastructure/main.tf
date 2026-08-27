@@ -338,6 +338,7 @@ module "mlflow" {
 
   depends_on = [
     module.iam,
+    module.postgres,
     module.rds,
     module.s3,
     module.secrets_manager,

@@ -16,10 +16,12 @@ variable "aws_admin_account_id" { type = string }
 variable "rds_postgres_admin_username" {
   type      = string
   sensitive = true
+  default   = "admin" # Can't be changed in Ministack's RDS
 }
 variable "rds_postgres_admin_password" {
   type      = string
   sensitive = true
+  default   = "admin" # Can't be changed in Ministack's RDS
 }
 # /mlflow-schema
 variable "rds_postgres_mlflow_username" {

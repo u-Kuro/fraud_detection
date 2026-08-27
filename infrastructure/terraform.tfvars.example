@@ -6,6 +6,124 @@ terraform validate
 terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve
 terraform apply -auto-approve
 
+module.mlflow.kubectl_manifest.ingress_route: Creation complete after 1s [id=/apis/traefik.io/v1alpha1/namespaces/mlflow/ingressroutes/mlflow-ingress-route]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m10s elapsed]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m20s elapsed]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m30s elapsed]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m40s elapsed]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m50s elapsed]
+module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [01m00s elapsed]
+╷
+│ Error: job: mlflow/create-mlflow-workspace-for-mle is not in complete state
+│
+│   with module.mlflow.kubernetes_job_v1.teams["mle"],
+│   on modules\k8s\mlflow\main.tf line 96, in resource "kubernetes_job_v1" "teams":
+│   96: resource "kubernetes_job_v1" "teams" {
+│
+╵
+
+$yaml = @'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pg-connectivity-test
+  namespace: mlflow
+spec:
+  restartPolicy: Never
+  containers:
+  - name: pg-test
+    image: python:3.12-alpine
+    env:
+    - name: SCRIPT
+      value: |
+        import sqlalchemy as sa
+        U = 'admin'
+        P = 'admin'
+        DB = 'main'
+        targets = [
+            ('172.18.0.4', 5432),
+            ('172.18.0.4', 15432),
+            ('ministack-rds-281afe4a44d7-instance-rds', 5432),
+            ('ministack-rds-281afe4a44d7-instance-rds', 15432),
+            ('172.18.0.1', 5432),
+            ('172.18.0.1', 15432),
+        ]
+        for host, port in targets:
+            url = f'postgresql+psycopg2://{U}:{P}@{host}:{port}/{DB}'
+            print(f'TARGET : {host}:{port}')
+            try:
+                engine = sa.create_engine(url)
+                with engine.connect() as conn:
+                    result = conn.execute(sa.text('SELECT 1 AS ok'))
+                    print('OK:', result.fetchone())
+            except Exception as e:
+                print(f'FAILED: {e}')
+        print('All done.')
+    command:
+    - sh
+    - -c
+    - |
+      pip install sqlalchemy psycopg2-binary -q
+      echo "$SCRIPT" | python
+'@
+$yaml | kubectl apply -f -
+kubectl logs -n mlflow pg-connectivity-test -f
+kubectl delete pod -n mlflow pg-connectivity-test
+
+
+$env:KUBECONFIG = "C:\Projects\Personal\Practice\fraud_detection\infrastructure\local_files\kubeconfig_for_localhost.yaml"
+
+# 1. Events and status summary
+kubectl describe pod mlflow-797688fbd8-mztcm -n mlflow
+
+# 2. Current logs
+kubectl logs mlflow-797688fbd8-mztcm -n mlflow
+
+# 3. Previous container logs (from the restart) ← start here
+kubectl logs mlflow-797688fbd8-mztcm -n mlflow --previous
+
+# 4. All containers
+kubectl logs mlflow-797688fbd8-mztcm -n mlflow --all-containers=true
+
+# 5. Previous logs, all containers
+kubectl logs mlflow-797688fbd8-mztcm -n mlflow --all-containers=true --previous
+
+# 6. Full pod YAML (spec + status)
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o yaml
+
+# 7. Status block only
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o json | ConvertFrom-Json | Select-Object -ExpandProperty status
+
+# 8. Last termination reason (OOMKilled, Error, exit code)
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o json | ConvertFrom-Json | Select-Object -ExpandProperty status | Select-Object -ExpandProperty containerStatuses | ForEach-Object { $_.lastState }
+
+# 9. Probe config (readiness/liveness)
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o jsonpath='{.spec.containers[*].readinessProbe}'
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o jsonpath='{.spec.containers[*].livenessProbe}'
+
+# 10. Events scoped to this pod
+kubectl get events -n mlflow --field-selector involvedObject.name=mlflow-797688fbd8-mztcm
+
+# 11. All namespace events sorted by time
+kubectl get events -n mlflow --sort-by='.lastTimestamp'
+
+# 12. Which node it's on
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o wide
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# 13. Node conditions (disk/memory pressure) — fill in node name from above
+kubectl describe node 2a3c710b9303
+
+# 14. CPU/memory usage
+kubectl top pod mlflow-797688fbd8-mztcm -n mlflow
+
+# 15. Volumes (spot missing secrets/configmaps)
+kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o jsonpath='{.spec.volumes}'
+
+# 16. Exec in (only works if container stays up long enough)
+kubectl exec -it mlflow-797688fbd8-mztcm -n mlflow -- /bin/sh
+
 # TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack-network
 docker volume rm ministack
@@ -993,3 +1111,8 @@ Remove-Item $tmpManifest
 
 kubectl wait pod/test-logger --for=condition=Ready --timeout=120s
 kubectl logs test-logger --follow
+
+
+
++++++
+
