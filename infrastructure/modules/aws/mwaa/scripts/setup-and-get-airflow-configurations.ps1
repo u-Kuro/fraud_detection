@@ -97,7 +97,7 @@ if (-not $airflow_container_host_port) {
 
 Write-Output @{
     airflow_container_name                 = $airflow_container_name
-    airflow_container_host_port            = $airflow_container_host_port
+    airflow_container_host_port            = [string]$airflow_container_host_port
     airflow_container_dag_directory_path   = $airflow_container_dag_directory_path
     airflow_container_kubeconfig_file_path = $airflow_container_kubeconfig_file_path
 } | ConvertTo-Json -Compress

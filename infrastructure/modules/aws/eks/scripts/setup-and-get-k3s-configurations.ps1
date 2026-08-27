@@ -6,7 +6,7 @@ $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPrefere
 $query = $Input | Out-String | ConvertFrom-Json
 $ministack_network_name             = $query.ministack_network_name
 $ministack_network_gateway          = $query.ministack_network_gateway
-$k3s_container_url                  = $query.k3s_container_url
+$eks_cluster_endpoint               = $query.eks_cluster_endpoint
 $k3s_registries_file_path           = $query.k3s_registries_file_path
 $kubeconfig_for_localhost_file_path = $query.kubeconfig_for_localhost_file_path
 $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
@@ -15,7 +15,7 @@ $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
 $items = @{
     ministack_network_name             = $ministack_network_name
     ministack_network_gateway          = $ministack_network_gateway
-    k3s_container_url                  = $k3s_container_url
+    k3s_container_url                  = $eks_cluster_endpoint
     k3s_registries_file_path           = $k3s_registries_file_path
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = $kubeconfig_for_docker_file_path
@@ -26,42 +26,63 @@ foreach ($item in $items) {
     }
 }
 
-# Get K3s container host port
-$k3s_container_port      = ([System.UriBuilder]$k3s_container_url).Port
-$k3s_container_host_port = $null
-
 # Get Ministack network configurations
 $ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
 $ministack_network_containers          = $ministack_network_json_configurations.Containers
 
-# Find K3s container that EKS spawned through Ministack
+# Get EKS given port
+$eks_endpoint_uri              = ([System.UriBuilder]$eks_cluster_endpoint)
+$is_eks_endpoint_for_localhost = $eks_endpoint_uri.Host -in "localhost", "127.0.0.1", "::1", "0.0.0.0"
+
+# Find K3s container configurations that EKS spawned through Ministack
+$k3s_container_port      = $null
+$k3s_container_host_port = $null
 $k3s_container_name = $null
-foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
-    $container_json_configurations = (docker inspect $container.Name | ConvertFrom-Json)[0]
-    $container_network_settings    = $container_json_configurations.NetworkSettings
-    $container_ports               = $container_network_settings.Ports
-    $container_tcp                 = $container_ports[0].PSObject.Properties.Name
-    $container_port                = ($container_tcp -split "/")[0]
-    if ([int]$container_port -eq [int]$k3s_container_port) {
-        $k3s_container_name      = $container.Name
-        $k3s_container_host_port = $container_ports.$container_tcp[0].HostPort
-        break
+if ($is_eks_endpoint_for_localhost) {
+    $k3s_container_host_port = $eks_endpoint_uri.Port
+    foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+        $container_json_configurations = (docker inspect $container.Name | ConvertFrom-Json)[0]
+        $container_network_settings    = $container_json_configurations.NetworkSettings
+        $container_ports               = $container_network_settings.Ports
+        $container_tcp                 = $container_ports[0].PSObject.Properties.Name
+        $container_host_port           = $container_ports.$container_tcp[0].HostPort
+        if ([int]$container_host_port -eq [int]$k3s_container_host_port) {
+            $k3s_container_name = $container.Name
+            $k3s_container_port = ($container_tcp -split "/")[0]
+            break
+        }
+    }
+} else {
+    $k3s_container_port = $eks_endpoint_uri.Port
+    foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+        $container_json_configurations = (docker inspect $container.Name | ConvertFrom-Json)[0]
+        $container_network_settings    = $container_json_configurations.NetworkSettings
+        $container_ports               = $container_network_settings.Ports
+        $container_tcp                 = $container_ports[0].PSObject.Properties.Name
+        $container_port                = ($container_tcp -split "/")[0]
+        if ([int]$container_port -eq [int]$k3s_container_port) {
+            $k3s_container_name      = $container.Name
+            $k3s_container_host_port = $container_ports.$container_tcp[0].HostPort
+            break
+        }
     }
 }
 if (-not $k3s_container_name) {
     throw "No K3s container with port '$k3s_container_port' found in the network '$ministack_network_name'."
 }
 
-# Check K3s container host port
+# Check K3s container ports
 if (-not $k3s_container_host_port) {
     throw "No Host Port found for K3s container '$k3s_container_name'."
+}
+if (-not $k3s_container_port) {
+    throw "No Port found for K3s container '$k3s_container_name'."
 }
 
 # Get K3s container configurations
 $k3s_container_json_configurations = (docker inspect $k3s_container_name | ConvertFrom-Json)[0]
 $k3s_container_network_settings    = $k3s_container_json_configurations.NetworkSettings
 $k3s_container_networks            = $k3s_container_network_settings.Networks
-$k3s_container_ports               = $k3s_container_network_settings.Ports
 
 # Get K3s container ip
 $k3s_container_ip = $k3s_container_networks.$ministack_network_name.IPAddress
@@ -114,7 +135,7 @@ $null = kubectl wait --for=condition=Ready nodes --all --timeout=5m
 
 Write-Output @{
     k3s_container_ip                   = $k3s_container_ip
-    k3s_container_host_port            = $k3s_container_host_port
+    k3s_container_host_port            = [string]$k3s_container_host_port
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
     kubeconfig_for_docker_file_path    = $kubeconfig_for_docker_file_path
 } | ConvertTo-Json -Compress

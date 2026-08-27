@@ -46,5 +46,5 @@ if (-not $postgres_container_host_port) {
 }
 
 Write-Output @{
-    postgres_container_host_port = $postgres_container_host_port
+    postgres_container_host_port = [string]$postgres_container_host_port
 } | ConvertTo-Json -Compress
