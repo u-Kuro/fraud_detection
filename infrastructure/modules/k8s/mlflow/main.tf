@@ -3,15 +3,18 @@ resource "helm_release" "mlflow" {
   name             = var.mlflow_host
   repository       = "https://community-charts.github.io/helm-charts"
   chart            = "mlflow"
-  version          = "1.11.2" # v3.14.0 https://artifacthub.io/packages/helm/community-charts/mlflow/1.11.2
+  version          = "1.11.5" # v3.15.1 https://artifacthub.io/packages/helm/community-charts/mlflow/1.11.5
   namespace        = var.eks_mlflow_namespace
   create_namespace = true
   wait             = true
   wait_for_jobs    = true
+  timeout          = 600
 
   values = [file("${path.module}/configurations/values.yaml")]
 
   set = [
+    { name = "image.tag", value = "3.15.1-alpine" },
+
     { name = "fullnameOverride", value = var.mlflow_host },
     { name = "service.port", value = var.traefik_http_port },
 

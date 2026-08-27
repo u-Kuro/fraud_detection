@@ -19,10 +19,9 @@ artifactRoot:
 
 extraFlags:
   - serveArtifacts # Enables mlflow to proxy artifact connection from s3 (uploads/downloads)
+  - enable-workspaces
 
-extraEnvVars:
-  MLFLOW_ENABLE_WORKSPACES: true
-#   SCRIPT_NAME: [dynamic] # Aligns request calls with path prefixed host from reverse proxy (traefik)
+# extraEnvVars:
 #   MLFLOW_S3_ENDPOINT_URL: [dynamic]
 #   AWS_DEFAULT_REGION: [dynamic]
 
@@ -43,6 +42,5 @@ service:
   type: ClusterIP # Internal access only
   containerPort: 8080
 # port: [dynamic] # service port (HTTP)
-# containerPort: [dynamic] # targetPort and containerPort
 
 # fullnameOverride: [dynamic] # Sets hostname

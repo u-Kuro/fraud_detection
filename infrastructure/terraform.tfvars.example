@@ -6,28 +6,6 @@ terraform validate
 terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve
 terraform apply -auto-approve
 
-│ Error: Error locating chart
-│
-│   with module.kyverno.helm_release.kyverno,
-│   on modules\k8s\kyverno\main.tf line 2, in resource "helm_release" "kyverno":
-│    2: resource "helm_release" "kyverno" {
-│
-│ Unable to locate chart kyverno: no cached repo found. (try 'helm repo update'):
-│ open C:\Users\MSILAP~1\AppData\Local\Temp\helm\repository\traefik-index.yaml: The
-│ system cannot find the file specified.
-╵
-╷
-│ Error: Error locating chart
-│
-│   with module.metallb.helm_release.metallb,
-│   on modules\k8s\metallb\main.tf line 2, in resource "helm_release" "metallb":
-│    2: resource "helm_release" "metallb" {
-│
-│ Unable to locate chart metallb: no cached repo found. (try 'helm repo update'):
-│ open C:\Users\MSILAP~1\AppData\Local\Temp\helm\repository\traefik-index.yaml: The
-│ system cannot find the file specified.
-╵
-
 # TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack-network
 docker volume rm ministack
