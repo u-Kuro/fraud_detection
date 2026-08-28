@@ -3,8 +3,50 @@ docker compose up --wait
 terraform init
 # New-Item -ItemType File -Force -Path "./local_files/kubeconfig_for_localhost.yaml"
 terraform validate
-terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve
-terraform apply -auto-approve
+terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve -parallelism=1
+terraform apply -auto-approve -parallelism=1
+
+
+
+
+# Find the pod(s) spawned by the job
+kubectl get pods -n mlflow --selector=job-name=<create-mlflow-workspace-for-mle>
+
+# Read logs from the failed pod
+kubectl logs -n mlflow <pod-name>
+
+# If the container already exited, use --previous
+kubectl logs -n mlflow <pod-name> --previous
+
+# Describe the job for events (OOMKilled, ImagePullBackOff, etc.)
+kubectl describe job <create-mlflow-workspace-for-mle> -n mlflow
+
+# Describe the pod for more detail
+kubectl describe pod <pod-name> -n mlflow
+
+kubectl get pods -n mlflow -w
+kubectl get configmap -n mlflow -w
+
+kubectl describe cm aaaaaa -n mlflow
+
+
+kubectl logs -n mlflow create-mlflow-workspace-for-mle-zj6hd
+
+kubectl describe -n mlflow pod create-mlflow-workspace-for-mle-zj6hd
+
+
+wget -qO- "http://127.0.0.1:8080/api/2.0/mlflow/users/get?username=mlflow_0123456789" \
+  --header "Authorization: Basic $(echo -n 'mlflow_0123456789:mlflow_0123456789' | base64)"
+
+kubectl run curl-debug `
+  --image=alpine/curl `
+  --restart=Never `
+  -n mlflow `
+  --command -- curl -v "http://mlflow/api/2.0/mlflow/users/get?username=mle_0123456789" `
+  --user "mlflow_0123456789:mlflow_0123456789"
+Start-Sleep 5
+kubectl logs -n mlflow curl-debug
+kubectl delete pod -n mlflow curl-debug
 
 module.mlflow.kubectl_manifest.ingress_route: Creation complete after 1s [id=/apis/traefik.io/v1alpha1/namespaces/mlflow/ingressroutes/mlflow-ingress-route]
 module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m10s elapsed]

@@ -1,57 +1,74 @@
 #!/bin/sh
-set -e
+set -e -u
 
 # install curl and jq
-apk add --no-cache curl jq > /dev/null 2>&1
+apk add --no-cache curl jq 1> /dev/null
 
 # Create user if not exists
-USER_STATUS=$( \
-  curl -s -o /dev/null -w "%{http_code}" \
-  "${MLFLOW_URL}/api/2.0/mlflow/users/get?username=${USERNAME}" \
-  -u "${ADMIN}" \
+USER_STATUS=$(
+  curl "${MLFLOW_URL}/api/2.0/mlflow/users/get?username=${USERNAME}" \
+    --user "${ADMIN}" \
+    --write-out "%{http_code}" --output /dev/null \
+    --silent --show-error
 )
 
 if [ "$USER_STATUS" != "200" ]; then
   echo "Creating user: ${USERNAME}"
-  curl -sf -X POST "${MLFLOW_URL}/api/2.0/mlflow/users/create" \
-    -u "${ADMIN}" \
-    -H "Content-Type: application/json" \
-    -d "{\"username\": \"${USERNAME}\", \"password\": \"${PASSWORD}\"}"
+  curl --request POST "${MLFLOW_URL}/api/2.0/mlflow/users/create" \
+    --user "${ADMIN}" \
+    --header "Content-Type: application/json" \
+    --data "{\"username\": \"${USERNAME}\", \"password\": \"${PASSWORD}\"}" \
+    --silent --show-error --fail
+  echo "User ${USERNAME} created."
 else
   echo "User ${USERNAME} already exists, skipping."
 fi
 
 # Create workspace if not exists
-WORKSPACE_ID=$( \
-  curl -sf "${MLFLOW_URL}/api/3.0/mlflow/workspaces" \
-  -u "${ADMIN}" | \
-  jq -r ".workspaces[] | select(.name == \"${WORKSPACE_NAME}\") | .id" \
+WORKSPACE_ID=$(
+  curl "${MLFLOW_URL}/api/3.0/mlflow/workspaces" \
+    --user "${ADMIN}" \
+    --silent --show-error --fail |
+    jq --raw-output --arg workspace "${WORKSPACE_NAME}" 'first(.workspaces[] | select(.name == $workspace) | .id) // empty'
 )
 
 if [ -z "$WORKSPACE_ID" ]; then
   echo "Creating workspace: ${WORKSPACE_NAME}"
-  WORKSPACE_ID=$( \
-    curl -sf -X POST "${MLFLOW_URL}/api/3.0/mlflow/workspaces" \
-    -u "${ADMIN}" \
-    -H "Content-Type: application/json" \
-    -d "{\"name\": \"${WORKSPACE_NAME}\"}" | jq -r '.workspace.id' \
+  WORKSPACE_ID=$(
+    curl --request POST "${MLFLOW_URL}/api/3.0/mlflow/workspaces" \
+      --user "${ADMIN}" \
+      --header "Content-Type: application/json" \
+      --data "{\"name\": \"${WORKSPACE_NAME}\"}" \
+      --silent --show-error --fail |
+      jq --raw-output '.workspace.id // empty'
   )
+  if [ -z "$WORKSPACE_ID" ]; then
+    echo "Failed to create ${WORKSPACE_NAME} workspace." 1>&2
+    exit 1
+  fi
+  echo "Workspace ${WORKSPACE_NAME} created (id: ${WORKSPACE_ID})."
 else
   echo "Workspace ${WORKSPACE_NAME} already exists (id: ${WORKSPACE_ID}), skipping."
 fi
 
 # Grant edit permission if not set
-PERMISSION=$( \
-  curl -sf "${MLFLOW_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
-  -u "${ADMIN}" | \
-  jq -r ".permissions[] | select(.username == \"${USERNAME}\") | .permission // empty" \
+PERMISSION=$(
+  curl "${MLFLOW_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
+    --user "${ADMIN}" \
+    --silent --show-error --fail |
+    jq --raw-output --arg user "${USERNAME}" 'first(.permissions[] | select(.username == $user) | .permission) // empty'
 )
+
 if [ "$PERMISSION" != "EDIT" ]; then
-  echo "Granting permission to ${USERNAME} on workspace ${WORKSPACE_ID}"
-  curl -sf -X POST "${MLFLOW_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
-    -u "${ADMIN}" \
-    -H "Content-Type: application/json" \
-    -d "{\"username\": \"${USERNAME}\", \"permission\": \"EDIT\"}"
+  echo "Granting EDIT permission to ${USERNAME} on workspace ${WORKSPACE_ID}."
+  curl --request POST "${MLFLOW_URL}/api/3.0/mlflow/workspaces/${WORKSPACE_ID}/permissions" \
+    --user "${ADMIN}" \
+    --header "Content-Type: application/json" \
+    --data "{\"username\": \"${USERNAME}\", \"permission\": \"EDIT\"}" \
+    --silent --show-error --fail
+  echo "Permission granted."
 else
-  echo "User is already permitted, skipping."
+  echo "User ${USERNAME} already has EDIT permission, skipping."
 fi
+
+echo "Done."

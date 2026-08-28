@@ -17,6 +17,15 @@ resource "helm_release" "mlflow" {
 
     { name = "fullnameOverride", value = var.mlflow_host },
     { name = "service.port", value = var.traefik_http_port },
+    {
+      name = "serverAllowedHosts",
+      value = [
+        var.mlflow_host,
+        local.mlflow_inter_host,
+        local.mlflow_subdomain,
+        local.mlflow_subdomain_from_host
+      ]
+    },
 
     { name = "backendStore.postgres.host", value = var.rds_postgres_host },
     { name = "backendStore.postgres.port", value = var.rds_postgres_port },
@@ -103,12 +112,13 @@ resource "kubernetes_job_v1" "teams" {
   }
 
   spec {
+    backoff_limit = 0
+    parallelism = 1
     template {
-      metadata {
-        name = "create-mlflow-workspace-for-${each.key}"
-      }
+      metadata {}
       spec {
-        restart_policy = "OnFailure"
+        restart_policy = "Never"
+        # restart_policy = "OnFailure"
 
         volume {
           name = local.create_mlflow_workspace_script_file_resource_name
@@ -120,9 +130,9 @@ resource "kubernetes_job_v1" "teams" {
 
         container {
           name  = "create-mlflow-workspace-for-${each.key}"
-          image = "alpine:3"
+          image = "alpine:3.24.1"
 
-          command = ["/bin/sh", "/${local.create_mlflow_workspace_script_file_relative_path}"]
+          command = ["/bin/sh", "-x", "/${local.create_mlflow_workspace_script_file_relative_path}"]
 
           env {
             name  = "MLFLOW_URL"
@@ -153,7 +163,10 @@ resource "kubernetes_job_v1" "teams" {
       }
     }
   }
-
+  timeouts {
+    create = "60m"
+    update = "60m"
+  }
   depends_on = [
     kubernetes_config_map_v1.create_mlflow_workspace # Needs the script to create mlflow workspace
   ]
