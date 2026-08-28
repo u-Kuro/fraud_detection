@@ -13,19 +13,10 @@ resource "helm_release" "mlflow" {
   values = [file("${path.module}/configurations/values.yaml")]
 
   set = [
-    { name = "image.tag", value = "3.15.1-alpine" },
+    { name = "image.tag", value = "3.15.2-alpine" },
 
     { name = "fullnameOverride", value = var.mlflow_host },
     { name = "service.port", value = var.traefik_http_port },
-    {
-      name = "serverAllowedHosts",
-      value = [
-        var.mlflow_host,
-        local.mlflow_inter_host,
-        local.mlflow_subdomain,
-        local.mlflow_subdomain_from_host
-      ]
-    },
 
     { name = "backendStore.postgres.host", value = var.rds_postgres_host },
     { name = "backendStore.postgres.port", value = var.rds_postgres_port },
@@ -38,6 +29,18 @@ resource "helm_release" "mlflow" {
     { name = "auth.postgres.host", value = var.rds_postgres_host },
     { name = "auth.postgres.port", value = var.rds_postgres_port },
     { name = "auth.postgres.database", value = var.rds_postgres_db_name },
+  ]
+
+  set_list = [
+    {
+      name = "serverAllowedHosts",
+      value = [
+        var.mlflow_host,
+        local.mlflow_inter_host,
+        local.mlflow_subdomain,
+        local.mlflow_subdomain_from_host
+      ]
+    },
   ]
 
   set_sensitive = [
@@ -141,6 +144,10 @@ resource "kubernetes_job_v1" "teams" {
           env {
             name  = "WORKSPACE_NAME"
             value = local.mlflow_teams_workspace_names[each.key]
+          }
+          env {
+            name  = "ROLE_NAME"
+            value = local.mlflow_teams_role_names[each.key]
           }
           env {
             name  = "USERNAME"

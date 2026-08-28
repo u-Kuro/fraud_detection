@@ -99,7 +99,7 @@ $raw_kubeconfig = docker exec $k3s_container_name cat "${k3s_container_configura
 # Write kubeconfig for localhost in defined file
 $raw_kubeconfig -replace `
     "https://127\.0\.0\.1:${k3s_container_port}", `
-    "https://localhost:${k3s_container_host_port}" `
+    "https://127.0.0.1:${k3s_container_host_port}" `
     | Out-File $kubeconfig_for_localhost_file_path -Encoding utf8
 
 # Write kubeconfig for docker in defined file

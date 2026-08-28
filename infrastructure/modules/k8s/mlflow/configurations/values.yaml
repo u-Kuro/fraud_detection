@@ -28,6 +28,8 @@ extraFlags:
 auth:
   enabled: true
   defaultPermission: MANAGE
+# adminUsername: [dynamic]
+# adminPassword: [dynamic]
   postgres:
     enabled: true
 #   host: [dynamic]
@@ -37,6 +39,9 @@ auth:
 #   password: [dynamic]
 
 # flaskServerSecretKey: [dynamic] # Avoids unexpected logout
+
+# serverAllowedHosts:
+# - [dynamic]
 
 service:
   type: ClusterIP # Internal access only

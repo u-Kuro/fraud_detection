@@ -23,6 +23,8 @@ locals {
   mlflow_host_url    = "http://${local.mlflow_subdomain_from_host}:${var.traefik_eks_host_port}"
 
   # Teams
+  # /mlflow-roles
+  mlflow_teams_role_names = { for v in var.mlflow_teams : v => v }
   # /workspace-names
   mlflow_teams_workspace_names = { for v in var.mlflow_teams : v => v }
   # /credentials

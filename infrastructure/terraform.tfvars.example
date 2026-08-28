@@ -6,7 +6,41 @@ terraform validate
 terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve -parallelism=1
 terraform apply -auto-approve -parallelism=1
 
+$env:KUBECONFIG = "C:\Projects\Personal\Practice\fraud_detection\infrastructure\local_files\kubeconfig_for_localhost.yaml"
 
+kubectl run curl-debug `
+  --image=alpine/curl `
+  --restart=Never `
+  -n mlflow `
+  --command -- curl -vS `
+  --request GET "http://mlflow/api/3.0/mlflow/users/permissions/list?username=ass_0123456789" `
+  --user "mlflow_0123456789:mlflow_0123456789" `
+  --header "Content-Type: application/json"
+# Wait for it to fully finish (not just Ready, but Completed)
+kubectl wait -n mlflow --for=jsonpath='{.status.phase}'=Succeeded pod/curl-debug --timeout=60s
+
+kubectl logs -n mlflow curl-debug
+kubectl delete pod -n mlflow curl-debug
+
+kubectl get pods -n mlflow -w
+
+Verify the actual response body of GET /3.0/mlflow/users/roles/list?username=X — specifically confirm it's {"roles": [{"id": N}]} and not {"assignments": [...]} or some other shape. Everything else is logically sound.
+
+# GET /3.0/mlflow/users/permissions/list?username=ass_0123456789
+# input - username=ass_0123456789
+# output - {"is_admin":false,"permissions":[{"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3,"role_name":"ass","workspace":"ass"}]}
+
+# POST /3.0/mlflow/roles/create
+# input - '{\"name\": \"ass\", \"workspace\": \"ass\"}'
+# output - {"role":{"description":null,"id":3,"name":"ass","permissions":[],"workspace":"ass"}}
+
+# POST /3.0/mlflow/roles/permissions/add
+# input - '{\"role_id\": \"3\", \"resource_type\": \"workspace\", \"resource_pattern\": \"*\", \"permission\": \"MANAGE\"}'
+# output - {"role_permission":{"id":3,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3}}
+
+# POST /3.0/mlflow/roles/assign
+# input - '{\"username\": \"ass_0123456789\", \"role_id\": \"3\", \"workspace\": \"ass\"}'
+# output - {"assignment":{"id":1,"role_id":3,"user_id":3}}
 
 
 # Find the pod(s) spawned by the job
@@ -30,7 +64,7 @@ kubectl get configmap -n mlflow -w
 kubectl describe cm aaaaaa -n mlflow
 
 
-kubectl logs -n mlflow create-mlflow-workspace-for-mle-zj6hd
+kubectl logs -n mlflow create-mlflow-workspace-for-mle-ph5jv
 
 kubectl describe -n mlflow pod create-mlflow-workspace-for-mle-zj6hd
 
@@ -38,15 +72,7 @@ kubectl describe -n mlflow pod create-mlflow-workspace-for-mle-zj6hd
 wget -qO- "http://127.0.0.1:8080/api/2.0/mlflow/users/get?username=mlflow_0123456789" \
   --header "Authorization: Basic $(echo -n 'mlflow_0123456789:mlflow_0123456789' | base64)"
 
-kubectl run curl-debug `
-  --image=alpine/curl `
-  --restart=Never `
-  -n mlflow `
-  --command -- curl -v "http://mlflow/api/2.0/mlflow/users/get?username=mle_0123456789" `
-  --user "mlflow_0123456789:mlflow_0123456789"
-Start-Sleep 5
-kubectl logs -n mlflow curl-debug
-kubectl delete pod -n mlflow curl-debug
+
 
 module.mlflow.kubectl_manifest.ingress_route: Creation complete after 1s [id=/apis/traefik.io/v1alpha1/namespaces/mlflow/ingressroutes/mlflow-ingress-route]
 module.mlflow.kubernetes_job_v1.teams["mle"]: Still creating... [00m10s elapsed]
@@ -112,8 +138,6 @@ $yaml | kubectl apply -f -
 kubectl logs -n mlflow pg-connectivity-test -f
 kubectl delete pod -n mlflow pg-connectivity-test
 
-
-$env:KUBECONFIG = "C:\Projects\Personal\Practice\fraud_detection\infrastructure\local_files\kubeconfig_for_localhost.yaml"
 
 # 1. Events and status summary
 kubectl describe pod mlflow-797688fbd8-mztcm -n mlflow
