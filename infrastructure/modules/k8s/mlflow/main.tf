@@ -108,6 +108,11 @@ resource "kubernetes_config_map_v1" "create_mlflow_workspace" {
 resource "kubernetes_job_v1" "teams" {
   for_each            = var.mlflow_teams
   wait_for_completion = true
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+  }
 
   metadata {
     name      = "create-mlflow-workspace-for-${each.key}"
