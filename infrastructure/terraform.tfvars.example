@@ -13,7 +13,7 @@ kubectl run curl-debug `
   --restart=Never `
   -n mlflow `
   --command -- curl -vS `
-  --request GET "http://mlflow/api/3.0/mlflow/users/permissions/list?username=ass_0123456789" `
+  --request GET "http://mlflow/api/3.0/mlflow/users/roles/list?username=mle_0123456789" `
   --user "mlflow_0123456789:mlflow_0123456789" `
   --header "Content-Type: application/json"
 # Wait for it to fully finish (not just Ready, but Completed)
@@ -24,11 +24,17 @@ kubectl delete pod -n mlflow curl-debug
 
 kubectl get pods -n mlflow -w
 
-Verify the actual response body of GET /3.0/mlflow/users/roles/list?username=X — specifically confirm it's {"roles": [{"id": N}]} and not {"assignments": [...]} or some other shape. Everything else is logically sound.
-
 # GET /3.0/mlflow/users/permissions/list?username=ass_0123456789
 # input - username=ass_0123456789
 # output - {"is_admin":false,"permissions":[{"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3,"role_name":"ass","workspace":"ass"}]}
+
+# GET /3.0/mlflow/users/roles/list?username=ass_0123456789
+# input - username=ass_0123456789
+# output - {"roles":[{"description":null,"id":3,"name":"ass","permissions":[{"id":3,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3}],"workspace":"ass"}]}
+
+# GET /3.0/mlflow/roles/list
+# input - username=ass_0123456789
+# output - {"roles":[{"description":"...","id":1,"name":"admin","permissions":[{"id":1,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":1}],"workspace":"ass"},{"description":"...","id":2,"name":"user","permissions":[{"id":2,"permission":"USE","resource_pattern":"*","resource_type":"workspace","role_id":2}],"workspace":"ass"},{"description":null,"id":3,"name":"ass","permissions":[{"id":3,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3}],"workspace":"ass"}]}
 
 # POST /3.0/mlflow/roles/create
 # input - '{\"name\": \"ass\", \"workspace\": \"ass\"}'
