@@ -1,5 +1,5 @@
 docker compose up --wait
-# cd infrastructure
+cd infrastructure
 terraform init
 terraform validate
 terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve -parallelism=1
