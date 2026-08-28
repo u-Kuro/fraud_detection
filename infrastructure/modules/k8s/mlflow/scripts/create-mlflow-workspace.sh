@@ -65,8 +65,9 @@ ROLE_ID=$(
     --user "${ADMIN}" \
     --silent --show-error --fail |
     jq --raw-output --arg name "${ROLE_NAME}" --arg workspace "${WORKSPACE_NAME}" \
-      '.roles | map(select(.name == $name and .workspace == $workspace)) | if length > 0 then .[0].id else empty end'
+      'first(.roles[] | select(.name == $name and .workspace == $workspace)).id // empty'
 )
+  #{"roles":[{"description":"...","id":1,"name":"admin","permissions":[{"id":1,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":1}],"workspace":"ass"},{"description":"...","id":2,"name":"user","permissions":[{"id":2,"permission":"USE","resource_pattern":"*","resource_type":"workspace","role_id":2}],"workspace":"ass"},{"description":null,"id":3,"name":"ass","permissions":[{"id":3,"permission":"MANAGE","resource_pattern":"*","resource_type":"workspace","role_id":3}],"workspace":"ass"}]}
 if [ -z "${ROLE_ID}" ]; then
   echo "Creating role: ${ROLE_NAME}"
   ROLE_ID=$(

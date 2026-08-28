@@ -103,7 +103,7 @@ resource "aws_eks_access_policy_association" "teams" {
 
   access_scope {
     type       = "namespace"
-    namespaces = [local.eks_teams_namespaces[each.key]]
+    namespaces = [var.eks_teams_namespaces[each.key]]
   }
 
   depends_on = [

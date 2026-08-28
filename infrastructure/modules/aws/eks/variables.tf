@@ -12,6 +12,7 @@ variable "iam_eks_role_name" { type = string }
 # EKS
 # /teams
 variable "eks_teams" { type = set(string) }
+variable "eks_teams_namespaces" { type = map(string) }
 
 # Local Files
 # /paths

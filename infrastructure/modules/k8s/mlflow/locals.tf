@@ -12,7 +12,7 @@ locals {
 
   # MLflow
   # /hosts
-  mlflow_inter_host          = "${var.mlflow_host}.${var.eks_mlflow_namespace}.svc.cluster.local"
+  mlflow_inter_host = "${var.mlflow_host}.${var.eks_mlflow_namespace}.svc.cluster.local"
   # /domains
   mlflow_subdomain           = "${var.mlflow_host}.${var.eks_ingress_domain}"
   mlflow_subdomain_from_host = "${var.mlflow_host}.${var.eks_ingress_domain_from_host}"

@@ -164,7 +164,8 @@ module "eks" {
 
   # EKS
   # /teams
-  eks_teams = local.eks_teams
+  eks_teams            = local.eks_teams
+  eks_teams_namespaces = local.eks_teams_namespaces
 
   # Local Files
   # /paths
@@ -367,7 +368,7 @@ module "exports" {
   # EKS
   # /teams
   eks_teams            = local.eks_teams
-  eks_teams_namespaces = module.eks.teams_namespaces
+  eks_teams_namespaces = local.eks_teams_namespaces
 
   # MLflow
   # /urls

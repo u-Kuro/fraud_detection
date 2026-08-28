@@ -116,7 +116,7 @@ resource "kubernetes_job_v1" "teams" {
 
   spec {
     backoff_limit = 0
-    parallelism = 1
+    parallelism   = 1
     template {
       metadata {}
       spec {

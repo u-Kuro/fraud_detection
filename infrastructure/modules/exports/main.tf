@@ -61,6 +61,14 @@
 # 3) (can't be done in act) merge accepted and pushed to main
 # 4) cd runs for deployment
 
+# Initialize teams' namespaces
+resource "kubernetes_namespace_v1" "teams" {
+  for_each = var.eks_teams
+  metadata {
+    name = var.eks_teams_namespaces[each.key]
+  }
+}
+
 # Create base kubernetes config map for each teams' namespace
 resource "kubernetes_config_map_v1" "eks_teams_base_config_map" {
   for_each = var.eks_teams
@@ -88,6 +96,10 @@ resource "kubernetes_config_map_v1" "eks_teams_base_config_map" {
     # Slack (team created)
     # SLACK_CHANNEL_ID = ""
   }
+
+  depends_on = [
+    kubernetes_namespace_v1.teams
+  ]
 }
 # Create base kubernetes secret for each teams' namespace
 resource "kubernetes_secret_v1" "eks_teams_base_secret" {
@@ -114,6 +126,10 @@ resource "kubernetes_secret_v1" "eks_teams_base_secret" {
     # SLACK_APP_TOKEN = ""
     # SLACK_SIGNING_SECRET = ""
   }
+
+  depends_on = [
+    kubernetes_namespace_v1.teams
+  ]
 }
 # Create kubernetes docker registry for each teams' namespace
 resource "kubernetes_secret_v1" "eks_teams_docker_registry" {
@@ -137,11 +153,19 @@ resource "kubernetes_secret_v1" "eks_teams_docker_registry" {
       }
     })
   }
+
+  depends_on = [
+    kubernetes_namespace_v1.teams
+  ]
 }
 # Create Kubernetes connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_k8s_connection_id" {
   for_each = var.mwaa_teams
   name     = "${var.mwaa_teams_connections_prefixes[each.key]}/${local.mwaa_connections_k8s_connection_id}"
+
+  depends_on = [
+    kubernetes_namespace_v1.teams
+  ]
 }
 resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id" {
   for_each  = aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
@@ -156,7 +180,9 @@ resource "aws_secretsmanager_secret_version" "mwaa_connections_k8s_connection_id
     }
   })
 
-  depends_on = [aws_secretsmanager_secret.mwaa_connections_k8s_connection_id]
+  depends_on = [
+    aws_secretsmanager_secret.mwaa_connections_k8s_connection_id
+  ]
 }
 # Create Postgres connection for each teams' MWAA
 resource "aws_secretsmanager_secret" "mwaa_connections_postgres_connection_id" {
@@ -339,74 +365,6 @@ resource "aws_secretsmanager_secret_version" "mwaa_variables_mlflow_tracking_pas
 
   depends_on = [aws_secretsmanager_secret.mwaa_variables_mlflow_tracking_password]
 }
-# Set Kubernetes policy to deny teams in editing infrastructure resources
-resource "kubectl_manifest" "platform_resources_protection" {
-  for_each = var.eks_teams
-
-  yaml_body = yamlencode({
-    apiVersion = "kyverno.io/v1"
-    kind       = "Policy"
-    metadata = {
-      name      = "${each.key}-platform-resources-protection"
-      namespace = var.eks_teams_namespaces[each.key]
-    }
-    spec = {
-      rules = [
-        {
-          name = "platform-config-map-protection"
-          match = {
-            any = [{
-              resources = {
-                kinds      = ["ConfigMap"]
-                names      = [local.eks_k8s_base_config_map_name]
-                operations = ["UPDATE", "DELETE"]
-              }
-            }]
-          }
-          exclude = {
-            any = [{
-              clusterRoles = ["cluster-admin"]
-            }]
-          }
-          validate = {
-            message = "Platform-managed ConfigMap cannot be modified."
-            deny    = {}
-          }
-        },
-        {
-          name = "platform-secret-protection"
-          match = {
-            any = [{
-              resources = {
-                kinds = ["Secret"]
-                names = [
-                  local.eks_k8s_base_secret_name,
-                  local.eks_k8s_docker_registry_secret_name,
-                ]
-                operations = ["UPDATE", "DELETE"]
-              }
-            }]
-          }
-          exclude = {
-            any = [{
-              clusterRoles = ["cluster-admin"]
-            }]
-          }
-          validate = {
-            message = "Platform-managed Secret cannot be modified."
-            deny    = {}
-          }
-        }
-      ]
-    }
-  })
-
-  depends_on = [
-    kubernetes_config_map_v1.eks_teams_base_config_map,
-    kubernetes_secret_v1.eks_teams_base_secret,
-    kubernetes_secret_v1.eks_teams_docker_registry,
-  ]
-}
 # Set Kubernetes policy to deny teams in editing infrastructure config maps
 resource "kubectl_manifest" "platform_configmap_protection" {
   for_each = var.eks_teams
@@ -446,6 +404,7 @@ resource "kubectl_manifest" "platform_configmap_protection" {
   })
 
   depends_on = [
+    kubernetes_namespace_v1.teams,
     kubernetes_config_map_v1.eks_teams_base_config_map,
   ]
 }
@@ -488,6 +447,7 @@ resource "kubectl_manifest" "platform_secret_protection" {
   })
 
   depends_on = [
+    kubernetes_namespace_v1.teams,
     kubernetes_secret_v1.eks_teams_base_secret,
     kubernetes_secret_v1.eks_teams_docker_registry,
   ]

@@ -14,6 +14,8 @@ locals {
   # /domain
   eks_ingress_domain           = "${module.eks.container_ip}.${var.sslip_io_public_wildcard_dns_domain}"
   eks_ingress_domain_from_host = "127.0.0.1.${var.sslip_io_public_wildcard_dns_domain}"
+  # /teams
+  eks_teams_namespaces = { for v in local.eks_teams : v => v }
 
   # Local files
   # /paths
