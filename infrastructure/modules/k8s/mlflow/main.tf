@@ -121,6 +121,7 @@ resource "kubernetes_job_v1" "teams" {
 
   spec {
     parallelism = 1
+    ttl_seconds_after_finished = 300
     template {
       metadata {}
       spec {
