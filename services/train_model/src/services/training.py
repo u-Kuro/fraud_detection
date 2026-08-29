@@ -1,4 +1,4 @@
-import numpy as np
+import numpy
 import optuna
 from optuna import Study
 from optuna.samplers import TPESampler
@@ -73,7 +73,7 @@ def optimize_model_hyperparameters(
         ])
 
         model_score = float(
-            np.mean(
+            numpy.mean(
                 cross_val_score(
                     estimator,
                     preprocessed_output.X_train,

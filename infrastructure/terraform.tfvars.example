@@ -1,3 +1,5 @@
+# TODO - 30/08/2026 - Continue with docker multi stage then github actions
+
 docker compose up --wait
 cd infrastructure
 terraform init
@@ -195,7 +197,6 @@ kubectl get pod mlflow-797688fbd8-mztcm -n mlflow -o jsonpath='{.spec.volumes}'
 # 16. Exec in (only works if container stays up long enough)
 kubectl exec -it mlflow-797688fbd8-mztcm -n mlflow -- /bin/sh
 
-# TODO - Update terraform aligned to working urls in test (e.g. removing elb to use k3s IP directly)
 docker network rm ministack-network
 docker volume rm ministack
 Start-Sleep -Seconds 5

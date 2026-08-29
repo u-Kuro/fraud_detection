@@ -8,7 +8,7 @@ from dags.shared.modules.schemas.postgres.model_deployment_workflows import Mode
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeployments
 from dags.shared.repositories.postgres.postgres import sql_session
 
-@task.branch(task_id="promote_model_deployment")
+@task(task_id="promote_model_deployment")
 def promote_model_deployment() -> None:
     context = get_current_context()
 

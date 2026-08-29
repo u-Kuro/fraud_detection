@@ -8,12 +8,10 @@ from sqlalchemy.orm import aliased
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval, invalidate_expired_promotion_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ModelDeploymentSuccessionKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches, \
-    DispatchTrainingApprovalBranches
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import DeleteExpiredPromotePendingWorkflowXCom, ReinitializeTrainPendingWorkflow, UpdateTrainPendingWorkflow
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
-from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, \
-    no_action, dispatch_training_approval
+from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import no_action
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
@@ -311,8 +309,8 @@ def check_current_model_deployment_workflows(group_id: str) -> str:
             return build_task_id((
                 group_id,
                 no_action.__name__,
-                aa
-            )) # TODO - current model drifted. and have existing pending + replacement both not expired. what to do?
+                NoActionBranches.no_expired_workflows
+            ))
         else:
             raise ValueError(f"Unexpected workflow state with 2 active workflows: {latest_workflow.state!r}")
     else:

@@ -4,7 +4,7 @@ from uuid import UUID
 from airflow.sdk import task, get_current_context
 
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import InitializeTrainingApprovalXCom, InvalidateOldTrainingApprovalXCom, UpdateTrainingApproval, InvalidateExpiredPromotionApprovalXCom
-from dags.shared.controllers.slack import create_blocks, slack_client
+from dags.shared.services.slack import create_blocks, slack_client
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.environment.slack import slack_environment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
@@ -16,7 +16,7 @@ def invalidate_expired_promotion_approval() -> None:
     invalidate_expired_promotion_approval_xcom = InvalidateExpiredPromotionApprovalXCom.from_context(context)
 
     slack_client.chat_update(
-        ts=invalidate_expired_promotion_approval_xcom.promotion_approval_slack_ts,
+        ts=invalidate_expired_promotion_approval_xcom.expired_promotion_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=[
             {

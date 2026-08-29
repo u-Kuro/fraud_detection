@@ -1,7 +1,6 @@
 from matplotlib.figure import Figure
 from pydantic import BaseModel, ConfigDict
 
-
 class ModelEvaluationMetrics(BaseModel):
     f1_score: float
     pr_auc: float

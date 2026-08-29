@@ -4,8 +4,9 @@ from airflow.sdk import task_group, task, get_current_context
 from kubernetes.client import models
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import initialize_training_approval, update_training_approval, invalidate_old_training_approval, invalidate_expired_promotion_approval
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftCheckKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches, SetupTrainingApprovalBranches, DispatchTrainingApprovalBranches
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import HasDriftXCom
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import HasDriftXCom, DriftCheckXCom
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.run import delete_expired_mlflow_run
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, update_train_pending_workflow, check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow
@@ -18,7 +19,8 @@ def no_action(branch: NoActionBranches) -> EmptyOperator:
 
 @task_group(group_id="invalidate_expired_challenger_model")
 def invalidate_expired_challenger_model() -> None:
-    has_expired_promote_pending_workflow_with_replacement(group_id=invalidate_expired_challenger_model.__name__) >> [
+    group_id = invalidate_expired_challenger_model.__name__
+    has_expired_promote_pending_workflow_with_replacement(group_id=group_id) >> [
         invalidate_expired_promotion_approval() \
         >> replace_expired_model() \
         >> delete_expired_model() \
@@ -49,13 +51,17 @@ def dispatch_training_approval(branch: DispatchTrainingApprovalBranches):
             >> reinitialize_train_pending_workflow() \
             >> setup_training_approval(branch=SetupTrainingApprovalBranches.replace),
 
-            no_action(branch=NoActionBranches.)
+            no_action(branch=NoActionBranches.no_expired_workflows)
         ]
 
     return group()
 
 def drift_check() -> KubernetesPodOperator:
-     return KubernetesPodOperator(
+    context = get_current_context()
+
+    drift_check_xcom = DriftCheckXCom.from_context(context)
+
+    return KubernetesPodOperator(
         task_id=drift_check.__name__,
         name=drift_check.__name__,
         namespace=k8s_environment.K8S_NAMESPACE,
@@ -65,6 +71,12 @@ def drift_check() -> KubernetesPodOperator:
         image_pull_secrets=[
             models.V1LocalObjectReference(
                 name=k8s_environment.K8S_DOCKER_REGISTRY_SECRET_NAME
+            )
+        ],
+        env=[
+            models.V1EnvVar(
+                name=DriftCheckKeys.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID,
+                value=drift_check_xcom.active_model_deployment_mlflow_run_id
             )
         ],
         env_from=[
@@ -95,8 +107,7 @@ def has_drift():
     if has_drift_xcom.drift_detected:
         return build_task_id((
             dispatch_training_approval.__name__,
-            DispatchTrainingApprovalBranches.drifted,
-            check_current_model_deployment_workflows.__name__
+            DispatchTrainingApprovalBranches.drifted
         ))
     else:
         return build_task_id((

@@ -1,5 +1,6 @@
-import numpy as np
-from matplotlib import pyplot as plt, ticker
+import numpy
+from matplotlib import pyplot, ticker
+from numpy import ndarray
 from sklearn.metrics import f1_score, average_precision_score, recall_score, precision_score, roc_auc_score, accuracy_score, ConfusionMatrixDisplay
 
 from services.shared.modules.configs.mlflow import MLFlowConfig
@@ -7,8 +8,8 @@ from services.train_model.src.modules.schemas.evaluation import EvaluateModelOut
 
 def evaluate_model(
     model: object,
-    X_test: np.ndarray,
-    y_test: np.ndarray,
+    X_test: ndarray,
+    y_test: ndarray,
 ) -> EvaluateModelOutputs:
     model_predictions = get_predictions_sklearn(model, X_test)
 
@@ -26,9 +27,9 @@ def evaluate_model(
 
 def get_predictions_sklearn(
     model: object,
-    x: np.ndarray,
+    x: ndarray,
     threshold: float = 0.5
-) -> dict[str, np.ndarray]:
+) -> dict[str, ndarray]:
     y_prob = model.predict_proba(x)[:, 1]
     return {
         "y_pred": (y_prob >= threshold).astype(int),
@@ -36,9 +37,9 @@ def get_predictions_sklearn(
     }
 
 def evaluate_model_predictions(
-    y_pred: np.ndarray,
-    y_prob: np.ndarray,
-    y_true: np.ndarray
+    y_pred: ndarray,
+    y_prob: ndarray,
+    y_true: ndarray
 ) -> ModelEvaluationMetrics:
     return ModelEvaluationMetrics(
         f1_score=float(f1_score(y_true, y_pred)),
@@ -51,15 +52,15 @@ def evaluate_model_predictions(
 
 def visualize_model_predictions(
     title: str,
-    y_pred: np.ndarray,
-    y_prob: np.ndarray,
-    y_true: np.ndarray,
+    y_pred: ndarray,
+    y_prob: ndarray,
+    y_true: ndarray,
     threshold: float = 0.5,
 ) -> ModelEvaluationFigures:
-    confusion_matrix_figure, confusion_matrix_ax = plt.subplots()
+    confusion_matrix_figure, confusion_matrix_ax = pyplot.subplots()
     ConfusionMatrixDisplay.from_predictions(
-        y_true,
-        y_pred,
+        y_true=y_true,
+        y_pred=y_pred,
         display_labels=["Legitimate", "Fraud"],
         normalize="true",
         cmap="Blues",
@@ -68,17 +69,17 @@ def visualize_model_predictions(
     )
     confusion_matrix_ax.set_title(title)
 
-    probability_scatter_figure, probability_scatter_ax = plt.subplots()
+    probability_scatter_figure, probability_scatter_ax = pyplot.subplots()
     probability_scatter_ax.scatter(
-        y_prob,
-        range(len(y_true)),
-        c=np.where(y_true == 1, "red", "blue"),
+        x=y_prob,
+        y=range(len(y_true)),
+        c=numpy.where(y_true == 1, "red", "blue"),
         edgecolors="k",
     )
     probability_scatter_ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
     probability_scatter_ax.axvline(x=threshold, alpha=0.3, color="white", linestyle="--")
-    probability_scatter_ax.axvspan(threshold, 1.0, alpha=0.05, color="red")
-    probability_scatter_ax.axvspan(0.0, threshold, alpha=0.05, color="blue")
+    probability_scatter_ax.axvspan(xmin=threshold, xmax=1.0, alpha=0.05, color="red")
+    probability_scatter_ax.axvspan(xmin=0.0, xmax=threshold, alpha=0.05, color="blue")
     probability_scatter_ax.set_yticks([])
     probability_scatter_ax.set_ylabel("Transactions")
     probability_scatter_ax.set_xlabel("Fraud Probability Score")

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class DriftCheckKeys:
     DRIFT_DETECTED: str = "DRIFT_DETECTED"
     DRIFT_SUMMARY: str = "DRIFT_SUMMARY"
+    ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID: str = "ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID"
 
 @dataclass(frozen=True)
 class ModelDeploymentSuccessionKeys:

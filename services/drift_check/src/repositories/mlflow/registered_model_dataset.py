@@ -1,20 +1,22 @@
 from datetime import datetime, timezone, timedelta
 
-import mlflow
 from pandas import DataFrame
 from pyarrow import parquet
 
-from services.drift_check.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.drift_check.src.modules.environment.drift_check import drift_check_environment
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.repositories.mlflow.mlflow import mlflow_module
 
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
-    reference_dataset_parquet = mlflow.artifacts.download_artifacts(
-        artifact_uri=MLFlowConfig.reference_dataset_uri()
+    reference_dataset_parquet = mlflow_module.artifacts.download_artifacts(
+        run_id=drift_check_environment.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID,
+        artifact_path=MLFlowConfig.reference_dataset_path
     )
     df_reference = parquet.read_table(reference_dataset_parquet).to_pandas()
 
     if df_reference is None:
-        raise RuntimeError(f"No reference dataset was found in {MLFlowConfig.reference_dataset_uri()}.")
+        raise ValueError(f"No reference dataset was found in 'runs:/{drift_check_environment.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID}/{MLFlowConfig.reference_dataset_path}'.")
 
     df_reference_max_timestamp = df_reference[TransactionInferences.transaction_timestamp.key].max()
     assert isinstance(df_reference_max_timestamp, float)

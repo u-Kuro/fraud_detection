@@ -4,26 +4,23 @@ import tempfile
 from contextlib import contextmanager
 from typing import Any
 
-import mlflow
 import pyarrow
-from pyarrow import parquet
 from matplotlib.figure import Figure
 from pandas import DataFrame
-from pydantic import validate_call
+from pyarrow import parquet
 
 from services.shared.modules.configs.mlflow import MLFlowConfig
-from services.train_model.src.modules.configs.mlflow import MLFlowArtifactsConfig
-from services.train_model.src.repositories.mlflow.mlflow import mlflow_client
+from services.shared.repositories.mlflow.mlflow import mlflow_client, mlflow_module
 
 @contextmanager
 def transactional_mlflow_run(run_name: str):
-    with mlflow.start_run(run_name=run_name) as run:
+    with mlflow_module.start_run(run_name=run_name) as run:
         try: yield
         except:
             run_id_str = str(run.info.run_id)
-            mlflow.delete_run(run_id_str)
+            mlflow_client.delete_run(run_id=run_id_str)
             try:
-                items = mlflow_client.search_model_versions(f"run_id='{run_id_str}'")
+                items = mlflow_client.search_model_versions(filter_string=f"run_id='{run_id_str}'")
                 for item in items:
                     mlflow_client.delete_model_version(
                         name=item.name,
@@ -40,7 +37,7 @@ def save_model_reference_dataset(
     try:
         dataset_reference_file_path = os.path.join(
             temporary_directory,
-            MLFlowArtifactsConfig.reference_dataset_filename
+            MLFlowConfig.reference_dataset_file_name
         )
         parquet.write_table(
             table=pyarrow.Table.from_pandas(
@@ -49,7 +46,7 @@ def save_model_reference_dataset(
             ),
             where=dataset_reference_file_path
         )
-        mlflow.log_artifact(
+        mlflow_module.log_artifact(
             local_path=dataset_reference_file_path,
             artifact_path=MLFlowConfig.reference_dataset_path,
             run_id=mlflow_model_run_id
@@ -61,20 +58,19 @@ def save_model_hyperparameters(
     mlflow_model_run_id: str,
     model_hyperparameters: dict[str, Any]
 ) -> None:
-    mlflow.log_params(
+    mlflow_module.log_params(
         params=model_hyperparameters,
         synchronous=True,
         run_id=mlflow_model_run_id
     )
 
-@validate_call()
 def save_model_metrics(
     mlflow_model_run_id: str,
     mlflow_model_id: str,
     model_metrics: dict[str, float],
     model_metric_figures: dict[str, Figure]
 ) -> None:
-    mlflow.log_metrics(
+    mlflow_module.log_metrics(
         metrics=model_metrics,
         synchronous=True,
         run_id=mlflow_model_run_id,
@@ -83,12 +79,11 @@ def save_model_metrics(
 
     save_model_metric_figures(model_metric_figures)
 
-@validate_call()
 def save_model_metric_figures(
     model_metric_figures: dict[str, Figure]
 ) -> None:
     for name, figure in model_metric_figures.items():
-        mlflow.log_figure(
+        mlflow_module.log_figure(
             figure=figure,
             artifact_file=f"{name}.png"
         )

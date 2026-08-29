@@ -6,7 +6,7 @@ from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflows
 from dags.shared.repositories.postgres.postgres import sql_session
 
-@task.branch(task_id="update_approved_promotion_workflow")
+@task(task_id="update_approved_promotion_workflow")
 def update_approved_promotion_workflow() -> None:
     context = get_current_context()
 
@@ -24,7 +24,7 @@ def update_approved_promotion_workflow() -> None:
             })
         )
 
-@task.branch(task_id="delete_rejected_promotion_workflow")
+@task(task_id="delete_rejected_promotion_workflow")
 def delete_rejected_promotion_workflow() -> None:
     context = get_current_context()
 

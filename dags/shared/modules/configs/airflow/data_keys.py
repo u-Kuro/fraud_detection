@@ -3,6 +3,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class ModelDeploymentKeys:
     MODEL_DEPLOYMENT_ID: str = "MODEL_DEPLOYMENT_ID"
+    MODEL_DEPLOYMENT_MLFLOW_RUN_ID: str = "MODEL_DEPLOYMENT_MLFLOW_RUN_ID"
 
 @dataclass(frozen=True)
 class ModelDeploymentWorkflowsKeys:

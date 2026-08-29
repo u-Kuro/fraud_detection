@@ -1,15 +1,15 @@
-import mlflow
 from mlflow.models import infer_signature
 from numpy import ndarray
 
 from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.repositories.mlflow.mlflow import mlflow_module
 from services.train_model.src.modules.schemas.mlflow import MLFlowRegisteredModelInfo
 
 def save_and_register_model(
     model: object,
     X_test_samples: ndarray,
 ) -> MLFlowRegisteredModelInfo:
-    model_info = mlflow.sklearn.log_model(
+    model_info = mlflow_module.sklearn.log_model(
         sk_model=model,
         registered_model_name=MLFlowConfig.model_name,
         signature=infer_signature(

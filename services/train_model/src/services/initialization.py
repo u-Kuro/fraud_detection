@@ -1,7 +1,7 @@
 import random
 
-import numpy as np
+import numpy
 
 def seed_everything(seed: int):
     random.seed(seed)
-    np.random.seed(seed)
+    numpy.random.seed(seed)

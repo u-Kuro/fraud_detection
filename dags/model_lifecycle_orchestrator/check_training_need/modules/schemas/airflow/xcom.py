@@ -7,26 +7,26 @@ from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack imp
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftCheckKeys, ModelDeploymentSuccessionKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, SetupTrainingApprovalBranches
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, check_current_model_deployment_workflows, initialize_train_pending_workflow
-from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, drift_check, dispatch_training_approval, setup_training_approval
-from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
+from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, drift_check, dispatch_training_approval, setup_training_approval, has_drift
+from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys, ModelDeploymentKeys
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 from dags.shared.modules.utilities.airflow.xcom import build_task_id, xcom_pull_coalesce
 
 class InvalidateExpiredPromotionApprovalXCom(BaseModel):
     model_config = ConfigDict(strict=True)
 
-    promotion_approval_slack_ts: str
+    expired_promotion_approval_slack_ts: str
 
     @classmethod
     def from_context(cls, context: dict) -> "InvalidateExpiredPromotionApprovalXCom":
         ti: TaskInstance = AirflowTaskContext.from_context(context).ti
         return cls(
-            promotion_approval_slack_ts=ti.xcom_pull(
+            expired_promotion_approval_slack_ts=ti.xcom_pull(
                 task_ids=build_task_id((
                     invalidate_expired_challenger_model.__name__,
                     has_expired_promote_pending_workflow_with_replacement.__name__
                 )),
-                key=ModelDeploymentSuccessionKeys.REPLACEMENT_MODEL_NAME,
+                key=ModelDeploymentSuccessionKeys.EXPIRED_PROMOTION_APPROVAL_SLACK_TS,
             )
         )
 
@@ -115,6 +115,21 @@ class DeleteExpiredPromotePendingWorkflowXCom(BaseModel):
                     has_expired_promote_pending_workflow_with_replacement.__name__
                 )),
                 key=ModelDeploymentSuccessionKeys.EXPIRED_ID,
+            )
+        )
+
+class DriftCheckXCom(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    active_model_deployment_mlflow_run_id: str
+
+    @classmethod
+    def from_context(cls, context: dict) -> "DriftCheckXCom":
+        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        return cls(
+            active_model_deployment_mlflow_run_id=ti.xcom_pull(
+                task_ids=has_drift.__name__,
+                key=ModelDeploymentKeys.MODEL_DEPLOYMENT_MLFLOW_RUN_ID,
             )
         )
 
@@ -272,7 +287,7 @@ class UpdateTrainingApproval(BaseModel):
                     DispatchTrainingApprovalBranches,
                     check_current_model_deployment_workflows.__name__
                 ),
-                key=ModelDeploymentWorkflowsKeys.MODEL_DEPLOYMENT_WORKFLOW_ID,
+                key=ModelDeploymentWorkflowsKeys.TRAIN_MODEL_FOR_PROMOTION,
             )
         )
 

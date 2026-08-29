@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class PostgresEnvironment(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
 
-    # Already read
     # PGHOST: str
     # PGPORT: int
     # PGDATABASE: str

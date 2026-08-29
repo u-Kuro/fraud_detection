@@ -5,7 +5,7 @@ from airflow.sdk import task, get_current_context
 
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.configurations import TrainingDecisionCallbackConfigurations
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.xcom import InitializePromotionApprovalXCom, UpdatePromotionApproval
-from dags.shared.controllers.slack import slack_client, create_blocks
+from dags.shared.services.slack import slack_client, create_blocks
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.environment.slack import slack_environment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
