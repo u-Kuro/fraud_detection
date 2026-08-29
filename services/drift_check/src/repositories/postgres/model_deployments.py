@@ -9,7 +9,7 @@ def get_active_model_deployment_mlflow_run_id() -> str:
         (mlflow_run_id, ) = session.execute(
             select(ModelDeployments.mlflow_run_id)
             .where(
-                ModelDeployments.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeployments.project_id == PostgresConfig.project_id(),
                 ModelDeployments.active.is_(True)
             )
             .limit(1)

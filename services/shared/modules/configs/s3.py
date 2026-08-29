@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
+from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.modules.configs.project import ProjectConfig
+from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+
 @dataclass(frozen=True)
 class S3Config:
-    S3_MLE_BUCKET: str = "mle"
-    S3_PIPELINE_DRIFT_REPORTS_PATH: str = "pipeline/fraud-detection/drift/reports"
-    S3_PIPELINE_ARCHIVE_PATH: str = "pipeline/fraud-detection/archive"
+    model_drift_path: str = f"{ProjectConfig.project_name}/monitoring/drift/{MLFlowConfig.model_name}"
+    transaction_inferences_archive_path: str = f"{ProjectConfig.project_name}/data/archive/{TransactionInferences.__tablename__}"

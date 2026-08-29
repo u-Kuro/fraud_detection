@@ -29,9 +29,9 @@ def train_model(
     best_model_hyperparameters = model_results.best_params
     best_model = Pipeline(
         [
-            (MLFlowConfig.SCALER_NAME, scaler()),
+            (MLFlowConfig.scaler_name, scaler()),
             (
-                MLFlowConfig.MODEL_NAME,
+                MLFlowConfig.model_name,
                 model(
                     **best_model_hyperparameters,
                     scale_pos_weight=preprocess_outputs.original_y_train_positive_scale,
@@ -59,9 +59,9 @@ def optimize_model_hyperparameters(
 ) -> Study:
     def objective(trial: optuna.Trial) -> float:
         estimator = Pipeline([
-            (MLFlowConfig.SCALER_NAME, scaler()),
+            (MLFlowConfig.scaler_name, scaler()),
             (
-                MLFlowConfig.MODEL_NAME,
+                MLFlowConfig.model_name,
                 model(
                     **hyperparameters_sampler.resolve(trial),
                     scale_pos_weight=preprocessed_output.original_y_train_positive_scale,

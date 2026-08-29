@@ -100,10 +100,27 @@ resource "aws_secretsmanager_secret" "mwaa_teams_mlflow_password_variables" {
   name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_tracking_password}"
 }
 resource "aws_secretsmanager_secret_version" "mwaa_teams_mlflow_password_variables" {
-  for_each  = aws_secretsmanager_secret.mwaa_teams_mlflow_password_variables
+  for_each  = aws_secretsmanager_secret.mwaa_teams_mlflow_workspace_variables
   secret_id = each.value.id
 
   secret_string = var.mlflow_teams_passwords[each.key]
 
-  depends_on = [aws_secretsmanager_secret.mwaa_teams_mlflow_password_variables]
+  depends_on = [
+    aws_secretsmanager_secret.mwaa_teams_mlflow_workspace_variables
+  ]
+}
+# /teams-workspaces
+resource "aws_secretsmanager_secret" "mwaa_teams_mlflow_workspace_variables" {
+  for_each = var.mlflow_teams
+  name     = "${var.mwaa_teams_variables_prefixes[each.key]}/${local.mwaa_variables_mlflow_workspace}"
+}
+resource "aws_secretsmanager_secret_version" "mwaa_teams_mlflow_workspace_variables" {
+  for_each  = aws_secretsmanager_secret.mwaa_teams_mlflow_workspace_variables
+  secret_id = each.value.id
+
+  secret_string = var.mlflow_teams_workspace_names[each.key]
+
+  depends_on = [
+    aws_secretsmanager_secret.mwaa_teams_mlflow_workspace_variables
+  ]
 }

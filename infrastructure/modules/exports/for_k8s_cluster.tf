@@ -31,7 +31,7 @@ resource "kubernetes_config_map_v1" "eks_teams_base_config_map" {
     MWAA_ENVIRONMENT_NAME = var.mwaa_teams_environment_names[each.key] # Not Fixed
     # MLflow
     MLFLOW_TRACKING_URI = var.mlflow_inter_url # http://[service-name].[namespace].svc.cluster.local:[port]
-    # Slack (team created)
+    # Slack (team created) # Not Fixed
     # SLACK_CHANNEL_ID = ""
   }
 
@@ -60,7 +60,7 @@ resource "kubernetes_secret_v1" "eks_teams_base_secret" {
     # MLflow
     MLFLOW_TRACKING_USERNAME = var.mlflow_teams_usernames[each.key]
     MLFLOW_TRACKING_PASSWORD = var.mlflow_teams_passwords[each.key]
-    # Slack (team created)
+    # Slack (team created) # Not Fixed
     # SLACK_BOT_TOKEN = ""
     # SLACK_APP_TOKEN = ""
     # SLACK_SIGNING_SECRET = ""

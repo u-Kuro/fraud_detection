@@ -9,9 +9,10 @@ from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.air
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.xcom import ArchiveUsedTransactionInferencesXCom
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
-from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKeys
 from dags.shared.modules.configs.github import GitHubConfig
-from dags.shared.modules.configs.kubernetes import K8sConfig, K8sSecretKeys, K8sConfigMapKeys
+from dags.shared.modules.environment.ecr import ecr_environment
+from dags.shared.modules.environment.github import github_environment
+from dags.shared.modules.environment.k8s import k8s_environment
 
 @task.branch(task_id="promotion_decision_callback")
 def promotion_decision_callback() -> str:
@@ -27,12 +28,11 @@ def promotion_decision_callback() -> str:
 def apply_model_deployment() -> HttpOperator:
     return HttpOperator(
         task_id=apply_model_deployment.__name__,
-        http_conn_id="github_api", # TODO - add in secretsmanager? airflow/connections/github_api
-        # TODO - GitHubConfig.owner and GitHubConfig.repository are not sensitive since it is stored in the repo it points to
+        http_conn_id=github_environment.GITHUB_CONNECTION_ID,
         endpoint=f"repos/{GitHubConfig.owner}/{GitHubConfig.repository}/actions/workflows/cd-fraud-detection.yaml/dispatches",
         method="POST",
         headers={
-            "Authorization": "Bearer {{ var.value.github_token }}", # TODO - add in secretsmanager? airflow/variables/github_token
+            "Authorization": f"Bearer {github_environment.GITHUB_CONNECTION_ID}",
             "Accept": "application/vnd.github.v3+json",
         },
         # Data unused for nektos/act
@@ -53,13 +53,13 @@ def archive_used_transaction_inferences() -> None:
     task_operator = KubernetesPodOperator(
         task_id=archive_used_transaction_inferences.__name__,
         name=archive_used_transaction_inferences.__name__,
-        namespace=K8sConfig.namespace,
-        kubernetes_conn_id=KubernetesConfig.connection_id,
-        image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.archive}:latest",
+        namespace=k8s_environment.K8S_NAMESPACE,
+        kubernetes_conn_id=k8s_environment.K8S_CONNECTION_ID,
+        image=ecr_environment.ARCHIVE_IMAGE,
         image_pull_policy="Always",
         image_pull_secrets=[
             models.V1LocalObjectReference(
-                name=ECRSecretKeys.ecr_secret
+                name=k8s_environment.K8S_DOCKER_REGISTRY_SECRET_NAME
             )
         ],
         env=[
@@ -71,12 +71,12 @@ def archive_used_transaction_inferences() -> None:
         env_from=[
             models.V1EnvFromSource(
                 config_map_ref=models.V1ConfigMapEnvSource(
-                    name=K8sConfigMapKeys.platform_infrastructure
+                    name=k8s_environment.K8S_BASE_CONFIG_MAP_NAME
                 )
             ),
             models.V1EnvFromSource(
                 secret_ref=models.V1SecretEnvSource(
-                    name=K8sSecretKeys.mle_pipeline_secret
+                    name=k8s_environment.K8S_BASE_SECRET_NAME
                 )
             ),
         ],

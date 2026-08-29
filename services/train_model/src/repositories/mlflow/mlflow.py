@@ -4,6 +4,6 @@ from mlflow import MlflowClient
 from services.shared.modules.configs.mlflow import MLFlowConfig
 
 mlflow.set_tracking_uri(MLFlowConfig.TRACKING_URI)
-mlflow.set_experiment(MLFlowConfig.EXPERIMENT_NAME)
+mlflow.set_experiment(MLFlowConfig.experiment_name)
 
 mlflow_client = MlflowClient(tracking_uri=MLFlowConfig.TRACKING_URI)

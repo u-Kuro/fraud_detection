@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 
 from services.fraud_detection.src.repositories.mwaa.mwaa import mwaa_client
-from services.shared.modules.environment.airflow import airflow_environment
+from services.shared.modules.environment.mwaa import mwaa_environment
 
 def trigger_airflow_dag(dag_id: str, configurations: dict) -> None:
     response = mwaa_client.invoke_rest_api(
-        Name=airflow_environment.MWAA_ENVIRONMENT_NAME,
+        Name=mwaa_environment.MWAA_ENVIRONMENT_NAME,
         Path=f"/dags/{dag_id}/dagRuns",
         Method="POST",
         Body={

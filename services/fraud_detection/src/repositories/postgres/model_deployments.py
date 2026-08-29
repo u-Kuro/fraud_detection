@@ -13,7 +13,7 @@ def get_active_model_deployment() -> DeployedModel:
                 ModelDeployments.version
             )
             .where(
-                ModelDeployments.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeployments.project_id == PostgresConfig.project_id(),
                 ModelDeployments.active.is_(True),
             )
             .limit(1)

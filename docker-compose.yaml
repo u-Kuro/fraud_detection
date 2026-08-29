@@ -1,7 +1,7 @@
 # docker compose up -d --wait
 services:
   ministack:
-    image: ministackorg/ministack
+    image: ministackorg/ministack:1.5
     container_name: ministack
     networks:
       - ministack_network

@@ -14,7 +14,7 @@ def insert_transaction_inference(
         model_deployment_id_subquery = (
             select(ModelDeployments.id)
             .where(
-                ModelDeployments.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeployments.project_id == PostgresConfig.project_id(),
                 ModelDeployments.name == transaction_inference.model_name,
                 ModelDeployments.version == transaction_inference.model_version,
             )

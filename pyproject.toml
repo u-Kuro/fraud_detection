@@ -1,93 +1,93 @@
 [project]
 name = "fraud-detection"
 version = "0.1.0"
-requires-python = "==3.12.11"
+requires-python = "==3.12.13"
 
 [dependency-groups]
 archive = [
     "pandas>=2.3.3",
-    "pyarrow>=21.0.0",
+    "pyarrow>=25.0.1",
     # Shared
-    "boto3>=1.43.77",
-    "pydantic>=2.11.7",
+    "boto3>=1.43.83",
+    "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
-    "sqlalchemy>=1.4.54",
+    "sqlalchemy>=2.0.52",
 ]
 drift_check = [
     "evidently>=0.7.21",
-    "mlflow-skinny>=3.2.0",
+    "mlflow-skinny>=3.15.2",
     "pandas>=2.3.3",
     # Shared
-    "boto3>=1.43.77",
-    "pydantic>=2.11.7",
+    "boto3>=1.43.83",
+    "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
-    "sqlalchemy>=1.4.54",
+    "sqlalchemy>=2.0.52",
 ]
 fraud_detection = [
-    "fastapi>=0.141.1",
-    "mlflow-skinny>=3.2.0",
+    "fastapi>=0.136.3",
+    "mlflow-skinny>=3.15.2",
     "pandas>=2.3.3",
     "slack-bolt>=1.30.0",
     # Shared
-    "boto3>=1.43.77",
-    "pydantic>=2.11.7",
+    "boto3>=1.43.83",
+    "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
-    "sqlalchemy>=1.4.54",
+    "sqlalchemy>=2.0.52",
 ]
 train_model = [
     "imbalanced-learn>=0.14.2",
     "matplotlib>=3.11.1",
-    "mlflow-skinny>=3.2.0",
+    "mlflow-skinny>=3.15.2",
     "numpy>=2.5.2",
     "optuna>=4.9.0",
     "pandas>=2.3.3",
-    "pyarrow>=21.0.0",
+    "pyarrow>=25.0.1",
     "scikit-learn>=1.9.0",
     "xgboost>=3.4.1",
     # Shared
-    "boto3>=1.43.77",
-    "pydantic>=2.11.7",
+    "boto3>=1.43.83",
+    "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
-    "sqlalchemy>=1.4.54",
+    "sqlalchemy>=2.0.52",
 ]
 dev = [
     # Apache Airflow (additionals)
-    "apache-airflow>=3.0.6",
-    "apache-airflow-providers-amazon>=9.12.0",
-    "apache-airflow-providers-cncf-kubernetes>=10.7.0",
-    "apache-airflow-providers-http>=5.3.3",
-    "apache-airflow-providers-postgres>=6.2.3",
-    "apache-airflow-providers-slack>=9.1.4",
-    "mlflow-skinny>=3.2.0",
-    "pydantic>=2.11.7",
+    "apache-airflow>=3.3.1",
+    "apache-airflow-providers-amazon>=9.34.0",
+    "apache-airflow-providers-cncf-kubernetes>=10.21.0",
+    "apache-airflow-providers-http>=6.0.5",
+    "apache-airflow-providers-postgres>=7.0.1",
+    "apache-airflow-providers-slack>=9.10.2",
+    "mlflow-skinny>=3.15.2",
+    "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     # Notebooks
     "imbalanced-learn>=0.14.2",
     "ipykernel>=7.3.0",
     "kaleido>=1.3.0",
     "matplotlib>=3.11.1",
-    "mlflow>=3.2.0",
+    "mlflow>=3.15.2",
     "numpy>=2.5.2",
     "optuna>=4.9.0",
     "pandas>=2.3.3",
     "scikit-learn>=1.9.0",
     "seaborn>=0.13.2",
-    "sqlalchemy>=1.4.54",
+    "sqlalchemy>=2.0.52",
     "xgboost>=3.4.1",
     # Tests
     "pytest>=9.1.1",
     "pytest-env>=1.7.0",
     "pytest-mock>=3.15.1",
     # Tools
-    "fastapi>=0.141.1",
+    "fastapi>=0.136.3",
     "uvicorn>=0.52.4",
     # Helpers
-    "boto3-stubs[mwaa,s3]>=1.43.77",
+    "boto3-stubs[mwaa,s3]>=1.43.83",
     "pandas-stubs>=3.0.5.260730",
     "pyarrow-stubs>=20.0.0.20260819",
     "matplotlib-stubs>=0.3.11",
     "mypy>=2.3.1",
-    "ruff>=0.16.4",
+    "ruff>=0.16.5",
     "types-seaborn>=0.13.2.20260728",
 ]
 
@@ -105,14 +105,16 @@ explicit = true
 
 [tool.uv]
 constraint-dependencies = [
-    # Apache Airflow v3.0.6-python3.12 constraint
-    "apache-airflow==3.0.6",
-    "apache-airflow-providers-amazon==9.12.0",
-    "apache-airflow-providers-cncf-kubernetes==10.7.0",
-    "apache-airflow-providers-http==5.3.3",
-    "apache-airflow-providers-postgres==6.2.3",
-    "apache-airflow-providers-slack==9.1.4",
-    "mlflow-skinny==3.2.0",
-    "pydantic==2.11.7",
-    "pydantic-settings==2.15.0"
+    # Apache Airflow 3.3.1-python3.12 constraints (https://raw.githubusercontent.com/apache/airflow/refs/tags/constraints-3.3.1/constraints-3.12.txt)
+    "apache-airflow==3.3.1",
+    "apache-airflow-providers-amazon==9.34.0",
+    "apache-airflow-providers-cncf-kubernetes==10.21.0",
+    "apache-airflow-providers-http==6.0.5",
+    "apache-airflow-providers-postgres==7.0.1",
+    "apache-airflow-providers-slack==9.10.2",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.15.0",
+    # MLflow constraints
+    "mlflow==3.15.2",
+    "mlflow-skinny==3.15.2",
 ]

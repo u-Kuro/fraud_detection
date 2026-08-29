@@ -20,7 +20,7 @@ def evaluate_model(
         metric_figures=visualize_model_predictions(
             **model_predictions,
             y_true=y_test,
-            title=MLFlowConfig.MODEL_NAME
+            title=MLFlowConfig.model_name
         )
     )
 

@@ -1,13 +1,16 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, QueuePool
 from sqlalchemy.orm import sessionmaker
 
-from services.shared.modules.configs.postgres import PostgresConfig
+from services.shared.modules.environment.postgres import postgres_environment
 
 sql_session: sessionmaker = sessionmaker(
     create_engine(
-        PostgresConfig.POSTGRES_DB_URL,
+        postgres_environment.DATABASE_URL,
+        poolclass=QueuePool,
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30,
+        pool_recycle=1800,
         pool_pre_ping=True,
-        pool_size=5,
-        max_overflow=10,
     )
 )

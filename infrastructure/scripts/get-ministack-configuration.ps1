@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
 # Get Ministack container name
-$ministack_container_name = docker ps --filter "ancestor=ministackorg/ministack" --format '{{.Names}}' | Select-Object -First 1
+$ministack_container_name = docker ps --filter "ancestor=ministackorg/ministack:1.5" --format '{{.Names}}' | Select-Object -First 1
 if (-not $ministack_container_name) {
     throw "Ministack is not running."
 }

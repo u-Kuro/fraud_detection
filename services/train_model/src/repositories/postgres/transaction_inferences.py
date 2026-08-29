@@ -15,7 +15,7 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
         cutoff_subquery = (
             select(func.max(ModelDeployments.dataset_max_timestamp))
             .where(
-                ModelDeployments.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeployments.project_id == PostgresConfig.project_id(),
                 ModelDeployments.active.is_(True),
             )
             .order_by(ModelDeployments.created_at.desc())

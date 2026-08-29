@@ -2,12 +2,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class MLFlowConfig:
-    TRACKING_URI:       str = "http://mlflow:5000"
-    EXPERIMENT_NAME:    str = "fraud_detection"
+    experiment_name: str = "fraud_detection"
 
-    MODEL_PATH:     str = "model"
-    MODEL_NAME:     str = "xgboost"
-    SCALER_NAME:    str = "robust_scaler"
+    model_path:  str = "model"
+    model_name:  str = "xgboost"
+    scaler_name: str = "robust_scaler"
 
-    REFERENCE_DATASET_PATH:         str = "reference_dataset"
-    REFERENCE_DATASET_FILE_NAME:    str = "reference.parquet"
+    reference_dataset_path:      str = "reference_dataset"
+    reference_dataset_file_name: str = "reference.parquet"

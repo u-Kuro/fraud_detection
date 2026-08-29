@@ -11,7 +11,7 @@ def save_and_register_model(
 ) -> MLFlowRegisteredModelInfo:
     model_info = mlflow.sklearn.log_model(
         sk_model=model,
-        registered_model_name=MLFlowConfig.MODEL_NAME,
+        registered_model_name=MLFlowConfig.model_name,
         signature=infer_signature(
             model_input=X_test_samples,
             model_output=model.predict(X_test_samples)
@@ -23,14 +23,14 @@ def save_and_register_model(
             "numpy==2.4.6",
             "pandas==2.3.3",
         ],
-        name=MLFlowConfig.MODEL_PATH,
+        name=MLFlowConfig.model_path,
     )
 
     if isinstance(model_info.registered_model_version, int):
         return MLFlowRegisteredModelInfo(
             run_id=model_info.run_id,
             model_id=model_info.model_id,
-            model_name=MLFlowConfig.MODEL_NAME,
+            model_name=MLFlowConfig.model_name,
             model_version=model_info.registered_model_version
         )
     else:

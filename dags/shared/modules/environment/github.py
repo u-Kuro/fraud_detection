@@ -9,5 +9,6 @@ class GitHubEnvironment(BaseSettings):
     )
 
     GITHUB_CONNECTION_ID: str
+    GITHUB_TOKEN: str = "test" # Not needed for nektos/act
 
 github_environment = GitHubEnvironment()

@@ -11,5 +11,6 @@ class MLflowEnvironment(BaseSettings):
     MLFLOW_TRACKING_URI: str
     MLFLOW_TRACKING_USERNAME: str
     MLFLOW_TRACKING_PASSWORD: str
+    MLFLOW_WORKSPACE: str
 
 mlflow_environment = MLflowEnvironment()

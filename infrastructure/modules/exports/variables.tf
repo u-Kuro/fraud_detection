@@ -46,6 +46,7 @@ variable "mlflow_teams_passwords" {
   type      = map(string)
   sensitive = true
 }
+variable "mlflow_teams_workspace_names" { type = map(string) }
 
 # MWAA
 # /urls

@@ -7,6 +7,7 @@ import pyarrow
 from pyarrow import parquet
 
 from services.shared.modules.configs.s3 import S3Config
+from services.shared.modules.environment.s3 import s3_environment
 from services.shared.repositories.s3.s3 import s3_client
 
 def upload_transaction_inference_batch(
@@ -24,12 +25,9 @@ def upload_transaction_inference_batch(
         )
         buffer.seek(0)
 
+        partition = date_key.strftime("year=%Y/month=%m/day=%d")
         s3_client.upload_fileobj(
             Fileobj=buffer,
-            Bucket=S3Config.S3_MLE_BUCKET,
-            Key=(
-                f"{S3Config.S3_PIPELINE_ARCHIVE_PATH}"
-                f"/year={date_key.year}/month={date_key.month:02d}/day={date_key.day:02d}"
-                f"/batch={batch_by_date[date_key]}/data.parquet"
-            ),
+            Bucket=s3_environment.S3_BUCKET_NAME,
+            Key=f"{S3Config.transaction_inferences_archive_path}/{partition}/part-{batch_by_date[date_key]:04d}.parquet",
         )

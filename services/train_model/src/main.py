@@ -22,7 +22,7 @@ def main() -> None:
     unused_dataset_outputs = get_timed_latest_unused_dataset()
     preprocess_outputs = preprocess(unused_dataset_outputs.dataset)
 
-    with transactional_mlflow_run(run_name=MLFlowConfig.MODEL_NAME):
+    with transactional_mlflow_run(run_name=MLFlowConfig.model_name):
         train_model_outputs = train_model(
             preprocess_outputs=preprocess_outputs,
             scaler=RobustScaler,

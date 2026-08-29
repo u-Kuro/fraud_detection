@@ -375,9 +375,10 @@ module "exports" {
   mlflow_ingress_url = module.mlflow.ingress_url
   mlflow_inter_url   = module.mlflow.inter_url
   # /teams
-  mlflow_teams           = local.mlflow_teams
-  mlflow_teams_usernames = module.mlflow.teams_usernames
-  mlflow_teams_passwords = module.mlflow.teams_passwords
+  mlflow_teams                 = local.mlflow_teams
+  mlflow_teams_usernames       = module.mlflow.teams_usernames
+  mlflow_teams_passwords       = module.mlflow.teams_passwords
+  mlflow_teams_workspace_names = module.mlflow.teams_workspace_names
 
   # MWAA
   # /urls

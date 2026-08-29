@@ -21,7 +21,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 # Initialize EKS
 resource "aws_eks_cluster" "main" {
   name     = "eks"
-  version  = "1.32"
+  version  = "v1.31.4-k3s1" # Fixed version, can only be changed in Ministack's container environment `EKS_K3S_IMAGE`
   role_arn = var.iam_eks_role_arn
 
   vpc_config {

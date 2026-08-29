@@ -95,6 +95,7 @@ locals {
   mwaa_variables_mlflow_tracking_uri      = "MLFLOW_TRACKING_URI"
   mwaa_variables_mlflow_tracking_username = "MLFLOW_TRACKING_USERNAME"
   mwaa_variables_mlflow_tracking_password = "MLFLOW_TRACKING_PASSWORD"
+  mwaa_variables_mlflow_workspace         = "MLFLOW_WORKSPACE"
 
   mwaa_variables_postgres_connection_id_name = "POSTGRES_CONNECTION_ID"
 

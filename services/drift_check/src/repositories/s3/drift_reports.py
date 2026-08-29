@@ -8,15 +8,15 @@ from services.shared.repositories.s3.s3 import s3_client
 def upload_drift_report(html_bytes: bytes, json_bytes: bytes) -> None:
     ensure_bucket(S3Config.S3_MLE_BUCKET)
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    partition = datetime.now(timezone.utc).strftime("year=%Y/month=%m/day=%d")
     s3_client.upload_fileobj(
         Fileobj=io.BytesIO(html_bytes),
         Bucket=S3Config.S3_MLE_BUCKET,
-        Key=f"{S3Config.S3_PIPELINE_DRIFT_REPORTS_PATH}/{timestamp}.html",
+        Key=f"{S3Config.model_drift_path}/{partition}.html",
     )
     s3_client.put_object(
         Bucket=S3Config.S3_MLE_BUCKET,
-        Key=f"{S3Config.S3_PIPELINE_DRIFT_REPORTS_PATH}/{timestamp}.json",
+        Key=f"{S3Config.model_drift_path}/{partition}.json",
         Body=json_bytes,
         ContentType="application/json",
     )

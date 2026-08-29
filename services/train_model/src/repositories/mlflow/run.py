@@ -51,7 +51,7 @@ def save_model_reference_dataset(
         )
         mlflow.log_artifact(
             local_path=dataset_reference_file_path,
-            artifact_path=MLFlowConfig.REFERENCE_DATASET_PATH,
+            artifact_path=MLFlowConfig.reference_dataset_path,
             run_id=mlflow_model_run_id
         )
     finally:
