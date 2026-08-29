@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
+from uuid import UUID
 
-from pydantic import ConfigDict, Field, UUID4, BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, Field
 
 from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 
 class FraudClassificationRequest(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    transaction_id: UUID4
+    transaction_id: UUID
 
     transaction_timestamp: datetime
 

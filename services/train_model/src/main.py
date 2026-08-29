@@ -17,7 +17,7 @@ from services.train_model.src.services.preprocessing import preprocess
 from services.train_model.src.services.training import train_model
 
 def main() -> None:
-    seed_everything(TrainingConfig.RANDOM_STATE)
+    seed_everything(TrainingConfig.random_state)
 
     unused_dataset_outputs = get_timed_latest_unused_dataset()
     preprocess_outputs = preprocess(unused_dataset_outputs.dataset)

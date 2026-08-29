@@ -35,7 +35,7 @@ def train_model(
                 model(
                     **best_model_hyperparameters,
                     scale_pos_weight=preprocess_outputs.original_y_train_positive_scale,
-                    random_state=TrainingConfig.RANDOM_STATE,
+                    random_state=TrainingConfig.random_state,
                     n_jobs=-1,
                     verbosity=2,
                 ),
@@ -65,7 +65,7 @@ def optimize_model_hyperparameters(
                 model(
                     **hyperparameters_sampler.resolve(trial),
                     scale_pos_weight=preprocessed_output.original_y_train_positive_scale,
-                    random_state=TrainingConfig.RANDOM_STATE,
+                    random_state=TrainingConfig.random_state,
                     n_jobs=-1,
                     verbosity=2,
                 ),
@@ -90,17 +90,17 @@ def optimize_model_hyperparameters(
     study = optuna.create_study(
         direction="maximize",
         sampler=TPESampler(
-            seed=TrainingConfig.RANDOM_STATE,
+            seed=TrainingConfig.random_state,
             multivariate=True
         ),
     )
     study.optimize(
         objective,
-        n_trials=TrainingConfig.BAYES_STEPS,
+        n_trials=TrainingConfig.bayes_steps,
         n_jobs=1,
         show_progress_bar=True,
         gc_after_trial=True,
-        timeout=TrainingConfig.TRAINING_TIMEOUT_SECONDS,
+        timeout=TrainingConfig.training_timeout_seconds,
     )
 
     return study

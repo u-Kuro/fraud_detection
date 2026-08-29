@@ -18,7 +18,7 @@ def no_action(branch: NoActionBranches) -> EmptyOperator:
 
 @task_group(group_id="invalidate_expired_challenger_model")
 def invalidate_expired_challenger_model() -> None:
-    has_expired_promote_pending_workflow_with_replacement() >> [
+    has_expired_promote_pending_workflow_with_replacement(group_id=invalidate_expired_challenger_model.__name__) >> [
         invalidate_expired_promotion_approval() \
         >> replace_expired_model() \
         >> delete_expired_model() \
@@ -38,9 +38,10 @@ def setup_training_approval(branch: SetupTrainingApprovalBranches):
     return group()
 
 def dispatch_training_approval(branch: DispatchTrainingApprovalBranches):
-    @task_group(group_id=build_task_id((dispatch_training_approval.__name__, branch)))
+    group_id = build_task_id((dispatch_training_approval.__name__, branch))
+    @task_group(group_id=group_id)
     def group() -> None:
-        check_current_model_deployment_workflows(branch=branch) >> [
+        check_current_model_deployment_workflows(group_id=group_id) >> [
             initialize_train_pending_workflow() \
             >> setup_training_approval(branch=SetupTrainingApprovalBranches.post),
 
@@ -48,7 +49,7 @@ def dispatch_training_approval(branch: DispatchTrainingApprovalBranches):
             >> reinitialize_train_pending_workflow() \
             >> setup_training_approval(branch=SetupTrainingApprovalBranches.replace),
 
-            no_action()
+            no_action(branch=NoActionBranches.)
         ]
 
     return group()

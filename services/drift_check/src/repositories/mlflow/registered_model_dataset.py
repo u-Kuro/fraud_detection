@@ -9,12 +9,12 @@ from services.shared.modules.schemas.postgres.transaction_inferences import Tran
 
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
     reference_dataset_parquet = mlflow.artifacts.download_artifacts(
-        artifact_uri=MLFlowConfig.REFERENCE_DATASET_URI()
+        artifact_uri=MLFlowConfig.reference_dataset_uri()
     )
     df_reference = parquet.read_table(reference_dataset_parquet).to_pandas()
 
     if df_reference is None:
-        raise RuntimeError(f"No reference dataset was found in {MLFlowConfig.REFERENCE_DATASET_URI()}.")
+        raise RuntimeError(f"No reference dataset was found in {MLFlowConfig.reference_dataset_uri()}.")
 
     df_reference_max_timestamp = df_reference[TransactionInferences.transaction_timestamp.key].max()
     assert isinstance(df_reference_max_timestamp, float)

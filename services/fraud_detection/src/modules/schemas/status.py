@@ -1,4 +1,4 @@
 from pydantic import BaseModel
 
-class HealthResponse(BaseModel):
+class StatusResponse(BaseModel):
     status: str

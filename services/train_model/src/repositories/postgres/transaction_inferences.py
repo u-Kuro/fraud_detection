@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 import pandas
+from pandas import DataFrame
 from sqlalchemy import select, func, or_
 
 from services.shared.modules.configs.dataset import DatasetConfig
@@ -58,6 +59,9 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
             session.connection()
         )
 
+        if not isinstance(df, DataFrame):
+            raise TypeError(f"Expected DataFrame, got {type(df).__name__}")
+
         if len(df) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df)} rows), minimum is {DatasetConfig.minimum_rows}.")
 
@@ -65,9 +69,11 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
         df[TransactionInferences.is_fraud.key] = df[TransactionInferences.is_fraud.key].astype("int64")
         # Convert datetime64[ns, UTC] to seconds (int64)
         df[TransactionInferences.transaction_timestamp.key] = (
-            pandas.to_datetime(
-                df[TransactionInferences.transaction_timestamp.key],
-                utc=True
+            pandas.Series(
+                pandas.to_datetime(
+                    df[TransactionInferences.transaction_timestamp.key],
+                    utc=True
+                )
             )
             .astype("datetime64[s, UTC]")
             .astype("int64")

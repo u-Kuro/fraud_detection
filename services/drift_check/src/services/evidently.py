@@ -79,7 +79,7 @@ def extract_drift_summary(
                 "number_of_drifted_features": result.get("number_of_drifted_features", 0),
                 "total_features": result.get("number_of_columns", len(feature_names)),
                 "drifted_feature_names": drifted_feature_names,
-                evidently_config.DRIFTED_KEY: result.get("dataset_drift", False),
+                evidently_config.drifted_key: result.get("dataset_drift", False),
             }
 
         # Concept / model performance drift — P(Y|X) degradation
@@ -105,14 +105,14 @@ def extract_drift_summary(
                 # A negative delta means the model performs worse on current data.
                 # Flag concept drift if F1 degrades by more than 5 pp.
                 # TODO - idk if we need to remove or change this concept drift. I need to check it manually first online.
-                evidently_config.DRIFTED_KEY: f1_delta is not None and f1_delta < -0.05
+                evidently_config.drifted_key: f1_delta is not None and f1_delta < -0.05
             }
 
     return {
         # Data drift (P(X) shift)
-        evidently_config.DATA_DRIFT_KEY: data_drift,
+        evidently_config.data_drift_key: data_drift,
         # Concept drift (P(Y|X) shift: model quality on current data vs reference)
-        evidently_config.CONCEPT_DRIFT_KEY: concept_drift,
+        evidently_config.concept_drift_key: concept_drift,
     }
 
 def drift_check() -> tuple[bool, dict[str, dict]]:
@@ -122,8 +122,8 @@ def drift_check() -> tuple[bool, dict[str, dict]]:
     drift_summary, html_bytes = run_drift_report(df_reference, df_current)
     upload_drift_report(html_bytes, json.dumps(drift_summary).encode())
 
-    data_drift = drift_summary[evidently_config.DATA_DRIFT_KEY].get(evidently_config.DRIFTED_KEY, False)
-    concept_drift = drift_summary[evidently_config.CONCEPT_DRIFT_KEY].get(evidently_config.DRIFTED_KEY, False)
+    data_drift = drift_summary[evidently_config.data_drift_key].get(evidently_config.drifted_key, False)
+    concept_drift = drift_summary[evidently_config.concept_drift_key].get(evidently_config.drifted_key, False)
 
     drift_detected = data_drift or concept_drift
 

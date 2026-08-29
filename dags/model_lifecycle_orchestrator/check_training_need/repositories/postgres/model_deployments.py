@@ -1,5 +1,4 @@
-from airflow.sdk import task
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.sdk import task, TriggerRule, get_current_context
 from sqlalchemy import select
 
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches
@@ -15,20 +14,20 @@ from dags.shared.repositories.postgres.postgres import sql_session
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
 )
 def has_any_active_model() -> str:
-    with sql_session.begin() as session:
-        (has_active_model,) = session.execute(
-            select(
-                select(ModelDeployments)
-                .where(
-                    ModelDeployments.project_id == PostgresConfig.project_id(),
-                    ModelDeployments.active.is_(True)
-                )
-                .limit(1)
-                .exists()
-            )
-        ).one().t
+    context = get_current_context()
 
-    if has_active_model:
+    with sql_session.begin() as session:
+        mlflow_run_id = session.execute(
+            select(ModelDeployments.mlflow_run_id)
+            .where(
+                ModelDeployments.project_id == PostgresConfig.project_id(),
+                ModelDeployments.active.is_(True)
+            )
+            .limit(1)
+        ).scalar_one_or_none()
+
+    if mlflow_run_id is not None:
+
         return drift_check.__name__
     else:
         return build_task_id((

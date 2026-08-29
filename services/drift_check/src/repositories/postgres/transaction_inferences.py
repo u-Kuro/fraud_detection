@@ -47,11 +47,14 @@ def load_current_dataset(
             .subquery()
         )
         df_current = pandas.read_sql(
-            select(current_dataset_subquery)
+            sql=select(current_dataset_subquery)
             .order_by(func.random())
             .limit(DatasetConfig.maximum_dataset_rows),
-            session.connection(),
+            con=session.connection(),
        )
+
+        if not isinstance(df_current, DataFrame):
+            raise TypeError(f"Expected DataFrame, got {type(df_current).__name__}")
 
         if len(df_current) < DatasetConfig.minimum_rows:
             raise ValueError(f"Dataset window is too small ({len(df_current)} rows), minimum is {DatasetConfig.minimum_rows}.")
@@ -62,9 +65,11 @@ def load_current_dataset(
         df_current[TransactionInferences.is_fraud_prediction.key] = df_current[TransactionInferences.is_fraud_prediction.key].astype("int64")
         # Convert datetime64[ns, UTC] to seconds (int64)
         df_current[TransactionInferences.transaction_timestamp.key] = (
-            pandas.to_datetime(
-                df_current[TransactionInferences.transaction_timestamp.key],
-                utc=True
+            pandas.Series(
+                pandas.to_datetime(
+                    df_current[TransactionInferences.transaction_timestamp.key],
+                    utc=True
+                )
             )
             .astype("datetime64[s, UTC]")
             .astype("int64")
