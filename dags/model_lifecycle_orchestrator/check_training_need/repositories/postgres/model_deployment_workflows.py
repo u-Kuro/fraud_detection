@@ -29,7 +29,7 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
             ModelDeploymentWorkflows,
             select(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.promote_pending,
                 ModelDeploymentWorkflows.model_trained_at <= func.now() - (
                     literal(ModelDeploymentWorkflowsConfig.challenger_model_expiration_days)
@@ -42,7 +42,7 @@ def has_expired_promote_pending_workflow_with_replacement() -> str:
             ModelDeploymentWorkflows,
             select(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.promote_pending_replacement
             )
             .subquery(name="replacement_model_deployment_workflow")
@@ -154,7 +154,7 @@ def delete_expired_promote_pending_workflow() -> None:
             delete(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == delete_expired_promote_pending_workflow_xcom.expired_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.promote_pending
             )
         )
@@ -167,7 +167,7 @@ def initialize_train_pending_workflow() -> None:
         (workflow_id,) = session.execute(
             insert(ModelDeploymentWorkflows)
             .values({
-                ModelDeploymentWorkflows.project_id.key: PostgresConfig.PROJECT_ID(),
+                ModelDeploymentWorkflows.project_id.key: PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state.key: ModelDeploymentWorkflowState.train_pending
             })
             .returning(
@@ -192,7 +192,7 @@ def reinitialize_train_pending_workflow() -> None:
             update(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == reinitialize_train_pending_workflow_xcom.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID(),
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.train_pending
             )
             .values({
@@ -212,7 +212,7 @@ def update_train_pending_workflow() -> None:
             update(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == update_train_pending_workflow_xcom.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
                 ModelDeploymentWorkflows.training_approval_slack_ts.key: update_train_pending_workflow_xcom.training_approval_slack_ts
@@ -229,7 +229,7 @@ def check_current_model_deployment_workflows() -> str:
         model_deployment_workflow_rows = session.execute(
             select(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .order_by(
                 ModelDeploymentWorkflows.created_at.desc()

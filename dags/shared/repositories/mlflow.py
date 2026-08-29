@@ -3,9 +3,9 @@ from mlflow import MlflowClient
 
 from dags.shared.modules.configs.mlflow import MLFlowConfig
 
-mlflow.set_tracking_uri(MLFlowConfig.TRACKING_URI)
-mlflow.set_experiment(MLFlowConfig.EXPERIMENT_NAME)
+mlflow.set_tracking_uri(mlflow_environment.MLFLOW_TRACKING_URI)
 
 mlflow_client: MlflowClient = MlflowClient(
-    tracking_uri=MLFlowConfig.TRACKING_URI
+    tracking_uri=MLFlowConfig.MLFLOW_TRACKING_URI
 )
+mlflow_client.set_wo

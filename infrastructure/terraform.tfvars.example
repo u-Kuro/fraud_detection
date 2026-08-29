@@ -435,11 +435,11 @@ aws rds create-db-instance `
  --engine postgres
 
 aws mwaa create-environment `
-    --name            $ENV_NAME `
+    --name            "mle" `
     --execution-role-arn "arn:aws:iam::000000000000:role/mwaa-execution-role" `
-    --source-bucket-arn  "arn:aws:s3:::$BUCKET" `
+    --source-bucket-arn  "arn:aws:s3:::mle" `
     --dag-s3-path        "dags/" `
-    --airflow-version    "3.0.6-python3.12" `
+    --airflow-version    "3.3.1" `
     --environment-class  "mw1.small" `
     --network-configuration '{\"SubnetIds\":[\"subnet-00000000\",\"subnet-00000001\"],\"SecurityGroupIds\":[\"sg-00000000\"]}' `
     --airflow-configuration-options '{\"secrets.backend\":\"airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend\",\"secrets.backend_kwargs\":\"{\\\"connections_prefix\\\":\\\"airflow/connections/mle\\\",\\\"variables_prefix\\\":\\\"airflow/variables/mle\\\",\\\"sep\\\":\\\"/\\\",\\\"endpoint_url\\\":\\\"http://ministack:4566\\\",\\\"profile_name\\\":\\\"default\\\"}\"}'

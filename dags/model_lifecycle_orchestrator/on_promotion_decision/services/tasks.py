@@ -5,11 +5,10 @@ from airflow.providers.http.operators.http import HttpOperator
 from airflow.sdk import task, get_current_context
 from kubernetes.client import models
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.xcom import ArchiveUsedTransactionInferencesXCom
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
-from dags.shared.modules.configs.airflow.airflow import AirflowConfig
 from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKeys
 from dags.shared.modules.configs.github import GitHubConfig
 from dags.shared.modules.configs.kubernetes import K8sConfig, K8sSecretKeys, K8sConfigMapKeys

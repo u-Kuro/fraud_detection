@@ -1,4 +1,4 @@
-from dags.shared.repositories.s3 import s3_hook
+from dags.shared.repositories.s3.s3 import s3_hook
 
 def ensure_bucket(bucket_name: str) -> None:
     if not s3_hook.check_for_bucket(bucket_name):

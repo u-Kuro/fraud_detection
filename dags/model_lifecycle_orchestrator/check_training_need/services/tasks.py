@@ -9,9 +9,8 @@ from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airfl
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.run import delete_expired_mlflow_run
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, update_train_pending_workflow, check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow
-from dags.shared.modules.configs.airflow.airflow import AirflowConfig
-from dags.shared.modules.configs.ecr import ECRConfig, ECRImageKeys, ECRSecretKeys
-from dags.shared.modules.configs.kubernetes import K8sConfig, K8sConfigMapKeys, K8sSecretKeys
+from dags.shared.modules.environment.ecr import ecr_environment
+from dags.shared.modules.environment.k8s import k8s_environment
 from dags.shared.modules.utilities.airflow.xcom import build_task_id
 
 def no_action(branch: NoActionBranches) -> EmptyOperator:
@@ -58,24 +57,24 @@ def drift_check() -> KubernetesPodOperator:
      return KubernetesPodOperator(
         task_id=drift_check.__name__,
         name=drift_check.__name__,
-        namespace=K8sConfig.namespace,
-        kubernetes_conn_id=KubernetesConfig.connection_id,
-        image=f"{ECRConfig.ECR_URL}/{ECRImageKeys.drift_check}:latest",
+        namespace=k8s_environment.K8S_NAMESPACE,
+        kubernetes_conn_id=k8s_environment.K8S_CONNECTION_ID,
+        image=ecr_environment.DRIFT_CHECK_IMAGE,
         image_pull_policy="Always",
         image_pull_secrets=[
             models.V1LocalObjectReference(
-                name=ECRSecretKeys.ecr_secret
+                name=k8s_environment.K8S_DOCKER_REGISTRY_SECRET_NAME
             )
         ],
         env_from=[
             models.V1EnvFromSource(
                 config_map_ref=models.V1ConfigMapEnvSource(
-                    name=K8sConfigMapKeys.platform_infrastructure
+                    name=k8s_environment.K8S_BASE_CONFIG_MAP_NAME
                 )
             ),
             models.V1EnvFromSource(
                 secret_ref=models.V1SecretEnvSource(
-                    name=K8sSecretKeys.mle_pipeline_secret
+                    name=k8s_environment.K8S_BASE_SECRET_NAME
                 )
             ),
         ],

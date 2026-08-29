@@ -2,13 +2,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
 
-class SlackEnvironment(BaseSettings):
+class S3Environment(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix=AirflowConfig.environment_prefix,
         case_sensitive=True
     )
 
-    SLACK_CONNECTION_ID: str
-    SLACK_CHANNEL_ID: str
+    S3_CONNECTION_ID: str
+    S3_BUCKET: str
 
-slack_environment = SlackEnvironment()
+s3_environment = S3Environment()

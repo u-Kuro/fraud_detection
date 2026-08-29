@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow.models import TaskInstance
 from pydantic import BaseModel, ConfigDict
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.configs.airflow.data_keys import ArchiveKeys
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import promote_model_deployment
 from dags.shared.modules.schemas.airflow import AirflowTaskContext
 

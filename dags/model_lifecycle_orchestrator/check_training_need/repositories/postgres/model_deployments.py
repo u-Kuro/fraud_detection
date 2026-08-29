@@ -20,7 +20,7 @@ def has_any_active_model() -> str:
             select(
                 select(ModelDeployments)
                 .where(
-                    ModelDeployments.project_id == PostgresConfig.PROJECT_ID(),
+                    ModelDeployments.project_id == PostgresConfig.project_id(),
                     ModelDeployments.active.is_(True)
                 )
                 .limit(1)

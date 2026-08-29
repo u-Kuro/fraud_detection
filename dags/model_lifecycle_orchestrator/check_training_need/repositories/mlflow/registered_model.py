@@ -12,7 +12,7 @@ def replace_expired_model() -> None:
 
     mlflow_client.set_registered_model_alias(
         name=replace_expired_model_xcom.replacement_model_name,
-        alias=MLFlowConfig.CHALLENGER_ALIAS,
+        alias=MLFlowConfig.challenger_alias,
         version=str(replace_expired_model_xcom.replacement_model_version),
     )
 

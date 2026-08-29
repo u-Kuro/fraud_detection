@@ -20,7 +20,7 @@ def update_approved_training_workflow() -> None:
             update(ModelDeploymentWorkflows.training_approved)
             .where(
                 ModelDeploymentWorkflows.id == training_decision_callback_configurations.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
                 ModelDeploymentWorkflows.training_approved.key: True
@@ -38,7 +38,7 @@ def delete_rejected_training_workflow() -> None:
             delete(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == training_decision_callback_configurations.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
         )
 
@@ -54,7 +54,7 @@ def update_trained_model_info_in_workflow() -> None:
             update(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == training_decision_callback_configurations.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
                 ModelDeploymentWorkflows.model_trained_at.key: datetime.fromisoformat(update_trained_model_info_in_workflow_xcom.model_trained_at_iso_datetime),
@@ -78,7 +78,7 @@ def update_promotion_pending_workflow() -> None:
             update(ModelDeploymentWorkflows)
             .where(
                 ModelDeploymentWorkflows.id == training_decision_callback_configurations.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.PROJECT_ID()
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
                 ModelDeploymentWorkflows.promotion_approval_slack_ts.key: update_promotion_pending_workflow_xcom.promotion_approval_slack_ts

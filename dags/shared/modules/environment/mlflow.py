@@ -2,13 +2,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
 
-class SlackEnvironment(BaseSettings):
+class MLflowEnvironment(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix=AirflowConfig.environment_prefix,
         case_sensitive=True
     )
 
-    SLACK_CONNECTION_ID: str
-    SLACK_CHANNEL_ID: str
+    MLFLOW_TRACKING_URI: str
+    MLFLOW_TRACKING_USERNAME: str
+    MLFLOW_TRACKING_PASSWORD: str
 
-slack_environment = SlackEnvironment()
+mlflow_environment = MLflowEnvironment()
