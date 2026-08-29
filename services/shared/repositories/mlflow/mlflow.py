@@ -1,8 +1,8 @@
 import mlflow
 from mlflow import MlflowClient
 
-from dags.shared.modules.environment.mlflow import mlflow_environment
 from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.modules.environment.mlflow import mlflow_environment
 
 def initialize_mlflow():
     # mlflow.set_tracking_uri(mlflow_environment.MLFLOW_TRACKING_URI)
