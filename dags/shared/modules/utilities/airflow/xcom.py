@@ -4,9 +4,6 @@ from typing import Sequence, Type, Any
 
 from airflow.models import TaskInstance
 
-def build_task_id(segments: Sequence[str]) -> str:
-    return ".".join(segments)
-
 def build_task_ids(segments: Sequence[str | Type[StrEnum] | set[str]]) -> list[str]:
     options: list[list[str]] = []
     for segment in segments:

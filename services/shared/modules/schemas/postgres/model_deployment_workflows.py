@@ -13,7 +13,7 @@ from services.shared.modules.schemas.postgres.postgres import PostgresTableBase
 class ModelDeploymentWorkflowState(StrEnum):
     train_pending = "train_pending"
     promote_pending = "promote_pending"
-    promote_pending_replacement = "promote_pending_replacement"
+    reserved = "reserved"
 
 class ModelDeploymentWorkflows(PostgresTableBase):
     __tablename__ = "model_deployment_workflows"

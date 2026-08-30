@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import promote_model_deployment
-from dags.shared.modules.schemas.airflow import AirflowTaskContext
+from dags.shared.modules.schemas.airflow import TaskContext
 
 class ArchiveUsedTransactionInferencesXCom(BaseModel):
     model_config = ConfigDict(strict=False)
@@ -14,7 +14,7 @@ class ArchiveUsedTransactionInferencesXCom(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "ArchiveUsedTransactionInferencesXCom":
-        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
             transaction_inferences_archive_cutoff_iso_datetime=ti.xcom_pull(
                 task_ids=promote_model_deployment.__name__,

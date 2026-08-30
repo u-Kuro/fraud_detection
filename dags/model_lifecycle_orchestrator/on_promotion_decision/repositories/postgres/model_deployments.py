@@ -3,7 +3,7 @@ from sqlalchemy import select, update, insert, true
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
 from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
-from dags.shared.modules.schemas.airflow import AirflowTaskContext
+from dags.shared.modules.schemas.airflow import TaskContext
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflows
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeployments
 from dags.shared.repositories.postgres.postgres import sql_session
@@ -62,7 +62,7 @@ def promote_model_deployment() -> None:
             )
         ).one().t
 
-    ti = AirflowTaskContext.from_context(context).ti
+    ti = TaskContext.from_context(context).task_instance
     ti.xcom_push(
         key=ArchiveKeys.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
         value=dataset_max_timestamp.isoformat()

@@ -5,65 +5,93 @@ from kubernetes.client import models
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import initialize_training_approval, update_training_approval, invalidate_old_training_approval, invalidate_expired_promotion_approval
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftCheckKeys
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import NoActionBranches, SetupTrainingApprovalBranches, DispatchTrainingApprovalBranches
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import HasDriftXCom, DriftCheckXCom
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_ids import NoActionTaskIDs, SetupTrainingApprovalTaskIDs, DispatchTrainingApprovalTaskIDs
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import DriftCheckResult, ActiveModelDeployment, ModelDeploymentWorkflowForTraining
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.registered_model import replace_expired_model, delete_expired_model
 from dags.model_lifecycle_orchestrator.check_training_need.repositories.mlflow.run import delete_expired_mlflow_run
-from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, update_train_pending_workflow, check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow
+from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployment_workflows import has_expired_promote_pending_workflow_with_replacement, delete_expired_promote_pending_workflow, update_train_pending_workflow, check_current_model_deployment_workflows, initialize_train_pending_workflow, reinitialize_train_pending_workflow, get_expired_model_deployment_workflow_with_its_replacement, get_current_model_deployment_workflow_for_training
 from dags.shared.modules.environment.ecr import ecr_environment
 from dags.shared.modules.environment.k8s import k8s_environment
-from dags.shared.modules.utilities.airflow.xcom import build_task_id
+from dags.shared.modules.schemas.airflow import TaskContext
 
-def no_action(branch: NoActionBranches) -> EmptyOperator:
-    return EmptyOperator(task_id=build_task_id((no_action.__name__, branch)))
+def no_action(task_id: NoActionTaskIDs) -> EmptyOperator:
+    return EmptyOperator(task_id=task_id)
 
-@task_group(group_id="invalidate_expired_challenger_model")
+@task_group
 def invalidate_expired_challenger_model() -> None:
-    group_id = invalidate_expired_challenger_model.__name__
-    has_expired_promote_pending_workflow_with_replacement(group_id=group_id) >> [
-        invalidate_expired_promotion_approval() \
-        >> replace_expired_model() \
-        >> delete_expired_model() \
-        >> delete_expired_mlflow_run() \
-        >> delete_expired_promote_pending_workflow(),
+    model_deployment_workflows = get_expired_model_deployment_workflow_with_its_replacement()
+    # noinspection none-function-assignment,unresolved-references
+    has_expired_promote_pending_workflow_with_replacement(model_deployment_workflows) >> [
+        invalidate_expired_promotion_approval(model_deployment_workflows)
+        >> replace_expired_model(model_deployment_workflows)
+        >> delete_expired_model(model_deployment_workflows)
+        >> delete_expired_mlflow_run(model_deployment_workflows)
+        >> delete_expired_promote_pending_workflow(model_deployment_workflows),
 
-        no_action(branch=NoActionBranches.no_expired_promote_pending_workflow_with_replacement)
+        no_action(task_id=NoActionTaskIDs.no_expired_promote_pending_workflow_with_replacement)
     ]
 
-def setup_training_approval(branch: SetupTrainingApprovalBranches):
-    @task_group(group_id=build_task_id((setup_training_approval.__name__, branch)))
+def setup_training_approval(
+    task_id: SetupTrainingApprovalTaskIDs,
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None,
+    drift_result: DriftCheckResult | None,
+):
+    @task_group(group_id=task_id)
     def group() -> None:
-        initialize_training_approval() \
-        >> update_train_pending_workflow() \
-        >> update_training_approval()
+        initialize_training_approval_task = initialize_training_approval(
+            model_deployment_workflow_for_training=model_deployment_workflow_for_training,
+            drift_result=drift_result,
+        )
+
+        # noinspection none-function-assignment,unresolved-references
+        initialize_training_approval_task \
+        >> update_train_pending_workflow(initialize_training_approval_task) \
+        >> update_training_approval(
+            model_deployment_workflow_for_training=initialize_training_approval_task,
+            drift_result=drift_result,
+        )
 
     return group()
 
-def dispatch_training_approval(branch: DispatchTrainingApprovalBranches):
-    group_id = build_task_id((dispatch_training_approval.__name__, branch))
-    @task_group(group_id=group_id)
+def dispatch_training_approval(
+    task_id: DispatchTrainingApprovalTaskIDs,
+    drift_result: DriftCheckResult | None = None,
+):
+    @task_group(group_id=task_id)
     def group() -> None:
-        check_current_model_deployment_workflows(group_id=group_id) >> [
-            initialize_train_pending_workflow() \
-            >> setup_training_approval(branch=SetupTrainingApprovalBranches.post),
+        model_deployment_workflow_for_training = get_current_model_deployment_workflow_for_training()
 
-            invalidate_old_training_approval() \
-            >> reinitialize_train_pending_workflow() \
-            >> setup_training_approval(branch=SetupTrainingApprovalBranches.replace),
+        initialize_train_pending_workflow_task = initialize_train_pending_workflow(model_deployment_workflow_for_training)
 
-            no_action(branch=NoActionBranches.no_expired_workflows)
+        # noinspection none-function-assignment,unresolved-references,unsupported-operator
+        check_current_model_deployment_workflows(model_deployment_workflow_for_training) >> [
+            initialize_train_pending_workflow_task
+            >> setup_training_approval(
+                task_id=SetupTrainingApprovalTaskIDs.post,
+                model_deployment_workflow_for_training=initialize_train_pending_workflow_task,
+                drift_result=drift_result,
+            ),
+
+            invalidate_old_training_approval(
+                model_deployment_workflow_for_training=model_deployment_workflow_for_training,
+                drift_result=drift_result,
+            )
+            >> reinitialize_train_pending_workflow(model_deployment_workflow_for_training)
+            >> setup_training_approval(
+                task_id=SetupTrainingApprovalTaskIDs.replace,
+                model_deployment_workflow_for_training=model_deployment_workflow_for_training,
+                drift_result=drift_result,
+            ),
+
+            no_action(task_id=NoActionTaskIDs.no_expired_workflows)
         ]
 
     return group()
 
-def drift_check() -> KubernetesPodOperator:
-    context = get_current_context()
-
-    drift_check_xcom = DriftCheckXCom.from_context(context)
-
+def drift_check_operator(active_model_deployment: ActiveModelDeployment) -> KubernetesPodOperator:
     return KubernetesPodOperator(
-        task_id=drift_check.__name__,
-        name=drift_check.__name__,
+        task_id=drift_check_operator.__name__,
+        name=drift_check_operator.__name__,
         namespace=k8s_environment.K8S_NAMESPACE,
         kubernetes_conn_id=k8s_environment.K8S_CONNECTION_ID,
         image=ecr_environment.DRIFT_CHECK_IMAGE,
@@ -76,7 +104,7 @@ def drift_check() -> KubernetesPodOperator:
         env=[
             models.V1EnvVar(
                 name=DriftCheckKeys.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID,
-                value=drift_check_xcom.active_model_deployment_mlflow_run_id
+                value=active_model_deployment.mlflow_run_id
             )
         ],
         env_from=[
@@ -98,19 +126,25 @@ def drift_check() -> KubernetesPodOperator:
         on_finish_action="delete_pod",
     )
 
-@task.branch(task_id="has_drift")
-def has_drift():
-    context = get_current_context()
+@task_group
+def drift_check(active_model_deployment: ActiveModelDeployment | None) -> DriftCheckResult:
+    assert isinstance(active_model_deployment, ActiveModelDeployment)
 
-    has_drift_xcom = HasDriftXCom.from_context(context)
+    @task
+    def get_drift_result() -> DriftCheckResult:
+        context = TaskContext(get_current_context())
+        return context.xcom_pull(pydantic_model=DriftCheckResult)
 
-    if has_drift_xcom.drift_detected:
-        return build_task_id((
-            dispatch_training_approval.__name__,
-            DispatchTrainingApprovalBranches.drifted
-        ))
+    drift_result = get_drift_result()
+
+    # noinspection unsupported-operator
+    drift_check_operator(active_model_deployment) >> drift_result
+
+    return drift_result
+
+@task.branch
+def has_drift(drift_result: DriftCheckResult):
+    if drift_result.drift_detected:
+        return DispatchTrainingApprovalTaskIDs.drifted
     else:
-        return build_task_id((
-            no_action.__name__,
-            NoActionBranches.no_drift
-        ))
+        return NoActionTaskIDs.no_drift

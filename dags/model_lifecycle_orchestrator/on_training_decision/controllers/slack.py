@@ -8,7 +8,7 @@ from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airf
 from dags.shared.services.slack import slack_client, create_blocks
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.environment.slack import slack_environment
-from dags.shared.modules.schemas.airflow import AirflowTaskContext
+from dags.shared.modules.schemas.airflow import TaskContext
 
 @task(task_id="initialize_promotion_approval")
 def initialize_promotion_approval() -> None:
@@ -36,7 +36,7 @@ def initialize_promotion_approval() -> None:
     promotion_approval_slack_ts = response["ts"]
     assert isinstance(promotion_approval_slack_ts, str)
 
-    ti = AirflowTaskContext.from_context(context).ti
+    ti = TaskContext.from_context(context).task_instance
     ti.xcom_push(
         key=ModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS,
         value=promotion_approval_slack_ts

@@ -1,22 +1,18 @@
 import json
 from uuid import UUID
 
-from airflow.sdk import task, get_current_context
+from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import InitializeTrainingApprovalXCom, InvalidateOldTrainingApprovalXCom, UpdateTrainingApproval, InvalidateExpiredPromotionApprovalXCom
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredModelDeploymentWorkflowWithItsReplacement, ModelDeploymentWorkflowForTraining, DriftCheckResult
 from dags.shared.services.slack import create_blocks, slack_client
-from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
 from dags.shared.modules.environment.slack import slack_environment
-from dags.shared.modules.schemas.airflow import AirflowTaskContext
 
-@task(task_id="invalidate_expired_promotion_approval")
-def invalidate_expired_promotion_approval() -> None:
-    context = get_current_context()
-
-    invalidate_expired_promotion_approval_xcom = InvalidateExpiredPromotionApprovalXCom.from_context(context)
+@task
+def invalidate_expired_promotion_approval(model_deployment_workflows: ExpiredModelDeploymentWorkflowWithItsReplacement | None) -> None:
+    assert isinstance(model_deployment_workflows, ExpiredModelDeploymentWorkflowWithItsReplacement)
 
     slack_client.chat_update(
-        ts=invalidate_expired_promotion_approval_xcom.expired_promotion_approval_slack_ts,
+        ts=model_deployment_workflows.expired.promotion_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=[
             {
@@ -40,14 +36,17 @@ def invalidate_expired_promotion_approval() -> None:
         ]
     )
 
-@task(task_id="invalidate_old_training_approval")
-def invalidate_old_training_approval() -> None:
-    context = get_current_context()
-
-    invalidate_old_training_approval_xcom = InvalidateOldTrainingApprovalXCom.from_context(context)
+@task
+def invalidate_old_training_approval(
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None,
+    drift_result: DriftCheckResult | None,
+) -> None:
+    assert model_deployment_workflow_for_training is not None
+    assert model_deployment_workflow_for_training.training_approval_slack_ts is not None
+    assert drift_result is not None
 
     slack_client.chat_update(
-        ts=invalidate_old_training_approval_xcom.training_approval_slack_ts,
+        ts=model_deployment_workflow_for_training.training_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=[
             {
@@ -56,7 +55,7 @@ def invalidate_old_training_approval() -> None:
                     "type": "mrkdwn",
                     "text": f"~{(
                         "⚠️ Model Retraining Required"
-                        if invalidate_old_training_approval_xcom.drift_detected
+                        if drift_result.drift_detected
                         else "🆕 First Training Required"
                     )}~"
                 }
@@ -74,78 +73,70 @@ def invalidate_old_training_approval() -> None:
     )
 
 def build_training_approval_blocks_initializing(
-    drift_summary: dict[str, dict] | None,
+    drift_summary: dict[str, dict]
 ) -> list:
-    if drift_summary is None:
-        return create_blocks(
-            title="🆕 First Training Required",
-            body=(
-                "No model has been deployed yet. "
-                "This approval request is initializing, please wait..."
-            ),
-        )
+    data_drift = drift_summary.get("data_drift", {})
+    concept_drift = drift_summary.get("concept_drift", {})
+
+    share_drifted_features = data_drift.get("share_drifted_features")
+    number_of_drifted_features = data_drift.get("number_of_drifted_features")
+    total_features = data_drift.get("total_features")
+
+    # Data Drift
+    if (
+        isinstance(share_drifted_features, float | int)
+        and isinstance(number_of_drifted_features, float | int)
+        and isinstance(total_features, float | int)
+    ):
+        features_drift_text = f"{share_drifted_features:.1%} ({number_of_drifted_features} / {total_features})"
     else:
-        data_drift = drift_summary.get("data_drift", {})
-        concept_drift = drift_summary.get("concept_drift", {})
+        features_drift_text = "N/A"
 
-        share_drifted_features = data_drift.get("share_drifted_features")
-        number_of_drifted_features = data_drift.get("number_of_drifted_features")
-        total_features = data_drift.get("total_features")
+    # Concept Drift
+    f1_delta = concept_drift.get("f1_delta")
+    if isinstance(f1_delta, float | int):
+        concept_drift_text = f"{f1_delta:+.4f} F1 Δ"
+    else:
+        concept_drift_text = "N/A"
 
-        # Data Drift
-        if (
-            share_drifted_features is not None
-            and number_of_drifted_features is not None
-            and total_features is not None
-        ):
-            features_drift_text = f"{share_drifted_features:.1%} ({number_of_drifted_features} / {total_features})"
-        else:
-            features_drift_text = "N/A"
+    return create_blocks(
+        title="⚠️ Model Retraining Required",
+        body=(
+            "Significant data or concept drift has been detected in production.\n\n"
 
-        # Concept Drift
-        f1_delta = concept_drift.get("f1_delta")
-        if f1_delta is not None:
-            concept_drift_text = f"{f1_delta:+.4f} F1 Δ"
-        else:
-            concept_drift_text = "N/A"
+            f"• *Features drift:* {features_drift_text}\n"
+            f"• *Concept drift:* {concept_drift_text}\n\n"
 
-        return create_blocks(
-            title="⚠️ Model Retraining Required",
-            body=(
-                "Significant data or concept drift has been detected in production.\n\n"
+            "This approval request is initializing, please wait..."
+        ),
+    )
 
-                f"• *Features drift:* {features_drift_text}\n"
-                f"• *Concept drift:* {concept_drift_text}\n\n"
+@task
+def initialize_training_approval(
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None,
+    drift_result: DriftCheckResult | None,
+) -> ModelDeploymentWorkflowForTraining:
+    assert model_deployment_workflow_for_training is not None
+    assert drift_result is not None
 
-                "This approval request is initializing, please wait..."
-            ),
-        )
-
-@task(task_id="initialize_training_approval")
-def initialize_training_approval() -> None:
-    context = get_current_context()
-
-    initialize_training_approval_xcom = InitializeTrainingApprovalXCom.from_context(context)
 
     response = slack_client.chat_postMessage(
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=build_training_approval_blocks_initializing(
-            drift_summary=initialize_training_approval_xcom.drift_summary
+            drift_summary=drift_result.drift_summary
         )
     )
-
     training_approval_slack_ts = response["ts"]
+
     assert isinstance(training_approval_slack_ts, str)
 
-    ti = AirflowTaskContext.from_context(context).ti
-    ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.TRAINING_APPROVAL_SLACK_TS,
-        value=training_approval_slack_ts
-    )
+    model_deployment_workflow_for_training.training_approval_slack_ts = training_approval_slack_ts
+
+    return model_deployment_workflow_for_training
 
 def cold_start_buttons(
     workflow_id: UUID,
-    for_promotion: bool
+    should_train_for_promotion: bool
 ) -> list:
     return [
         {
@@ -158,7 +149,7 @@ def cold_start_buttons(
             "action_id": "approve_training",
             "value": json.dumps({
                 "workflow_id": str(workflow_id),
-                "for_promotion": for_promotion
+                "should_train_for_promotion": should_train_for_promotion
             })
         },
         {
@@ -171,14 +162,14 @@ def cold_start_buttons(
             "action_id": "reject_training",
             "value": json.dumps({
                 "workflow_id": str(workflow_id),
-                "for_promotion": for_promotion
+                "should_train_for_promotion": should_train_for_promotion
             })
         },
     ]
 
 def drift_retraining_buttons(
     workflow_id: UUID,
-    for_promotion: bool
+    should_train_for_promotion: bool
 ) -> list:
     return [
         {
@@ -191,7 +182,7 @@ def drift_retraining_buttons(
             "action_id": "approve_retraining",
             "value": json.dumps({
                 "workflow_id": str(workflow_id),
-                "for_promotion": for_promotion
+                "should_train_for_promotion": should_train_for_promotion
             })
         },
         {
@@ -204,7 +195,7 @@ def drift_retraining_buttons(
             "action_id": "reject_retraining",
             "value": json.dumps({
                 "workflow_id": str(workflow_id),
-                "for_promotion": for_promotion
+                "should_train_for_promotion": should_train_for_promotion
             })
         },
     ]
@@ -212,7 +203,7 @@ def drift_retraining_buttons(
 def build_training_approval_blocks(
     workflow_id: UUID,
     drift_summary: dict[str, dict] | None,
-    for_promotion: bool,
+    should_train_for_promotion: bool,
 ) -> list:
     if drift_summary is None:
         return create_blocks(
@@ -223,7 +214,7 @@ def build_training_approval_blocks(
             ),
             buttons=cold_start_buttons(
                 workflow_id=workflow_id,
-                for_promotion=for_promotion
+                should_train_for_promotion=should_train_for_promotion
             )
         )
     else:
@@ -249,22 +240,25 @@ def build_training_approval_blocks(
             ),
             buttons=drift_retraining_buttons(
                 workflow_id=workflow_id,
-                for_promotion=for_promotion
+                should_train_for_promotion=should_train_for_promotion
             )
         )
 
-@task(task_id="update_training_approval")
-def update_training_approval() -> None:
-    context = get_current_context()
-
-    update_training_approval_xcom = UpdateTrainingApproval.from_context(context)
+@task
+def update_training_approval(
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining,
+    drift_result: DriftCheckResult | None,
+) -> None:
+    assert model_deployment_workflow_for_training.training_approval_slack_ts is not None
+    assert model_deployment_workflow_for_training.workflow_id is not None
+    assert drift_result is not None
 
     slack_client.chat_update(
-        ts=update_training_approval_xcom.training_approval_slack_ts,
+        ts=model_deployment_workflow_for_training.training_approval_slack_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=build_training_approval_blocks(
-            workflow_id=update_training_approval_xcom.workflow_id,
-            drift_summary=update_training_approval_xcom.drift_summary,
-            for_promotion=update_training_approval_xcom.for_promotion
+            workflow_id=model_deployment_workflow_for_training.workflow_id,
+            drift_summary=drift_result.drift_summary,
+            should_train_for_promotion=model_deployment_workflow_for_training.should_train_for_promotion
         )
     )

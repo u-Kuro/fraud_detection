@@ -1250,13 +1250,18 @@ archive = [
     { name = "pydantic-settings" },
     { name = "sqlalchemy" },
 ]
-dev = [
+dags = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-cncf-kubernetes" },
     { name = "apache-airflow-providers-http" },
     { name = "apache-airflow-providers-postgres" },
     { name = "apache-airflow-providers-slack" },
+    { name = "mlflow-skinny" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+dev = [
     { name = "boto3-stubs", extra = ["mwaa", "s3"] },
     { name = "fastapi" },
     { name = "imbalanced-learn" },
@@ -1265,15 +1270,12 @@ dev = [
     { name = "matplotlib" },
     { name = "matplotlib-stubs" },
     { name = "mlflow" },
-    { name = "mlflow-skinny" },
     { name = "mypy" },
     { name = "numpy" },
     { name = "optuna" },
     { name = "pandas" },
     { name = "pandas-stubs" },
     { name = "pyarrow-stubs" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-env" },
     { name = "pytest-mock" },
@@ -1331,13 +1333,18 @@ archive = [
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "sqlalchemy", specifier = ">=2.0.52" },
 ]
-dev = [
+dags = [
     { name = "apache-airflow", specifier = ">=3.3.1" },
     { name = "apache-airflow-providers-amazon", specifier = ">=9.34.0" },
     { name = "apache-airflow-providers-cncf-kubernetes", specifier = ">=10.21.0" },
     { name = "apache-airflow-providers-http", specifier = ">=6.0.5" },
     { name = "apache-airflow-providers-postgres", specifier = ">=7.0.1" },
     { name = "apache-airflow-providers-slack", specifier = ">=9.10.2" },
+    { name = "mlflow-skinny", specifier = ">=3.15.2" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+]
+dev = [
     { name = "boto3-stubs", extras = ["mwaa", "s3"], specifier = ">=1.43.83" },
     { name = "fastapi", specifier = ">=0.136.3" },
     { name = "imbalanced-learn", specifier = ">=0.14.2" },
@@ -1346,15 +1353,12 @@ dev = [
     { name = "matplotlib", specifier = ">=3.11.1" },
     { name = "matplotlib-stubs", specifier = ">=0.3.11" },
     { name = "mlflow", specifier = ">=3.15.2" },
-    { name = "mlflow-skinny", specifier = ">=3.15.2" },
     { name = "mypy", specifier = ">=2.3.1" },
     { name = "numpy", specifier = ">=2.5.2" },
     { name = "optuna", specifier = ">=4.9.0" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pandas-stubs", specifier = ">=3.0.5.260730" },
     { name = "pyarrow-stubs", specifier = ">=20.0.0.20260819" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-env", specifier = ">=1.7.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },

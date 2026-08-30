@@ -5,7 +5,7 @@ from dags.model_lifecycle_orchestrator.on_training_decision.controllers.slack im
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.data_keys import TrainModelKeys
 from dags.model_lifecycle_orchestrator.on_training_decision.services.tasks import train_model
 from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
-from dags.shared.modules.schemas.airflow import AirflowTaskContext
+from dags.shared.modules.schemas.airflow import TaskContext
 
 class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
     model_config = ConfigDict(strict=True)
@@ -19,7 +19,7 @@ class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdateTrainedModelInfoInWorkflowXCom":
-        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
             model_trained_at_iso_datetime=ti.xcom_pull(
                 task_ids=train_model.__name__,
@@ -59,7 +59,7 @@ class InitializePromotionApprovalXCom(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "InitializePromotionApprovalXCom":
-        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
             model_name=ti.xcom_pull(
                 task_ids=train_model.__name__,
@@ -94,7 +94,7 @@ class UpdatePromotionPendingWorkflow(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdatePromotionPendingWorkflow":
-        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
             promotion_approval_slack_ts=ti.xcom_pull(
                 task_ids=initialize_promotion_approval.__name__,
@@ -115,7 +115,7 @@ class UpdatePromotionApproval(BaseModel):
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdatePromotionApproval":
-        ti: TaskInstance = AirflowTaskContext.from_context(context).ti
+        ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
             promotion_approval_slack_ts=ti.xcom_pull(
                 task_ids=initialize_promotion_approval.__name__,

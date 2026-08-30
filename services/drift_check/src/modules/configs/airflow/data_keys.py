@@ -1,7 +1,6 @@
-from dataclasses import dataclass
+from enum import StrEnum
 
-@dataclass(frozen=True)
-class DriftCheckKeys:
-    DRIFT_DETECTED: str = "DRIFT_DETECTED"
-    DRIFT_SUMMARY: str = "DRIFT_SUMMARY"
-    # ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID: str = "ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID"
+class DriftCheckKeys(StrEnum):
+    DRIFT_DETECTED = "DRIFT_DETECTED"
+    DRIFT_SUMMARY = "DRIFT_SUMMARY"
+    # ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID = "ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID"

@@ -1,12 +1,10 @@
-from airflow.sdk import task, get_current_context
+from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import DeleteExpiredMLFlowRunXCom
-from dags.shared.repositories.mlflow import mlflow_client
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredModelDeploymentWorkflowWithItsReplacement
+from dags.shared.repositories.mlflow.mlflow import mlflow_client
 
-@task(task_id="delete_expired_mlflow_run")
-def delete_expired_mlflow_run() -> None:
-    context = get_current_context()
+@task
+def delete_expired_mlflow_run(data: ExpiredModelDeploymentWorkflowWithItsReplacement | None) -> None:
+    assert isinstance(data, ExpiredModelDeploymentWorkflowWithItsReplacement)
 
-    delete_expired_mlflow_run_xcom = DeleteExpiredMLFlowRunXCom.from_context(context)
-
-    mlflow_client.delete_run(run_id=delete_expired_mlflow_run_xcom.expired_mlflow_run_id)
+    mlflow_client.delete_run(run_id=data.expired.mlflow_run_id)

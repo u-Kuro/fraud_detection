@@ -1,36 +1,40 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from airflow.sdk import dag
 
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.branches import DispatchTrainingApprovalBranches, NoActionBranches
-from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployments import has_any_active_model
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_ids import DispatchTrainingApprovalTaskIDs, NoActionTaskIDs
+from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres.model_deployments import has_active_model_deployment, get_active_model_deployment
 from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import invalidate_expired_challenger_model, drift_check, has_drift, dispatch_training_approval, no_action
-from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
+from dags.shared.modules.configs.project import ProjectConfig
+from dags.shared.services.slack import slack_failure_alert
 
 @dag(
-    dag_id=DagIDs.check_training_need,
     schedule="@daily",
     start_date=datetime(2026, 1, 1),
-    is_paused_upon_creation=False,
     max_active_runs=1,
     catchup=False,
     default_args={
-        "owner": AirflowConfig.owner,
-        "retries": 1,
-        "retry_delay": timedelta(minutes=5),
-        "email_on_failure": False
+        "on_failure_callback": slack_failure_alert
     },
-    tags=["mle", "scheduled", "check", "training"]
+    is_paused_upon_creation=False,
+    tags=[ProjectConfig.project_name, "scheduled", "daily", "monitor", "drift"],
 )
 def check_training_need():
+    active_model_deployment = get_active_model_deployment()
+    drift_result = drift_check(active_model_deployment)
+
+    # noinspection unsupported-operator,unresolved-references
     invalidate_expired_challenger_model() \
-    >> has_any_active_model() >> [
-        drift_check() \
-        >> has_drift() >> [
-            dispatch_training_approval(branch=DispatchTrainingApprovalBranches.drifted),
-            no_action(branch=NoActionBranches.no_drift)
+    >> has_active_model_deployment(active_model_deployment) >> [
+        drift_check(active_model_deployment)
+        >> has_drift(drift_result) >> [
+            dispatch_training_approval(
+                task_id=DispatchTrainingApprovalTaskIDs.drifted,
+                drift_result=drift_result,
+            ),
+            no_action(task_id=NoActionTaskIDs.no_drift)
         ],
-        dispatch_training_approval(branch=DispatchTrainingApprovalBranches.cold_start)
+        dispatch_training_approval(task_id=DispatchTrainingApprovalTaskIDs.cold_start)
     ]
 
 check_training_need()

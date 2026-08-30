@@ -1,5 +1,4 @@
 from os import environ
-from typing import Type
 
 import mlflow
 from mlflow import MlflowClient

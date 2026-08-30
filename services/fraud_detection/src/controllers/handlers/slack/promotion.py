@@ -7,7 +7,7 @@ from services.fraud_detection.src.services.mwaa import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
 from services.fraud_detection.src.services.slack import update_message
 
-@slack_app.action("approve_promotion")
+@slack_app.state("approve_promotion")
 def approve_promotion(
     ack: Ack,
     body: dict,
@@ -30,7 +30,7 @@ def approve_promotion(
             text_markdown=f"🚀 *Promotion approved* by @{body['user']['username']}, added to queue..."
         )
 
-@slack_app.action("reject_promotion")
+@slack_app.state("reject_promotion")
 def reject_promotion(
     ack,
     body,

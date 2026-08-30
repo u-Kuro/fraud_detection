@@ -50,8 +50,7 @@ train_model = [
     "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.0.52",
 ]
-dev = [
-    # Apache Airflow (additionals)
+dags = [
     "apache-airflow>=3.3.1",
     "apache-airflow-providers-amazon>=9.34.0",
     "apache-airflow-providers-cncf-kubernetes>=10.21.0",
@@ -61,6 +60,8 @@ dev = [
     "mlflow-skinny>=3.15.2",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
+]
+dev = [
     # Notebooks
     "imbalanced-learn>=0.14.2",
     "ipykernel>=7.3.0",

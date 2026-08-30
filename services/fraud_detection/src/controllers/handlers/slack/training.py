@@ -7,7 +7,7 @@ from services.fraud_detection.src.services.mwaa import trigger_airflow_dag
 from services.fraud_detection.src.services.idempotency import slack_action_store
 from services.fraud_detection.src.services.slack import update_message
 
-@slack_app.action("approve_training")
+@slack_app.state("approve_training")
 def approve_training(
     ack: Ack,
     body: dict,
@@ -22,7 +22,7 @@ def approve_training(
             configurations={
                 "approved": True,
                 "workflow_id": str(training_value.workflow_id),
-                "for_promotion": training_value.for_promotion
+                "should_train_for_promotion": training_value.should_train_for_promotion
             }
         )
         update_message(
@@ -31,7 +31,7 @@ def approve_training(
             text_markdown=f"✅ *Training approved* by @{body['user']['username']}, added to queue..."
         )
 
-@slack_app.action("reject_training")
+@slack_app.state("reject_training")
 def reject_training(
     ack: Ack,
     body: dict,
@@ -46,7 +46,7 @@ def reject_training(
             configurations={
                 "approved": False,
                 "workflow_id": str(training_value.workflow_id),
-                "for_promotion": training_value.for_promotion
+                "should_train_for_promotion": training_value.should_train_for_promotion
             }
         )
         update_message(
