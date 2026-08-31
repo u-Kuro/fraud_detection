@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, StrictBool
 
 class TrainingValue(BaseModel):
-    model_config = ConfigDict(strict=False)
-
     workflow_id: UUID
-    should_train_for_promotion: bool
+    should_train_for_promotion: StrictBool
 
 class PromotionValue(BaseModel):
-    model_config = ConfigDict(strict=False)
-
     workflow_id: UUID

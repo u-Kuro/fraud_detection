@@ -10,7 +10,7 @@ from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airfl
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_states import CurrentModelDeploymentWorkflowForTrainingStates
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_ids import NoActionTaskIDs
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredModelDeploymentWorkflowWithItsReplacement, ModelDeploymentWorkflowForTraining, ExpiredModelDeploymentWorkflow, ReservedModelDeploymentWorkflow
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredAndReservedModelDeploymentWorkflows, ModelDeploymentWorkflowForTraining, ExpiredModelDeploymentWorkflow, ReservedModelDeploymentWorkflow
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.airflow import TaskContext
@@ -18,7 +18,7 @@ from dags.shared.modules.schemas.postgres.model_deployment_workflows import Mode
 from dags.shared.repositories.postgres.postgres import sql_session
 
 @task
-def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredModelDeploymentWorkflowWithItsReplacement | None:
+def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredAndReservedModelDeploymentWorkflows | None:
     with sql_session.begin() as session:
         expired_model_deployment_workflow = aliased(
             ModelDeploymentWorkflows,
@@ -49,7 +49,7 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredModel
                 expired_model_deployment_workflow.registered_model_name.label(ExpiredModelDeploymentWorkflowsKeys.MODEL_NAME),
                 expired_model_deployment_workflow.registered_model_version.label(ExpiredModelDeploymentWorkflowsKeys.MODEL_VERSION),
                 expired_model_deployment_workflow.mlflow_run_id.label(ExpiredModelDeploymentWorkflowsKeys.MLFLOW_RUN_ID),
-                expired_model_deployment_workflow.promotion_approval_slack_ts.label(ExpiredModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS),
+                expired_model_deployment_workflow.slack_promotion_approval_message_ts.label(ExpiredModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS),
 
                 reserved_model_deployment_workflow.registered_model_name.label(ReservedModelDeploymentWorkflowsKeys.MODEL_NAME),
                 reserved_model_deployment_workflow.registered_model_version.label(ReservedModelDeploymentWorkflowsKeys.MODEL_VERSION),
@@ -64,13 +64,13 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredModel
     if result is None:
         return None
     else:
-        return ExpiredModelDeploymentWorkflowWithItsReplacement(
+        return ExpiredAndReservedModelDeploymentWorkflows(
             expired=ExpiredModelDeploymentWorkflow(
                 workflow_id=result[ExpiredModelDeploymentWorkflowsKeys.WORKFLOW_ID],
                 model_name=result[ExpiredModelDeploymentWorkflowsKeys.MODEL_NAME],
                 model_version=result[ExpiredModelDeploymentWorkflowsKeys.MODEL_VERSION],
                 mlflow_run_id=result[ExpiredModelDeploymentWorkflowsKeys.MLFLOW_RUN_ID],
-                promotion_approval_slack_ts=result[ExpiredModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS],
+                slack_promotion_approval_message_ts=result[ExpiredModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS],
             ),
             reserved=ReservedModelDeploymentWorkflow(
                 model_name=result[ReservedModelDeploymentWorkflowsKeys.MODEL_NAME],
@@ -79,10 +79,10 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredModel
         )
 
 @task.branch
-def has_expired_promote_pending_workflow_with_replacement(data: ExpiredModelDeploymentWorkflowWithItsReplacement | None) -> str:
+def has_expired_promote_pending_workflow_with_replacement(expired_and_reserved_model_deployment_workflows: ExpiredAndReservedModelDeploymentWorkflows | None) -> str:
     context = TaskContext(get_current_context())
 
-    if data is None:
+    if expired_and_reserved_model_deployment_workflows is None:
         return context.resolve_task_id(
             task_id=NoActionTaskIDs.no_expired_promote_pending_workflow_with_replacement
         )
@@ -122,7 +122,7 @@ def get_current_model_deployment_workflow_for_training() -> ModelDeploymentWorkf
             return ModelDeploymentWorkflowForTraining(
                 state=CurrentModelDeploymentWorkflowForTrainingStates.train_and_replace_the_challenger,
                 workflow_id=latest_workflow.id,
-                training_approval_slack_ts=latest_workflow.training_approval_slack_ts,
+                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
                 should_train_for_promotion=True,
             )
         elif latest_workflow.state == ModelDeploymentWorkflowState.promote_pending:
@@ -142,7 +142,7 @@ def get_current_model_deployment_workflow_for_training() -> ModelDeploymentWorkf
             return ModelDeploymentWorkflowForTraining(
                 state=CurrentModelDeploymentWorkflowForTrainingStates.train_and_replace_the_challenger_substitute,
                 workflow_id=latest_workflow.id,
-                training_approval_slack_ts=latest_workflow.training_approval_slack_ts,
+                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
                 should_train_for_promotion=True,
             )
         elif latest_workflow.state == ModelDeploymentWorkflowState.reserved:
@@ -180,8 +180,8 @@ def check_current_model_deployment_workflows(model_deployment_workflow_for_train
         raise ValueError(f"Unexpected state: {model_deployment_workflow_for_training.state}")
 
 @task
-def delete_expired_promote_pending_workflow(data: ExpiredModelDeploymentWorkflowWithItsReplacement | None) -> None:
-    assert isinstance(data, ExpiredModelDeploymentWorkflowWithItsReplacement)
+def delete_expired_promote_pending_workflow(data: ExpiredAndReservedModelDeploymentWorkflows | None):
+    assert data is not None
 
     with sql_session.begin() as session:
         session.execute(
@@ -216,7 +216,7 @@ def initialize_train_pending_workflow(model_deployment_workflow_for_training: Mo
     return model_deployment_workflow_for_training
 
 @task
-def reinitialize_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None) -> None:
+def reinitialize_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None):
     assert model_deployment_workflow_for_training is not None
     assert model_deployment_workflow_for_training.workflow_id is not None
 
@@ -235,8 +235,8 @@ def reinitialize_train_pending_workflow(model_deployment_workflow_for_training: 
         )
 
 @task
-def update_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining) -> None:
-    assert model_deployment_workflow_for_training.training_approval_slack_ts is not None
+def update_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining):
+    assert model_deployment_workflow_for_training.slack_training_approval_message_ts is not None
 
     with sql_session.begin() as session:
         session.execute(
@@ -246,6 +246,6 @@ def update_train_pending_workflow(model_deployment_workflow_for_training: ModelD
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
-                ModelDeploymentWorkflows.training_approval_slack_ts.key: model_deployment_workflow_for_training.training_approval_slack_ts
+                ModelDeploymentWorkflows.slack_training_approval_message_ts.key: model_deployment_workflow_for_training.slack_training_approval_message_ts
             })
         )

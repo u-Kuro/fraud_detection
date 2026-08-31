@@ -37,5 +37,5 @@ class ModelDeploymentWorkflows(PostgresTableBase):
     registered_model_version: Mapped[Optional[int]] = mapped_column(Integer)
     model_dataset_min_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     model_dataset_max_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    training_approval_slack_ts: Mapped[str] = mapped_column(Text)
-    promotion_approval_slack_ts: Mapped[Optional[str]] = mapped_column(Text)
+    slack_training_approval_message_ts: Mapped[str] = mapped_column(Text)
+    slack_promotion_approval_message_ts: Mapped[Optional[str]] = mapped_column(Text)

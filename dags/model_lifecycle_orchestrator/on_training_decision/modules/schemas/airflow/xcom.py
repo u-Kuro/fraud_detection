@@ -1,5 +1,5 @@
 from airflow.models import TaskInstance
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, StrictStr, StrictInt, StrictFloat
 
 from dags.model_lifecycle_orchestrator.on_training_decision.controllers.slack import initialize_promotion_approval
 from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.data_keys import TrainModelKeys
@@ -8,14 +8,12 @@ from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflo
 from dags.shared.modules.schemas.airflow import TaskContext
 
 class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    model_trained_at_iso_datetime: str
-    mlflow_run_id: str
-    model_name: str
-    model_version: int
-    model_dataset_min_iso_datetime: str
-    model_dataset_max_iso_datetime: str
+    model_trained_at_iso_datetime: StrictStr
+    mlflow_run_id: StrictStr
+    model_name: StrictStr
+    model_version: StrictInt
+    model_dataset_min_iso_datetime: StrictStr
+    model_dataset_max_iso_datetime: StrictStr
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdateTrainedModelInfoInWorkflowXCom":
@@ -48,14 +46,12 @@ class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
         )
 
 class InitializePromotionApprovalXCom(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    model_name: str
-    model_version: int
-    f1_score: float
-    pr_auc: float
-    recall: float
-    precision: float
+    model_name: StrictStr
+    model_version: StrictInt
+    f1_score: StrictFloat
+    pr_auc: StrictFloat
+    recall: StrictFloat
+    precision: StrictFloat
 
     @classmethod
     def from_context(cls, context: dict) -> "InitializePromotionApprovalXCom":
@@ -88,38 +84,34 @@ class InitializePromotionApprovalXCom(BaseModel):
         )
 
 class UpdatePromotionPendingWorkflow(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    promotion_approval_slack_ts: str
+    slack_promotion_approval_message_ts: StrictStr
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdatePromotionPendingWorkflow":
         ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
-            promotion_approval_slack_ts=ti.xcom_pull(
+            slack_promotion_approval_message_ts=ti.xcom_pull(
                 task_ids=initialize_promotion_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS,
+                key=ModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS,
             ),
         )
 
 class UpdatePromotionApproval(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    promotion_approval_slack_ts: str
-    model_name: str
-    model_version: int
-    f1_score: float
-    pr_auc: float
-    recall: float
-    precision: float
+    slack_promotion_approval_message_ts: StrictStr
+    model_name: StrictStr
+    model_version: StrictInt
+    f1_score: StrictFloat
+    pr_auc: StrictFloat
+    recall: StrictFloat
+    precision: StrictFloat
 
     @classmethod
     def from_context(cls, context: dict) -> "UpdatePromotionApproval":
         ti: TaskInstance = TaskContext.from_context(context).task_instance
         return cls(
-            promotion_approval_slack_ts=ti.xcom_pull(
+            slack_promotion_approval_message_ts=ti.xcom_pull(
                 task_ids=initialize_promotion_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS,
+                key=ModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS,
             ),
             model_name=ti.xcom_pull(
                 task_ids=train_model.__name__,

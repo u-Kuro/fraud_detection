@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictStr
 
 class StatusResponse(BaseModel):
-    status: str
+    status: StrictStr

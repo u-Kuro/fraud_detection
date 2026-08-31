@@ -13,23 +13,27 @@ from dags.model_lifecycle_orchestrator.check_training_need.repositories.postgres
 from dags.shared.modules.environment.ecr import ecr_environment
 from dags.shared.modules.environment.k8s import k8s_environment
 from dags.shared.modules.schemas.airflow import TaskContext
+from dags.shared.modules.utilities.airflow.airflow import sequence
 
 def no_action(task_id: NoActionTaskIDs) -> EmptyOperator:
     return EmptyOperator(task_id=task_id)
 
 @task_group
 def invalidate_expired_challenger_model() -> None:
-    model_deployment_workflows = get_expired_model_deployment_workflow_with_its_replacement()
-    # noinspection none-function-assignment,unresolved-references
-    has_expired_promote_pending_workflow_with_replacement(model_deployment_workflows) >> [
-        invalidate_expired_promotion_approval(model_deployment_workflows)
-        >> replace_expired_model(model_deployment_workflows)
-        >> delete_expired_model(model_deployment_workflows)
-        >> delete_expired_mlflow_run(model_deployment_workflows)
-        >> delete_expired_promote_pending_workflow(model_deployment_workflows),
-
-        no_action(task_id=NoActionTaskIDs.no_expired_promote_pending_workflow_with_replacement)
-    ]
+    sequence(
+        expired_and_reserved_model_deployment_workflows := get_expired_model_deployment_workflow_with_its_replacement(),
+        has_expired_promote_pending_workflow_with_replacement(expired_and_reserved_model_deployment_workflows),
+        [
+            sequence(
+                invalidate_expired_promotion_approval(expired_and_reserved_model_deployment_workflows),
+                replace_expired_model(expired_and_reserved_model_deployment_workflows),
+                delete_expired_model(expired_and_reserved_model_deployment_workflows),
+                delete_expired_mlflow_run(expired_and_reserved_model_deployment_workflows),
+                delete_expired_promote_pending_workflow(expired_and_reserved_model_deployment_workflows)
+            ),
+            no_action(task_id=NoActionTaskIDs.no_expired_promote_pending_workflow_with_replacement)
+        ]
+    )
 
 def setup_training_approval(
     task_id: SetupTrainingApprovalTaskIDs,
@@ -38,17 +42,16 @@ def setup_training_approval(
 ):
     @task_group(group_id=task_id)
     def group() -> None:
-        initialize_training_approval_task = initialize_training_approval(
-            model_deployment_workflow_for_training=model_deployment_workflow_for_training,
-            drift_result=drift_result,
-        )
-
-        # noinspection none-function-assignment,unresolved-references
-        initialize_training_approval_task \
-        >> update_train_pending_workflow(initialize_training_approval_task) \
-        >> update_training_approval(
-            model_deployment_workflow_for_training=initialize_training_approval_task,
-            drift_result=drift_result,
+        sequence(
+            initialize_training_approval_task := initialize_training_approval(
+                new_model_deployment_workflow_for_training=model_deployment_workflow_for_training,
+                drift_result=drift_result,
+            ),
+            update_train_pending_workflow(initialize_training_approval_task),
+            update_training_approval(
+                new_model_deployment_workflow_for_training=initialize_training_approval_task,
+                drift_result=drift_result,
+            )
         )
 
     return group()
@@ -59,32 +62,35 @@ def dispatch_training_approval(
 ):
     @task_group(group_id=task_id)
     def group() -> None:
-        model_deployment_workflow_for_training = get_current_model_deployment_workflow_for_training()
+        sequence(
+            current_model_deployment_workflow_for_training := get_current_model_deployment_workflow_for_training(),
+            check_current_model_deployment_workflows(current_model_deployment_workflow_for_training),
+            [
+                sequence(
+                    new_model_deployment_workflow_for_training := initialize_train_pending_workflow(current_model_deployment_workflow_for_training),
+                    setup_training_approval(
+                        task_id=SetupTrainingApprovalTaskIDs.post,
+                        model_deployment_workflow_for_training=new_model_deployment_workflow_for_training,
+                        drift_result=drift_result,
+                    )
+                ),
 
-        initialize_train_pending_workflow_task = initialize_train_pending_workflow(model_deployment_workflow_for_training)
+                sequence(
+                    invalidate_old_training_approval(
+                        model_deployment_workflow_for_training=current_model_deployment_workflow_for_training,
+                        drift_result=drift_result,
+                    ),
+                    reinitialize_train_pending_workflow(current_model_deployment_workflow_for_training),
+                    setup_training_approval(
+                        task_id=SetupTrainingApprovalTaskIDs.replace,
+                        model_deployment_workflow_for_training=current_model_deployment_workflow_for_training,
+                        drift_result=drift_result,
+                    )
+                ),
 
-        # noinspection none-function-assignment,unresolved-references,unsupported-operator
-        check_current_model_deployment_workflows(model_deployment_workflow_for_training) >> [
-            initialize_train_pending_workflow_task
-            >> setup_training_approval(
-                task_id=SetupTrainingApprovalTaskIDs.post,
-                model_deployment_workflow_for_training=initialize_train_pending_workflow_task,
-                drift_result=drift_result,
-            ),
-
-            invalidate_old_training_approval(
-                model_deployment_workflow_for_training=model_deployment_workflow_for_training,
-                drift_result=drift_result,
-            )
-            >> reinitialize_train_pending_workflow(model_deployment_workflow_for_training)
-            >> setup_training_approval(
-                task_id=SetupTrainingApprovalTaskIDs.replace,
-                model_deployment_workflow_for_training=model_deployment_workflow_for_training,
-                drift_result=drift_result,
-            ),
-
-            no_action(task_id=NoActionTaskIDs.no_expired_workflows)
-        ]
+                no_action(task_id=NoActionTaskIDs.no_expired_workflows)
+            ]
+        )
 
     return group()
 
@@ -128,23 +134,29 @@ def drift_check_operator(active_model_deployment: ActiveModelDeployment) -> Kube
 
 @task_group
 def drift_check(active_model_deployment: ActiveModelDeployment | None) -> DriftCheckResult:
-    assert isinstance(active_model_deployment, ActiveModelDeployment)
+    assert active_model_deployment is not None
 
     @task
     def get_drift_result() -> DriftCheckResult:
         context = TaskContext(get_current_context())
         return context.xcom_pull(pydantic_model=DriftCheckResult)
 
-    drift_result = get_drift_result()
-
-    # noinspection unsupported-operator
-    drift_check_operator(active_model_deployment) >> drift_result
+    sequence(
+        drift_check_operator(active_model_deployment),
+        drift_result := get_drift_result()
+    )
 
     return drift_result
 
 @task.branch
 def has_drift(drift_result: DriftCheckResult):
+    context = TaskContext(get_current_context())
+
     if drift_result.drift_detected:
-        return DispatchTrainingApprovalTaskIDs.drifted
+        return context.resolve_task_id(
+            task_id=DispatchTrainingApprovalTaskIDs.drifted
+        )
     else:
-        return NoActionTaskIDs.no_drift
+        return context.resolve_task_id(
+            task_id=NoActionTaskIDs.no_drift
+        )

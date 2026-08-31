@@ -81,6 +81,6 @@ def update_promotion_pending_workflow() -> None:
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
-                ModelDeploymentWorkflows.promotion_approval_slack_ts.key: update_promotion_pending_workflow_xcom.promotion_approval_slack_ts
+                ModelDeploymentWorkflows.slack_promotion_approval_message_ts.key: update_promotion_pending_workflow_xcom.slack_promotion_approval_message_ts
             })
         )

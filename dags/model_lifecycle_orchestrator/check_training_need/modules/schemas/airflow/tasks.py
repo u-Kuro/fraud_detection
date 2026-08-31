@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, StrictStr, StrictInt, StrictBool, Strict
 
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import DriftCheckKeys
 from dags.model_lifecycle_orchestrator.check_training_need.services.tasks import drift_check_operator
@@ -8,31 +9,25 @@ from dags.shared.modules.schemas.airflow import TaskContext
 
 class ExpiredModelDeploymentWorkflow(BaseModel):
     workflow_id: UUID
-    model_name: str
-    model_version: int
-    mlflow_run_id: str
-    promotion_approval_slack_ts: str
+    model_name: StrictStr
+    model_version: StrictInt
+    mlflow_run_id: StrictStr
+    slack_promotion_approval_message_ts: StrictStr
 
 class ReservedModelDeploymentWorkflow(BaseModel):
-    model_name: str
-    model_version: int
+    model_name: StrictStr
+    model_version: StrictInt
 
-class ExpiredModelDeploymentWorkflowWithItsReplacement(BaseModel):
-    model_config = ConfigDict(strict=False)
-
+class ExpiredAndReservedModelDeploymentWorkflows(BaseModel):
     expired: ExpiredModelDeploymentWorkflow
     reserved: ReservedModelDeploymentWorkflow
 
 class ActiveModelDeployment(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    mlflow_run_id: str
+    mlflow_run_id: StrictStr
 
 class DriftCheckResult(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    drift_detected: bool
-    drift_summary: dict[str, dict]
+    drift_detected: StrictBool
+    drift_summary: Annotated[dict[StrictStr, Annotated[dict, Strict()]], Strict()]
 
     @model_validator(mode="wrap")
     @classmethod
@@ -51,12 +46,9 @@ class DriftCheckResult(BaseModel):
         )
 
 class ModelDeploymentWorkflowForTraining(BaseModel):
-    model_config = ConfigDict(
-        strict=False,
-        validate_assignment = True
-    )
+    model_config = ConfigDict(validate_assignment=True)
 
-    state: str
+    state: StrictStr
     workflow_id: UUID | None = None
-    training_approval_slack_ts: str | None = None
-    should_train_for_promotion: bool
+    slack_training_approval_message_ts: StrictStr | None = None
+    should_train_for_promotion: StrictBool

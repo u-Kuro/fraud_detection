@@ -1,13 +1,11 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, StrictBool
 
 from dags.shared.modules.schemas.airflow import TaskDAGRun
 
 class PromotionDecisionCallbackConfigurations(BaseModel):
-    model_config = ConfigDict(strict=False)
-
-    approved: bool
+    approved: StrictBool
     workflow_id: UUID
 
     @classmethod

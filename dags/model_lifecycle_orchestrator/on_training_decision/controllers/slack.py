@@ -33,13 +33,13 @@ def initialize_promotion_approval() -> None:
         )
     )
 
-    promotion_approval_slack_ts = response["ts"]
-    assert isinstance(promotion_approval_slack_ts, str)
+    slack_promotion_approval_message_ts = response["ts"]
+    assert isinstance(slack_promotion_approval_message_ts, str)
 
     ti = TaskContext.from_context(context).task_instance
     ti.xcom_push(
-        key=ModelDeploymentWorkflowsKeys.PROMOTION_APPROVAL_SLACK_TS,
-        value=promotion_approval_slack_ts
+        key=ModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS,
+        value=slack_promotion_approval_message_ts
     )
 
 def model_promotion_buttons(workflow_id: UUID) -> list:
@@ -78,7 +78,7 @@ def update_promotion_approval() -> None:
     update_promotion_approval_xcom = UpdatePromotionApproval.from_context(context)
 
     slack_client.chat_update(
-        ts=update_promotion_approval_xcom.promotion_approval_slack_ts,
+        ts=update_promotion_approval_xcom.slack_promotion_approval_message_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=create_blocks(
             title="⚠️ Challenger Model Promotion Required",
