@@ -1,23 +1,17 @@
-from airflow.sdk import task, get_current_context
+from airflow.sdk import task
 from sqlalchemy import select, update, insert, true
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
-from dags.shared.modules.schemas.airflow import TaskContext
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.tasks import PromotionDecision, PromotedModelDeployment
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflows
 from dags.shared.modules.schemas.postgres.model_deployments import ModelDeployments
 from dags.shared.repositories.postgres.postgres import sql_session
 
-@task(task_id="promote_model_deployment")
-def promote_model_deployment() -> None:
-    context = get_current_context()
-
-    promotion_decision_callback_configurations = PromotionDecisionCallbackConfigurations.from_context(context)
-
+@task
+def promote_model_deployment(promotion_decision_configuration: PromotionDecision) -> PromotedModelDeployment:
     with sql_session.begin() as session:
         project_id_subquery = (
             select(ModelDeploymentWorkflows.project_id)
-            .where(ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id)
+            .where(ModelDeploymentWorkflows.id == promotion_decision_configuration.model_deployment_workflow.id)
             .limit(1)
             .scalar_subquery()
         )
@@ -54,7 +48,7 @@ def promote_model_deployment() -> None:
                     true()
                 )
                 .where(
-                    ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id
+                    ModelDeploymentWorkflows.id == promotion_decision_configuration.model_deployment_workflow.id
                 )
             )
             .returning(
@@ -62,8 +56,6 @@ def promote_model_deployment() -> None:
             )
         ).one().t
 
-    ti = TaskContext.from_context(context).task_instance
-    ti.xcom_push(
-        key=ArchiveKeys.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
-        value=dataset_max_timestamp.isoformat()
+    return PromotedModelDeployment(
+        dataset_max_timestamp=dataset_max_timestamp
     )

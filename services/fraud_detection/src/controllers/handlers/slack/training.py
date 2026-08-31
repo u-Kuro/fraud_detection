@@ -21,7 +21,9 @@ def approve_training(
             dag_id="on_training_decision",
             configurations={
                 "approved": True,
-                "workflow_id": str(training_value.workflow_id),
+                "model_deployment_workflow": {
+                    "id": str(training_value.workflow_id),
+                },
                 "should_train_for_promotion": training_value.should_train_for_promotion
             }
         )
@@ -45,7 +47,9 @@ def reject_training(
             dag_id="on_training_decision",
             configurations={
                 "approved": False,
-                "workflow_id": str(training_value.workflow_id),
+                "model_deployment_workflow": {
+                    "id": str(training_value.workflow_id),
+                },
                 "should_train_for_promotion": training_value.should_train_for_promotion
             }
         )

@@ -3,7 +3,8 @@ from uuid import UUID
 
 from airflow.sdk import task
 
-from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredAndReservedModelDeploymentWorkflows, ModelDeploymentWorkflowForTraining, DriftCheckResult
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredAndReservedModelDeploymentWorkflows, ModelDeploymentWorkflowForTraining
+from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.xcom import DriftCheckResult
 from dags.shared.services.slack import create_blocks, slack_client
 from dags.shared.modules.environment.slack import slack_environment
 
@@ -122,10 +123,10 @@ def build_training_approval_blocks_initializing(
 
 @task
 def initialize_training_approval(
-    new_model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None,
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None,
     drift_result: DriftCheckResult | None,
 ) -> ModelDeploymentWorkflowForTraining:
-    assert new_model_deployment_workflow_for_training is not None
+    assert model_deployment_workflow_for_training is not None
     assert drift_result is not None
 
     response = slack_client.chat_postMessage(
@@ -138,9 +139,9 @@ def initialize_training_approval(
 
     assert isinstance(slack_training_approval_message_ts, str)
 
-    new_model_deployment_workflow_for_training.slack_training_approval_message_ts = slack_training_approval_message_ts
+    model_deployment_workflow_for_training.slack_training_approval_message_ts = slack_training_approval_message_ts
 
-    return new_model_deployment_workflow_for_training
+    return model_deployment_workflow_for_training
 
 def cold_start_buttons(
     workflow_id: UUID,
@@ -255,18 +256,18 @@ def build_training_approval_blocks(
 
 @task
 def update_training_approval(
-    new_model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining,
+    model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining,
     drift_result: DriftCheckResult | None,
 ):
-    assert new_model_deployment_workflow_for_training.slack_training_approval_message_ts is not None
-    assert new_model_deployment_workflow_for_training.workflow_id is not None
+    assert model_deployment_workflow_for_training.slack_training_approval_message_ts is not None
+    assert model_deployment_workflow_for_training.id is not None
 
     slack_client.chat_update(
-        ts=new_model_deployment_workflow_for_training.slack_training_approval_message_ts,
+        ts=model_deployment_workflow_for_training.slack_training_approval_message_ts,
         channel=slack_environment.SLACK_CHANNEL_ID,
         blocks=build_training_approval_blocks(
-            workflow_id=new_model_deployment_workflow_for_training.workflow_id,
+            workflow_id=model_deployment_workflow_for_training.id,
             drift_result=drift_result,
-            should_train_for_promotion=new_model_deployment_workflow_for_training.should_train_for_promotion
+            should_train_for_promotion=model_deployment_workflow_for_training.should_train_for_promotion
         )
     )

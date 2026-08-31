@@ -4,7 +4,7 @@ from xgboost import XGBClassifier
 from services.shared.controllers.airflow.xcom import xcom_push
 from services.shared.modules.configs.mlflow import MLFlowConfig
 from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
-from services.train_model.src.modules.configs.airflow.data_keys import TrainModelKeys
+from services.train_model.src.modules.configs.airflow.xcom import TrainModelXComKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
 from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.repositories.mlflow.registered_model import save_and_register_model
@@ -64,16 +64,16 @@ def main() -> None:
     )
 
     xcom_push({
-        TrainModelKeys.MODEL_TRAINED_AT_ISO_DATETIME: unused_dataset_outputs.retrieved_iso_datetime,
-        TrainModelKeys.MLFLOW_RUN_ID: registered_model_info.run_id,
-        TrainModelKeys.MODEL_NAME: registered_model_info.model_name,
-        TrainModelKeys.MODEL_VERSION: registered_model_info.model_version,
-        TrainModelKeys.MODEL_DATASET_MIN_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_min_iso_datetime,
-        TrainModelKeys.MODEL_DATASET_MAX_ISO_DATETIME: dataset_min_max_timestamps.model_dataset_max_iso_datetime,
-        TrainModelKeys.MODEL_F1_SCORE: model_evaluations.metrics.f1_score,
-        TrainModelKeys.MODEL_PR_AUC: model_evaluations.metrics.pr_auc,
-        TrainModelKeys.MODEL_RECALL: model_evaluations.metrics.recall,
-        TrainModelKeys.MODEL_PRECISION: model_evaluations.metrics.precision,
+        TrainModelXComKeys.model_trained_at_datetime: unused_dataset_outputs.retrieved_datetime,
+        TrainModelXComKeys.model_mlflow_run_id: registered_model_info.run_id,
+        TrainModelXComKeys.model_name: registered_model_info.model_name,
+        TrainModelXComKeys.model_version: registered_model_info.model_version,
+        TrainModelXComKeys.model_dataset_min_datetime: dataset_min_max_timestamps.model_dataset_min_iso_datetime,
+        TrainModelXComKeys.model_dataset_max_datetime: dataset_min_max_timestamps.model_dataset_max_iso_datetime,
+        TrainModelXComKeys.model_f1_score: model_evaluations.metrics.f1_score,
+        TrainModelXComKeys.model_pr_auc: model_evaluations.metrics.pr_auc,
+        TrainModelXComKeys.model_recall: model_evaluations.metrics.recall,
+        TrainModelXComKeys.model_precision: model_evaluations.metrics.precision,
     })
 
 if __name__ == "__main__":

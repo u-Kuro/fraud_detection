@@ -1,140 +1,67 @@
-from airflow.models import TaskInstance
-from pydantic import BaseModel, StrictStr, StrictInt, StrictFloat
+from datetime import datetime
 
-from dags.model_lifecycle_orchestrator.on_training_decision.controllers.slack import initialize_promotion_approval
-from dags.model_lifecycle_orchestrator.on_training_decision.modules.schemas.airflow.data_keys import TrainModelKeys
-from dags.model_lifecycle_orchestrator.on_training_decision.services.tasks import train_model
-from dags.shared.modules.configs.airflow.data_keys import ModelDeploymentWorkflowsKeys
+from pydantic import BaseModel, StrictStr, StrictInt, StrictFloat, model_validator
+
+from dags.model_lifecycle_orchestrator.on_training_decision.modules.configs.airflow.xcom import TrainModelXComKeys
+from dags.model_lifecycle_orchestrator.on_training_decision.services.tasks import train_model_operator
 from dags.shared.modules.schemas.airflow import TaskContext
 
-class UpdateTrainedModelInfoInWorkflowXCom(BaseModel):
-    model_trained_at_iso_datetime: StrictStr
-    mlflow_run_id: StrictStr
+class TrainModelResult(BaseModel):
+    model_trained_at_datetime: StrictStr
+    model_mlflow_run_id: StrictStr
     model_name: StrictStr
     model_version: StrictInt
-    model_dataset_min_iso_datetime: StrictStr
-    model_dataset_max_iso_datetime: StrictStr
+    model_dataset_min_datetime: datetime
+    model_dataset_max_datetime: datetime
+    model_f1_score: StrictFloat
+    model_pr_auc: StrictFloat
+    model_recall: StrictFloat
+    model_precision: StrictFloat
 
+    @model_validator(mode="wrap")
     @classmethod
-    def from_context(cls, context: dict) -> "UpdateTrainedModelInfoInWorkflowXCom":
-        ti: TaskInstance = TaskContext.from_context(context).task_instance
+    def parse_xcom(cls, context: TaskContext) -> "TrainModelResult":
+        task_instance = context.task_instance
+        task_id = context.resolve_task_id(train_model_operator.__name__)
         return cls(
-            model_trained_at_iso_datetime=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_TRAINED_AT_ISO_DATETIME,
+            model_trained_at_datetime=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_trained_at_datetime,
             ),
-            mlflow_run_id=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MLFLOW_RUN_ID,
+            model_mlflow_run_id=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_mlflow_run_id,
             ),
-            model_name=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_NAME,
+            model_name=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_name,
             ),
-            model_version=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_VERSION,
+            model_version=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_version,
             ),
-            model_dataset_min_iso_datetime=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_DATASET_MIN_ISO_DATETIME,
+            model_dataset_min_datetime=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_dataset_min_datetime,
             ),
-            model_dataset_max_iso_datetime=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_DATASET_MAX_ISO_DATETIME,
-            )
-        )
-
-class InitializePromotionApprovalXCom(BaseModel):
-    model_name: StrictStr
-    model_version: StrictInt
-    f1_score: StrictFloat
-    pr_auc: StrictFloat
-    recall: StrictFloat
-    precision: StrictFloat
-
-    @classmethod
-    def from_context(cls, context: dict) -> "InitializePromotionApprovalXCom":
-        ti: TaskInstance = TaskContext.from_context(context).task_instance
-        return cls(
-            model_name=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_NAME,
+            model_dataset_max_datetime=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_dataset_max_datetime,
             ),
-            model_version=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_VERSION,
+            model_f1_score=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_f1_score,
             ),
-            f1_score=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_F1_SCORE,
+            model_pr_auc=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_pr_auc,
             ),
-            pr_auc=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_PR_AUC,
+            model_recall=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_recall,
             ),
-            recall=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_RECALL,
-            ),
-            precision=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_PRECISION,
-            ),
-        )
-
-class UpdatePromotionPendingWorkflow(BaseModel):
-    slack_promotion_approval_message_ts: StrictStr
-
-    @classmethod
-    def from_context(cls, context: dict) -> "UpdatePromotionPendingWorkflow":
-        ti: TaskInstance = TaskContext.from_context(context).task_instance
-        return cls(
-            slack_promotion_approval_message_ts=ti.xcom_pull(
-                task_ids=initialize_promotion_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS,
-            ),
-        )
-
-class UpdatePromotionApproval(BaseModel):
-    slack_promotion_approval_message_ts: StrictStr
-    model_name: StrictStr
-    model_version: StrictInt
-    f1_score: StrictFloat
-    pr_auc: StrictFloat
-    recall: StrictFloat
-    precision: StrictFloat
-
-    @classmethod
-    def from_context(cls, context: dict) -> "UpdatePromotionApproval":
-        ti: TaskInstance = TaskContext.from_context(context).task_instance
-        return cls(
-            slack_promotion_approval_message_ts=ti.xcom_pull(
-                task_ids=initialize_promotion_approval.__name__,
-                key=ModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS,
-            ),
-            model_name=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_NAME,
-            ),
-            model_version=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_VERSION,
-            ),
-            f1_score=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_F1_SCORE,
-            ),
-            pr_auc=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_PR_AUC,
-            ),
-            recall=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_RECALL,
-            ),
-            precision=ti.xcom_pull(
-                task_ids=train_model.__name__,
-                key=TrainModelKeys.MODEL_PRECISION,
+            model_precision=task_instance.xcom_pull(
+                task_ids=task_id,
+                key=TrainModelXComKeys.model_precision,
             ),
         )

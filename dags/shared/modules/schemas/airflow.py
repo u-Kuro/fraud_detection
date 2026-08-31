@@ -10,7 +10,7 @@ class TaskDAGRun:
         self.dag_run = dag_run
 
     @property
-    def configurations(self) -> dict[str, Any]:
+    def conf(self) -> dict[str, Any]:
         conf = self.dag_run.conf
         if conf is None:
             raise TypeError(f"Expected a dict, got None.")
@@ -32,6 +32,9 @@ class TaskContext:
 
     def xcom_pull[T: BaseModel](self, pydantic_model: type[T]) -> T:
         return pydantic_model.model_validate(self)
+
+    def configurations[T: BaseModel](self, pydantic_model: type[T]) -> T:
+        return pydantic_model.model_validate(self.dag_run.conf)
 
     @property
     def task_instance(self) -> RuntimeTaskInstanceProtocol:

@@ -81,5 +81,5 @@ def get_timed_latest_unused_dataset() -> TransactionInferencesDatasetNow:
 
         return TransactionInferencesDatasetNow(
             dataset=df,
-            retrieved_iso_datetime=datetime.now(timezone.utc).isoformat()
+            retrieved_datetime=datetime.now(timezone.utc)
         )

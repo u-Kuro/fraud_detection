@@ -1,35 +1,34 @@
-# TODO - 31/08/2026 - Continue here + on_training_decision
-from datetime import datetime, timedelta
-
 from airflow.sdk import dag
 
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployments import promote_model_deployment
-from dags.model_lifecycle_orchestrator.on_promotion_decision.services.tasks import promotion_decision_callback, apply_model_deployment, archive_used_transaction_inferences
-from dags.shared.modules.configs.airflow.airflow import DagIDs, AirflowConfig
+from dags.model_lifecycle_orchestrator.on_promotion_decision.services.tasks import check_promotion_decision, get_promotion_decision, apply_model_deployment, archive_transaction_inferences_used_for_deployed_model
+from dags.shared.modules.configs.project import ProjectConfig
+from dags.shared.modules.utilities.airflow.airflow import sequence
+from dags.shared.services.slack import slack_failure_alert
 
 @dag(
-    dag_id=DagIDs.on_promotion_decision,
-    schedule=None,
-    start_date=datetime(2026, 1, 1),
-    is_paused_upon_creation=False,
     max_active_runs=1,
     default_args={
-        "owner": AirflowConfig.owner,
-        "retries": 1,
-        "retry_delay": timedelta(minutes=2),
-        "email_on_failure": False
+        "on_failure_callback": slack_failure_alert
     },
-    tags=["mle", "triggered", "promotion", "decision"]
+    is_paused_upon_creation=False,
+    tags=[ProjectConfig.project_name, "triggered", "promotion", "decision"]
 )
 def on_promotion_decision():
-    promotion_decision_callback() >> [
-        update_approved_promotion_workflow() \
-        >> promote_model_deployment() \
-        >> apply_model_deployment() \
-        >> archive_used_transaction_inferences(),
+    sequence(
+        promotion_decision := get_promotion_decision(),
+        check_promotion_decision(promotion_decision),
+        [
+            sequence(
+                update_approved_promotion_workflow(promotion_decision),
+                promoted_model_deployment := promote_model_deployment(promotion_decision),
+                apply_model_deployment(),
+                archive_transaction_inferences_used_for_deployed_model(promoted_model_deployment)
+            ),
 
-        delete_rejected_promotion_workflow()
-    ]
+            delete_rejected_promotion_workflow(promotion_decision)
+        ]
+    )
 
 on_promotion_decision()

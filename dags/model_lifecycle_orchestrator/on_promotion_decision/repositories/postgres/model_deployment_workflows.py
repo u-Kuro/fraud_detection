@@ -1,22 +1,18 @@
-from airflow.sdk import task, get_current_context
+from airflow.sdk import task
 from sqlalchemy import update, delete
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.tasks import PromotionDecision
 from dags.shared.modules.configs.postgres import PostgresConfig
 from dags.shared.modules.schemas.postgres.model_deployment_workflows import ModelDeploymentWorkflows
 from dags.shared.repositories.postgres.postgres import sql_session
 
-@task(task_id="update_approved_promotion_workflow")
-def update_approved_promotion_workflow() -> None:
-    context = get_current_context()
-
-    promotion_decision_callback_configurations = PromotionDecisionCallbackConfigurations.from_context(context)
-
+@task
+def update_approved_promotion_workflow(promotion_decision: PromotionDecision):
     with sql_session.begin() as session:
         session.execute(
             update(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id,
+                ModelDeploymentWorkflows.id == promotion_decision.model_deployment_workflow.id,
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
@@ -24,17 +20,13 @@ def update_approved_promotion_workflow() -> None:
             })
         )
 
-@task(task_id="delete_rejected_promotion_workflow")
-def delete_rejected_promotion_workflow() -> None:
-    context = get_current_context()
-
-    promotion_decision_callback_configurations = PromotionDecisionCallbackConfigurations.from_context(context)
-
+@task
+def delete_rejected_promotion_workflow(data: PromotionDecision):
     with sql_session.begin() as session:
         session.execute(
             delete(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.id == promotion_decision_callback_configurations.workflow_id,
+                ModelDeploymentWorkflows.id == data.model_deployment_workflow,
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
         )

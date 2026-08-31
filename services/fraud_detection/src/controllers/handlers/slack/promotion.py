@@ -21,7 +21,9 @@ def approve_promotion(
             dag_id="on_promotion_decision",
             configurations={
                 "approved": True,
-                "workflow_id": str(promotion_value.workflow_id),
+                "model_deployment_workflow": {
+                    "id": str(promotion_value.workflow_id),
+                }
             }
         )
         update_message(
@@ -33,9 +35,9 @@ def approve_promotion(
 @slack_app.state("reject_promotion")
 def reject_promotion(
     ack,
-    body,
-    action,
-    client
+    body: dict,
+    action: dict,
+    client: WebClient
 ):
     ack()
     with slack_action_store.guard(action["action_id"], body["message"]["ts"]):
@@ -44,7 +46,9 @@ def reject_promotion(
             dag_id="on_promotion_decision",
             configurations={
                 "approved": False,
-                "workflow_id": str(promotion_value.workflow_id),
+                "model_deployment_workflow": {
+                    "id": str(promotion_value.workflow_id),
+                }
              }
         )
         update_message(

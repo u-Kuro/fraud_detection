@@ -6,9 +6,8 @@ from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.orm import aliased
 
 from dags.model_lifecycle_orchestrator.check_training_need.controllers.slack import invalidate_old_training_approval, invalidate_expired_promotion_approval
-from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.data_keys import ExpiredModelDeploymentWorkflowsKeys, ReservedModelDeploymentWorkflowsKeys
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_states import CurrentModelDeploymentWorkflowForTrainingStates
-from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig
+from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.postgres.model_deployment_workflows import ModelDeploymentWorkflowsConfig, ReservedModelDeploymentWorkflowLabels, ExpiredModelDeploymentWorkflowsLabels
 from dags.model_lifecycle_orchestrator.check_training_need.modules.configs.airflow.task_ids import NoActionTaskIDs
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.airflow.tasks import ExpiredAndReservedModelDeploymentWorkflows, ModelDeploymentWorkflowForTraining, ExpiredModelDeploymentWorkflow, ReservedModelDeploymentWorkflow
 from dags.model_lifecycle_orchestrator.check_training_need.modules.schemas.model_deployment_workflows import ModelDeploymentWorkflow
@@ -31,7 +30,7 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredAndRe
                     * cast(literal("1 day"), INTERVAL)
                 )
             )
-            .subquery(name="expired_model_deployment_workflow")
+            .subquery()
         )
         reserved_model_deployment_workflow = aliased(
             ModelDeploymentWorkflows,
@@ -40,19 +39,19 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredAndRe
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
                 ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.reserved
             )
-            .subquery(name="reserved_model_deployment_workflow")
+            .subquery()
         )
 
         result = session.execute(
             select(
-                expired_model_deployment_workflow.id.label(ExpiredModelDeploymentWorkflowsKeys.WORKFLOW_ID),
-                expired_model_deployment_workflow.registered_model_name.label(ExpiredModelDeploymentWorkflowsKeys.MODEL_NAME),
-                expired_model_deployment_workflow.registered_model_version.label(ExpiredModelDeploymentWorkflowsKeys.MODEL_VERSION),
-                expired_model_deployment_workflow.mlflow_run_id.label(ExpiredModelDeploymentWorkflowsKeys.MLFLOW_RUN_ID),
-                expired_model_deployment_workflow.slack_promotion_approval_message_ts.label(ExpiredModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS),
+                expired_model_deployment_workflow.id.label(ExpiredModelDeploymentWorkflowsLabels.id),
+                expired_model_deployment_workflow.registered_model_name.label(ExpiredModelDeploymentWorkflowsLabels.registered_model_name),
+                expired_model_deployment_workflow.registered_model_version.label(ExpiredModelDeploymentWorkflowsLabels.registered_model_version),
+                expired_model_deployment_workflow.mlflow_run_id.label(ExpiredModelDeploymentWorkflowsLabels.mlflow_run_id),
+                expired_model_deployment_workflow.slack_promotion_approval_message_ts.label(ExpiredModelDeploymentWorkflowsLabels.slack_promotion_approval_message_ts),
 
-                reserved_model_deployment_workflow.registered_model_name.label(ReservedModelDeploymentWorkflowsKeys.MODEL_NAME),
-                reserved_model_deployment_workflow.registered_model_version.label(ReservedModelDeploymentWorkflowsKeys.MODEL_VERSION),
+                reserved_model_deployment_workflow.registered_model_name.label(ReservedModelDeploymentWorkflowLabels.registered_model_name),
+                reserved_model_deployment_workflow.registered_model_version.label(ReservedModelDeploymentWorkflowLabels.registered_model_version),
             ).join_from(
                 expired_model_deployment_workflow,
                 reserved_model_deployment_workflow,
@@ -66,15 +65,15 @@ def get_expired_model_deployment_workflow_with_its_replacement() -> ExpiredAndRe
     else:
         return ExpiredAndReservedModelDeploymentWorkflows(
             expired=ExpiredModelDeploymentWorkflow(
-                workflow_id=result[ExpiredModelDeploymentWorkflowsKeys.WORKFLOW_ID],
-                model_name=result[ExpiredModelDeploymentWorkflowsKeys.MODEL_NAME],
-                model_version=result[ExpiredModelDeploymentWorkflowsKeys.MODEL_VERSION],
-                mlflow_run_id=result[ExpiredModelDeploymentWorkflowsKeys.MLFLOW_RUN_ID],
-                slack_promotion_approval_message_ts=result[ExpiredModelDeploymentWorkflowsKeys.SLACK_PROMOTION_APPROVAL_MESSAGE_TS],
+                id=result[ExpiredModelDeploymentWorkflowsLabels.id],
+                model_name=result[ExpiredModelDeploymentWorkflowsLabels.registered_model_name],
+                model_version=result[ExpiredModelDeploymentWorkflowsLabels.registered_model_version],
+                mlflow_run_id=result[ExpiredModelDeploymentWorkflowsLabels.mlflow_run_id],
+                slack_promotion_approval_message_ts=result[ExpiredModelDeploymentWorkflowsLabels.slack_promotion_approval_message_ts],
             ),
             reserved=ReservedModelDeploymentWorkflow(
-                model_name=result[ReservedModelDeploymentWorkflowsKeys.MODEL_NAME],
-                model_version=result[ReservedModelDeploymentWorkflowsKeys.MODEL_VERSION],
+                model_name=result[ReservedModelDeploymentWorkflowLabels.registered_model_name],
+                model_version=result[ReservedModelDeploymentWorkflowLabels.registered_model_version],
             )
         )
 
@@ -89,6 +88,20 @@ def has_expired_promote_pending_workflow_with_replacement(expired_and_reserved_m
     else:
         return context.resolve_task_id(
             task_id=invalidate_expired_promotion_approval.__name__
+        )
+
+@task
+def delete_expired_promote_pending_workflow(model_deployment_workflows: ExpiredAndReservedModelDeploymentWorkflows | None):
+    assert model_deployment_workflows is not None
+
+    with sql_session.begin() as session:
+        session.execute(
+            delete(ModelDeploymentWorkflows)
+            .where(
+                ModelDeploymentWorkflows.id == model_deployment_workflows.expired.id,
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
+                ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.promote_pending
+            )
         )
 
 @task
@@ -121,9 +134,9 @@ def get_current_model_deployment_workflow_for_training() -> ModelDeploymentWorkf
         if latest_workflow.state == ModelDeploymentWorkflowState.train_pending:
             return ModelDeploymentWorkflowForTraining(
                 state=CurrentModelDeploymentWorkflowForTrainingStates.train_and_replace_the_challenger,
-                workflow_id=latest_workflow.id,
-                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
                 should_train_for_promotion=True,
+                id=latest_workflow.id,
+                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
             )
         elif latest_workflow.state == ModelDeploymentWorkflowState.promote_pending:
             return ModelDeploymentWorkflowForTraining(
@@ -141,9 +154,9 @@ def get_current_model_deployment_workflow_for_training() -> ModelDeploymentWorkf
         if latest_workflow.state == ModelDeploymentWorkflowState.train_pending:
             return ModelDeploymentWorkflowForTraining(
                 state=CurrentModelDeploymentWorkflowForTrainingStates.train_and_replace_the_challenger_substitute,
-                workflow_id=latest_workflow.id,
-                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
                 should_train_for_promotion=True,
+                id=latest_workflow.id,
+                slack_training_approval_message_ts=latest_workflow.slack_training_approval_message_ts,
             )
         elif latest_workflow.state == ModelDeploymentWorkflowState.reserved:
             return None
@@ -180,20 +193,6 @@ def check_current_model_deployment_workflows(model_deployment_workflow_for_train
         raise ValueError(f"Unexpected state: {model_deployment_workflow_for_training.state}")
 
 @task
-def delete_expired_promote_pending_workflow(data: ExpiredAndReservedModelDeploymentWorkflows | None):
-    assert data is not None
-
-    with sql_session.begin() as session:
-        session.execute(
-            delete(ModelDeploymentWorkflows)
-            .where(
-                ModelDeploymentWorkflows.id == data.expired.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
-                ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.promote_pending
-            )
-        )
-
-@task
 def initialize_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None) -> ModelDeploymentWorkflowForTraining:
     assert isinstance(model_deployment_workflow_for_training, ModelDeploymentWorkflowForTraining)
 
@@ -211,28 +210,9 @@ def initialize_train_pending_workflow(model_deployment_workflow_for_training: Mo
 
     assert isinstance(workflow_id, UUID)
 
-    model_deployment_workflow_for_training.workflow_id = workflow_id
+    model_deployment_workflow_for_training.id = workflow_id
 
     return model_deployment_workflow_for_training
-
-@task
-def reinitialize_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None):
-    assert model_deployment_workflow_for_training is not None
-    assert model_deployment_workflow_for_training.workflow_id is not None
-
-    with sql_session.begin() as session:
-        session.execute(
-            update(ModelDeploymentWorkflows)
-            .where(
-                ModelDeploymentWorkflows.id == model_deployment_workflow_for_training.workflow_id,
-                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
-                ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.train_pending
-            )
-            .values({
-                ModelDeploymentWorkflows.created_at.key: func.now(),
-                ModelDeploymentWorkflows.state.key: ModelDeploymentWorkflowState.train_pending
-            })
-        )
 
 @task
 def update_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining):
@@ -242,10 +222,29 @@ def update_train_pending_workflow(model_deployment_workflow_for_training: ModelD
         session.execute(
             update(ModelDeploymentWorkflows)
             .where(
-                ModelDeploymentWorkflows.id == model_deployment_workflow_for_training.workflow_id,
+                ModelDeploymentWorkflows.id == model_deployment_workflow_for_training.id,
                 ModelDeploymentWorkflows.project_id == PostgresConfig.project_id()
             )
             .values({
                 ModelDeploymentWorkflows.slack_training_approval_message_ts.key: model_deployment_workflow_for_training.slack_training_approval_message_ts
+            })
+        )
+
+@task
+def reinitialize_train_pending_workflow(model_deployment_workflow_for_training: ModelDeploymentWorkflowForTraining | None):
+    assert model_deployment_workflow_for_training is not None
+    assert model_deployment_workflow_for_training.id is not None
+
+    with sql_session.begin() as session:
+        session.execute(
+            update(ModelDeploymentWorkflows)
+            .where(
+                ModelDeploymentWorkflows.id == model_deployment_workflow_for_training.id,
+                ModelDeploymentWorkflows.project_id == PostgresConfig.project_id(),
+                ModelDeploymentWorkflows.state == ModelDeploymentWorkflowState.train_pending
+            )
+            .values({
+                ModelDeploymentWorkflows.created_at.key: func.now(),
+                ModelDeploymentWorkflows.state.key: ModelDeploymentWorkflowState.train_pending
             })
         )

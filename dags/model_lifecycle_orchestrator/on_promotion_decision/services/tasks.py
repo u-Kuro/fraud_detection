@@ -5,25 +5,33 @@ from airflow.providers.http.operators.http import HttpOperator
 from airflow.sdk import task, get_current_context
 from kubernetes.client import models
 
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.airflow.data_keys import ArchiveKeys
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.configurations import PromotionDecisionCallbackConfigurations
-from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.xcom import ArchiveUsedTransactionInferencesXCom
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.configs.k8s.environments import ArchiveEnvironmentKeys
+from dags.model_lifecycle_orchestrator.on_promotion_decision.modules.schemas.airflow.tasks import PromotionDecision, PromotedModelDeployment
 from dags.model_lifecycle_orchestrator.on_promotion_decision.repositories.postgres.model_deployment_workflows import update_approved_promotion_workflow, delete_rejected_promotion_workflow
 from dags.shared.modules.configs.github import GitHubConfig
 from dags.shared.modules.environment.ecr import ecr_environment
 from dags.shared.modules.environment.github import github_environment
 from dags.shared.modules.environment.k8s import k8s_environment
+from dags.shared.modules.schemas.airflow import TaskContext
 
-@task.branch(task_id="promotion_decision_callback")
-def promotion_decision_callback() -> str:
-    context = get_current_context()
+@task
+def get_promotion_decision() -> PromotionDecision:
+    context = TaskContext(get_current_context())
 
-    promotion_decision_callback_configurations = PromotionDecisionCallbackConfigurations.from_context(context)
+    return context.configurations(pydantic_model=PromotionDecision)
 
-    if promotion_decision_callback_configurations.approved:
-        return update_approved_promotion_workflow.__name__
+@task.branch
+def check_promotion_decision(promotion_decision: PromotionDecision) -> str:
+    context = TaskContext(get_current_context())
+
+    if promotion_decision.approved:
+        return context.resolve_task_id(
+            task_id=update_approved_promotion_workflow.__name__
+        )
     else:
-        return delete_rejected_promotion_workflow.__name__
+        return context.resolve_task_id(
+            task_id=delete_rejected_promotion_workflow.__name__
+        )
 
 def apply_model_deployment() -> HttpOperator:
     return HttpOperator(
@@ -45,14 +53,11 @@ def apply_model_deployment() -> HttpOperator:
         response_check=lambda response: response.status_code == 204,
     )
 
-@task(task_id="archive_used_transaction_inferences")
-def archive_used_transaction_inferences() -> None:
-    context = get_current_context()
-    archive_used_transaction_inferences_xcom = ArchiveUsedTransactionInferencesXCom.from_context(context)
-
-    task_operator = KubernetesPodOperator(
-        task_id=archive_used_transaction_inferences.__name__,
-        name=archive_used_transaction_inferences.__name__,
+@task
+def archive_transaction_inferences_used_for_deployed_model(promoted_model_deployment: PromotedModelDeployment):
+    return KubernetesPodOperator(
+        task_id=archive_transaction_inferences_used_for_deployed_model.__name__,
+        name=archive_transaction_inferences_used_for_deployed_model.__name__,
         namespace=k8s_environment.K8S_NAMESPACE,
         kubernetes_conn_id=k8s_environment.K8S_CONNECTION_ID,
         image=ecr_environment.ARCHIVE_IMAGE,
@@ -64,8 +69,8 @@ def archive_used_transaction_inferences() -> None:
         ],
         env=[
             models.V1EnvVar(
-                name=ArchiveKeys.TRANSACTION_INFERENCES_ARCHIVE_CUTOFF_ISO_DATETIME,
-                value=archive_used_transaction_inferences_xcom.transaction_inferences_archive_cutoff_iso_datetime.isoformat()
+                name=ArchiveEnvironmentKeys.TRANSACTION_INFERENCES_ISO_DATETIME_CUTOFF,
+                value=promoted_model_deployment.dataset_max_timestamp.isoformat()
             )
         ],
         env_from=[
@@ -86,4 +91,3 @@ def archive_used_transaction_inferences() -> None:
         log_events_on_failure=True,
         on_finish_action="delete_pod",
     )
-    task_operator.execute(context=context)

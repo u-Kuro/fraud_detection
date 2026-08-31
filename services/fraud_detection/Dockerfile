@@ -1,8 +1,5 @@
 FROM python:3.12.11-slim
 
-ARG FRAUD_DETECTION_API_PORT
-
-ENV FRAUD_DETECTION_API_PORT=$FRAUD_DETECTION_API_PORT
 # Python console output optimizations
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -25,4 +22,4 @@ COPY /services/shared ./services/shared
 # Expose uv's virtual environment binaries directly to the terminal environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD exec uvicorn services.fraud_detection.src.main:app --host 0.0.0.0 --port $FRAUD_DETECTION_API_PORT --workers 1
+CMD ["uvicorn", "services.fraud_detection.src.main:app", "--host", "0.0.0.0", "--port", "8080"]

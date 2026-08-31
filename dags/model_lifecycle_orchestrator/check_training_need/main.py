@@ -26,7 +26,6 @@ def check_training_need():
         active_model_deployment := get_active_model_deployment(),
         has_active_model_deployment(active_model_deployment),
         [
-            # With
             sequence(
                 drift_result := drift_check(active_model_deployment),
                 has_drift(drift_result),
