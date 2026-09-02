@@ -13,6 +13,5 @@ resource "helm_release" "traefik" {
   set = [
     { name = "service.spec.loadBalancerIP", value = var.metallb_eks_ip },
     { name = "service.annotations.metallb\\.io/address-pool", value = var.metallb_eks_ip_address_pool_name },
-    { name = "ports.${var.traefik_host_entry_point_name}.port", value = var.eks_container_host_port },
   ]
 }

@@ -195,17 +195,11 @@ module "eks" {
   ]
 }
 
-module "kyverno" {
-  source = "./modules/k8s/kyverno"
-
-  depends_on = [
-    module.eks,
-  ]
-}
-
 module "metallb" {
   source = "./modules/k8s/metallb"
 
+  # EKS
+  # /urls
   eks_container_ip = module.eks.container_ip
 
   depends_on = [
@@ -229,6 +223,24 @@ module "traefik" {
   depends_on = [
     module.eks,
     module.metallb
+  ]
+}
+
+module "socat" {
+  source = "./modules/docker/socat"
+
+  # EKS
+  # /urls
+  eks_container_ip = module.eks.container_ip
+
+  # Ministack
+  # /container
+  ministack_network_name = local.ministack_network_name
+
+  depends_on = [
+    module.eks,
+    module.metallb,
+    module.traefik,
   ]
 }
 
@@ -330,20 +342,23 @@ module "mlflow" {
   # /teams
   ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
 
-  # Traefik
-  # /entry-points
-  traefik_eks_host_entry_point_name = module.traefik.eks_host_entry_point_name
-  # /ports
-  traefik_eks_host_port = module.traefik.eks_host_port
-
   depends_on = [
     module.iam,
+    module.socat,
     module.postgres,
     module.rds,
     module.s3,
     module.secrets_manager,
     module.ssm,
     module.traefik,
+  ]
+}
+
+module "kyverno" {
+  source = "./modules/k8s/kyverno"
+
+  depends_on = [
+    module.eks,
   ]
 }
 

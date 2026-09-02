@@ -16,7 +16,7 @@ resource "helm_release" "mlflow" {
     { name = "image.tag", value = "3.15.2-alpine" },
 
     { name = "fullnameOverride", value = var.mlflow_host },
-    { name = "service.port", value = var.traefik_http_port },
+    { name = "service.port", value = var.mlflow_port },
 
     { name = "backendStore.postgres.host", value = var.rds_postgres_host },
     { name = "backendStore.postgres.port", value = var.rds_postgres_port },
@@ -67,25 +67,25 @@ resource "kubectl_manifest" "ingress_route" {
       namespace = helm_release.mlflow.namespace
     }
     spec = {
-      entryPoints = ["web", var.traefik_eks_host_entry_point_name] # http 80 / e.g. 16443
+      entryPoints = ["web", "websecure"] # http 80 / https 443
       routes = [
         {
-          match = "Host(${local.mlflow_subdomain})"
+          match = "Host(`${local.mlflow_subdomain}`)"
           kind  = "Rule"
           services = [
             {
               name = var.mlflow_host
-              port = var.traefik_http_port
+              port = var.mlflow_port
             }
           ]
         },
         {
-          match = "Host(${local.mlflow_subdomain_from_host})"
+          match = "Host(`${local.mlflow_subdomain_from_host}`)"
           kind  = "Rule"
           services = [
             {
               name = var.mlflow_host
-              port = var.traefik_http_port
+              port = var.mlflow_port
             }
           ]
         }

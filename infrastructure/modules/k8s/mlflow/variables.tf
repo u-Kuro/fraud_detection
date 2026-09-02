@@ -26,6 +26,10 @@ variable "mlflow_host" {
   type    = string
   default = "mlflow"
 }
+variable "mlflow_port" {
+  type    = number
+  default = 80
+}
 variable "mlflow_flask_server_secret_key" {
   type      = string
   sensitive = true
@@ -68,13 +72,3 @@ variable "secrets_manager_teams_secret_paths" { type = map(string) }
 # SSM
 # /teams
 variable "ssm_teams_parameter_paths" { type = map(string) }
-
-# Traefik
-# /entry-points
-variable "traefik_eks_host_entry_point_name" { type = string }
-# /ports
-variable "traefik_eks_host_port" { type = number }
-variable "traefik_http_port" {
-  type    = number
-  default = 80
-}
