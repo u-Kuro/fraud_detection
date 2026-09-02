@@ -1,9 +1,30 @@
+module "main_docker_network" {
+  source = "./modules/docker/main_network"
+}
+
+module "ministack_container" {
+  source = "./modules/docker/ministack"
+
+  # Docker Network
+  # /configurations
+  main_docker_network_name = module.main_docker_network.name
+
+  depends_on = [
+    module.main_docker_network
+  ]
+}
+
 module "iam" {
   source = "./modules/aws/iam"
 
   # IAM
   # /teams
   iam_teams = local.iam_teams
+
+  depends_on = [
+    module.main_docker_network,
+    module.ministack_container,
+  ]
 }
 
 module "ecr" {
@@ -19,7 +40,9 @@ module "ecr" {
   ecr_teams = local.ecr_teams
 
   depends_on = [
-    module.iam
+    module.iam,
+    module.main_docker_network,
+    module.ministack_container,
   ]
 }
 
@@ -37,7 +60,9 @@ module "secrets_manager" {
   secrets_manager_teams = local.secrets_manager_teams
 
   depends_on = [
-    module.iam
+    module.iam,
+    module.main_docker_network,
+    module.ministack_container,
   ]
 }
 
@@ -55,7 +80,9 @@ module "ssm" {
   ssm_teams = local.ssm_teams
 
   depends_on = [
-    module.iam
+    module.iam,
+    module.main_docker_network,
+    module.ministack_container,
   ]
 }
 
@@ -80,6 +107,8 @@ module "s3" {
 
   depends_on = [
     module.iam,
+    module.main_docker_network,
+    module.ministack_container,
     module.ssm,
   ]
 }
@@ -91,9 +120,9 @@ module "rds" {
   # /services
   iam_rds_role_name = module.iam.rds_role_name
 
-  # Ministack
-  # /network
-  ministack_network_name = local.ministack_network_name
+  # Docker Network
+  # /configurations
+  main_network_name = module.main_docker_network.name
 
   # RDS
   # /postgres
@@ -112,6 +141,8 @@ module "rds" {
 
   depends_on = [
     module.iam,
+    module.main_docker_network,
+    module.ministack_container,
     module.s3,
     module.ssm,
   ]
@@ -141,6 +172,8 @@ module "postgres" {
   ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
 
   depends_on = [
+    module.main_docker_network,
+    module.ministack_container,
     module.rds,
     module.secrets_manager,
     module.ssm,
@@ -161,6 +194,11 @@ module "eks" {
   iam_eks_role_arn  = module.iam.eks_role_arn
   iam_eks_role_name = module.iam.eks_role_name
 
+  # Docker Network
+  # /configurations
+  main_network_name    = module.main_docker_network.name
+  main_network_gateway = module.main_docker_network.gateway
+
   # EKS
   # /teams
   eks_teams            = local.eks_teams
@@ -172,11 +210,6 @@ module "eks" {
   local_files_kubeconfig_for_docker_file_path    = local_sensitive_file.kubeconfig_for_docker.filename
   local_files_eks_registries_file_path           = local_sensitive_file.eks_registries.filename
 
-  # Ministack
-  # /network
-  ministack_network_name    = local.ministack_network_name
-  ministack_network_gateway = local.ministack_network_gateway
-
   # Secrets Manager
   # /teams
   ssm_teams_parameter_paths = module.ssm.teams_parameter_paths
@@ -187,6 +220,8 @@ module "eks" {
 
   depends_on = [
     module.iam,
+    module.main_docker_network,
+    module.ministack_container,
     local_sensitive_file.kubeconfig_for_localhost,
     local_sensitive_file.kubeconfig_for_docker,
     local_sensitive_file.eks_registries,
@@ -199,7 +234,7 @@ module "metallb" {
   source = "./modules/k8s/metallb"
 
   # EKS
-  # /urls
+  # /configurations
   eks_container_ip = module.eks.container_ip
 
   depends_on = [
@@ -210,18 +245,16 @@ module "metallb" {
 module "traefik" {
   source = "./modules/k8s/traefik"
 
-  # EKS
-  # /urls
-  eks_container_host_port = module.eks.container_host_port
-
   # MetalLB
-  # /ip
+  # /configurations
   metallb_eks_ip = module.metallb.eks_ip
   # /resources
   metallb_eks_ip_address_pool_name = module.metallb.eks_ip_address_pool_name
 
   depends_on = [
     module.eks,
+    module.main_docker_network,
+    module.ministack_container,
     module.metallb
   ]
 }
@@ -229,16 +262,18 @@ module "traefik" {
 module "socat" {
   source = "./modules/docker/socat"
 
-  # EKS
-  # /urls
-  eks_container_ip = module.eks.container_ip
+  # Docker Network
+  # /configurations
+  main_network_name = module.main_docker_network.name
 
-  # Ministack
-  # /container
-  ministack_network_name = local.ministack_network_name
+  # EKS
+  # /configurations
+  eks_container_ip = module.eks.container_ip
 
   depends_on = [
     module.eks,
+    module.main_docker_network,
+    module.ministack_container,
     module.metallb,
     module.traefik,
   ]
@@ -257,6 +292,10 @@ module "mwaa" {
   iam_teams_usernames = module.iam.teams_usernames
   iam_teams_passwords = module.iam.teams_passwords
 
+  # Docker Network
+  # /configurations
+  main_network_name = module.main_docker_network.name
+
   # Local Files
   # /paths
   local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_docker_file_path
@@ -265,12 +304,10 @@ module "mwaa" {
   local_files_kubeconfig_for_docker_file_md5 = local_sensitive_file.kubeconfig_for_docker.content_md5
   local_files_mwaa_requirements_file_md5     = local_sensitive_file.mwaa_requirements.content_md5
 
-  # Ministack
-  # /container
-  ministack_network_name = local.ministack_network_name
-  # /urls
-  ministack_container_ip   = local.ministack_container_ip
-  ministack_container_port = local.ministack_container_port
+  # MiniStack
+  # /configurations
+  ministack_container_ip   = module.ministack_container.ip
+  ministack_container_port = module.ministack_container.port
 
   # MWAA
   # /teams
@@ -291,8 +328,11 @@ module "mwaa" {
 
   depends_on = [
     module.iam,
+    module.main_docker_network,
+    module.ministack_container,
     module.eks,
     local_sensitive_file.mwaa_requirements,
+    module.ministack_container,
     module.s3,
     module.ssm,
   ]
@@ -331,7 +371,8 @@ module "mlflow" {
 
   # S3
   # /urls
-  s3_url                = local.s3_url
+  s3_url = local.s3_url
+  # /mlflow
   s3_mlflow_bucket_name = module.s3.mlflow_bucket_name
 
   # Secrets Manager
@@ -344,9 +385,11 @@ module "mlflow" {
 
   depends_on = [
     module.iam,
-    module.socat,
+    module.main_docker_network,
+    module.ministack_container,
     module.postgres,
     module.rds,
+    module.socat,
     module.s3,
     module.secrets_manager,
     module.ssm,
@@ -359,6 +402,8 @@ module "kyverno" {
 
   depends_on = [
     module.eks,
+    module.main_docker_network,
+    module.ministack_container,
   ]
 }
 
@@ -425,6 +470,8 @@ module "exports" {
     module.iam,
     module.eks,
     module.kyverno,
+    module.main_docker_network,
+    module.ministack_container,
     module.mlflow,
     module.mwaa,
     module.rds,

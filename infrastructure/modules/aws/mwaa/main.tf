@@ -86,14 +86,14 @@ resource "aws_iam_user_policy" "teams" {
     aws_mwaa_environment.teams
   ]
 }
-# Setup and get Ministack's EKS configurations
+# Setup and get MiniStack's EKS configurations
 data "external" "airflow_configuration" {
   for_each = aws_mwaa_environment.teams
 
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 
   query = {
-    ministack_network_name                 = var.ministack_network_name
+    main_network_name                      = var.main_network_name
     airflow_container_url                  = local.mwaa_urls[each.key] # https://172.19.0.5:[8080|internal-port]
     airflow_requirements_file_path         = var.local_files_mwaa_requirements_file_path
     airflow_python_packages_constraint_url = local.mwaa_airflow_python_packages_constraint_url

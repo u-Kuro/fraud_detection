@@ -1,5 +1,5 @@
 # EKS
-# /urls
+# /configurations
 variable "eks_container_ip" {
   type = string
 }

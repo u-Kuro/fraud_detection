@@ -1,9 +1,4 @@
-# Get Ministack configurations
-data "external" "ministack_configuration" {
-  program     = ["powershell", "-File", "${local.scripts_directory_path}/get-ministack-configuration.ps1"]
-  working_dir = path.root
-}
-# Connect AWS with Ministack
+# Connect AWS with MiniStack
 provider "aws" {
   access_key               = var.aws_admin_access_key
   secret_key               = var.aws_admin_secret_key
@@ -13,17 +8,17 @@ provider "aws" {
 
   # Routes requests to local aws emulator (MiniStack container)
   endpoints {
-    ec2            = local.ministack_host_url
-    ecr            = local.ministack_host_url
-    elbv2          = local.ministack_host_url
-    eks            = local.ministack_host_url
-    iam            = local.ministack_host_url
-    mwaa           = local.ministack_host_url
-    rds            = local.ministack_host_url
-    s3             = local.ministack_host_url
-    secretsmanager = local.ministack_host_url
-    ssm            = local.ministack_host_url
-    sts            = local.ministack_host_url
+    ec2            = module.ministack_container.host_url
+    ecr            = module.ministack_container.host_url
+    elbv2          = module.ministack_container.host_url
+    eks            = module.ministack_container.host_url
+    iam            = module.ministack_container.host_url
+    mwaa           = module.ministack_container.host_url
+    rds            = module.ministack_container.host_url
+    s3             = module.ministack_container.host_url
+    secretsmanager = module.ministack_container.host_url
+    ssm            = module.ministack_container.host_url
+    sts            = module.ministack_container.host_url
   }
 
   # Forces S3 URLs to use "http://localhost:4566/bucket-name" (path-style)
@@ -36,22 +31,26 @@ provider "aws" {
   # Prevents Terraform from calling STS GetCallerIdentity to lookup a real 12-digit AWS Account ID
   skip_requesting_account_id = true
 }
-# # Set default AWS configurations for local script executions
-# resource "terraform_data" "configure_local_aws" {
-#   provisioner "local-exec" {
-#     interpreter = ["powershell", "-File"]
-#     command     = "${local.scripts_directory_path}/configure-aws.ps1"
-#     environment = {
-#       AWS_ACCESS_KEY_ID     = var.aws_admin_access_key
-#       AWS_SECRET_ACCESS_KEY = var.aws_admin_secret_key
-#       AWS_DEFAULT_REGION    = var.aws_admin_region
-#       AWS_ENDPOINT_URL      = local.ministack_host_url
-#     }
-#   }
-# }
-# Get ECR authorization token mocked by Ministack
+# Set default AWS configurations for local script executions
+resource "terraform_data" "configure_local_aws" {
+  provisioner "local-exec" {
+    interpreter = ["powershell", "-File"]
+    command     = "${local.scripts_directory_path}/configure-aws.ps1"
+    environment = {
+      AWS_ACCESS_KEY_ID     = var.aws_admin_access_key
+      AWS_SECRET_ACCESS_KEY = var.aws_admin_secret_key
+      AWS_DEFAULT_REGION    = var.aws_admin_region
+      AWS_ENDPOINT_URL      = module.ministack_container.host_url
+    }
+  }
+  depends_on = [
+    module.main_docker_network,
+    module.ministack_container,
+  ]
+}
+# Get ECR authorization token mocked by MiniStack
 data "aws_ecr_authorization_token" "main" {}
-# Connect to Postgres spawned by RDS from Ministack
+# Connect to Postgres spawned by RDS from MiniStack
 provider "postgresql" {
   host             = module.rds.postgres_local_host
   port             = module.rds.postgres_local_port
@@ -62,7 +61,7 @@ provider "postgresql" {
   sslmode          = "disable"
   max_connections  = 1
 }
-# Connect to K3s spawned by EKS from Ministack
+# Connect to K3s spawned by EKS from MiniStack
 provider "kubernetes" {
   config_path = local_sensitive_file.kubeconfig_for_localhost.filename
 }

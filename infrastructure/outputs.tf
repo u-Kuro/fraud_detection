@@ -2,6 +2,10 @@
 # /cluster
 output "aws_eks_cluster_name" { value = module.eks.cluster_name }
 
+# Ministack
+# /urls
+output "ministack_host_url" { value = module.ministack_container.host_url }
+
 # MLflow
 # /urls
 output "mlflow_host_url" { value = module.mlflow.host_url }

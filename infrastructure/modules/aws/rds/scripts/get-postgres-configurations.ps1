@@ -4,12 +4,12 @@ $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPrefere
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$ministack_network_name = $query.ministack_network_name
+$main_network_name      = $query.main_network_name
 $postgres_container_ip  = $query.postgres_container_ip
 
 # Validate inputs values
 $items = @{
-    ministack_network_name = $ministack_network_name
+    main_network_name      = $main_network_name
     postgres_container_ip  = $postgres_container_ip
 }.GetEnumerator()
 foreach ($item in $items) {
@@ -18,20 +18,20 @@ foreach ($item in $items) {
     }
 }
 
-# Get Ministack network configurations
-$ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
-$ministack_network_containers          = $ministack_network_json_configurations.Containers
+# Get main network configurations
+$main_network_json_configurations = (docker inspect $main_network_name | ConvertFrom-Json)[0]
+$main_network_containers          = $main_network_json_configurations.Containers
 
 # Get Postgres container name using its IP in Ministack network
 $postgres_container_name = $null
-foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+foreach ($container in $main_network_containers.PSObject.Properties.Value) {
     if ($container.IPv4Address -like "$postgres_container_ip/*") {
         $postgres_container_name = $container.Name
         break
     }
 }
 if (-not $postgres_container_name) {
-    throw "No container with IP '$postgres_container_ip' found in network '$ministack_network_name'."
+    throw "No container with IP '$postgres_container_ip' found in network '$main_network_name'."
 }
 
 # Get Postgres container configurations

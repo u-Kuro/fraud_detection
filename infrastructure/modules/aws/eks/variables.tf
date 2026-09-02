@@ -9,6 +9,11 @@ variable "iam_ec2_role_name" { type = string }
 variable "iam_eks_role_arn" { type = string }
 variable "iam_eks_role_name" { type = string }
 
+# Docker Network
+# /configurations
+variable "main_network_name" { type = string }
+variable "main_network_gateway" { type = string }
+
 # EKS
 # /teams
 variable "eks_teams" { type = set(string) }
@@ -19,11 +24,6 @@ variable "eks_teams_namespaces" { type = map(string) }
 variable "local_files_kubeconfig_for_localhost_file_path" { type = string }
 variable "local_files_kubeconfig_for_docker_file_path" { type = string }
 variable "local_files_eks_registries_file_path" { type = string }
-
-# Ministack
-# /network
-variable "ministack_network_name" { type = string }
-variable "ministack_network_gateway" { type = string }
 
 # Secrets Manager
 # /teams

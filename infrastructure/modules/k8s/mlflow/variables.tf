@@ -63,6 +63,7 @@ variable "rds_postgres_mlflow_password" {
 # S3
 # /urls
 variable "s3_url" { type = string }
+# /mlflow
 variable "s3_mlflow_bucket_name" { type = string }
 
 # Secrets Manager

@@ -4,7 +4,7 @@ $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPrefere
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$ministack_network_name                 = $query.ministack_network_name
+$main_network_name                      = $query.main_network_name
 $airflow_container_url                  = $query.airflow_container_url
 $airflow_requirements_file_path         = $query.airflow_requirements_file_path
 $airflow_python_packages_constraint_url = $query.airflow_python_packages_constraint_url
@@ -16,7 +16,7 @@ $aws_secret_access_key                  = $query.aws_secret_access_key
 
 # Validate inputs values
 $items = @{
-    ministack_network_name                 = $ministack_network_name
+    main_network_name                      = $main_network_name
     airflow_container_url                  = $airflow_container_url
     airflow_requirements_file_path         = $airflow_requirements_file_path
     airflow_python_packages_constraint_url = $airflow_python_packages_constraint_url
@@ -35,20 +35,20 @@ foreach ($item in $items) {
 # Get Airflow container IP
 $airflow_container_ip = ([System.UriBuilder]$airflow_container_url).Host
 
-# Get Ministack network configurations
-$ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
-$ministack_network_containers          = $ministack_network_json_configurations.Containers
+# Get main network configurations
+$main_network_json_configurations = (docker inspect $main_network_name | ConvertFrom-Json)[0]
+$main_network_containers          = $main_network_json_configurations.Containers
 
-# Get Airflow container name using its IP in Ministack network
+# Get Airflow container name using its IP in MiniStack network
 $airflow_container_name = $null
-foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+foreach ($container in $main_network_containers.PSObject.Properties.Value) {
     if ($container.IPv4Address -like "$airflow_container_ip/*") {
         $airflow_container_name = $container.Name
         break
     }
 }
 if (-not $airflow_container_name) {
-    throw "No container with IP '$airflow_container_ip' found in network '$ministack_network_name'."
+    throw "No container with IP '$airflow_container_ip' found in network '$main_network_name'."
 }
 
 # Get Airflow container configurations

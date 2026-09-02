@@ -4,8 +4,8 @@ $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPrefere
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$ministack_network_name             = $query.ministack_network_name
-$ministack_network_gateway          = $query.ministack_network_gateway
+$main_network_name                  = $query.main_network_name
+$main_network_gateway               = $query.main_network_gateway
 $eks_cluster_endpoint               = $query.eks_cluster_endpoint
 $k3s_registries_file_path           = $query.k3s_registries_file_path
 $kubeconfig_for_localhost_file_path = $query.kubeconfig_for_localhost_file_path
@@ -13,8 +13,8 @@ $kubeconfig_for_docker_file_path    = $query.kubeconfig_for_docker_file_path
 
 # Validate inputs values
 $items = @{
-    ministack_network_name             = $ministack_network_name
-    ministack_network_gateway          = $ministack_network_gateway
+    main_network_name                  = $main_network_name
+    main_network_gateway               = $main_network_gateway
     k3s_container_url                  = $eks_cluster_endpoint
     k3s_registries_file_path           = $k3s_registries_file_path
     kubeconfig_for_localhost_file_path = $kubeconfig_for_localhost_file_path
@@ -26,21 +26,21 @@ foreach ($item in $items) {
     }
 }
 
-# Get Ministack network configurations
-$ministack_network_json_configurations = (docker inspect $ministack_network_name | ConvertFrom-Json)[0]
-$ministack_network_containers          = $ministack_network_json_configurations.Containers
+# Get main network configurations
+$main_network_json_configurations = (docker inspect $main_network_name | ConvertFrom-Json)[0]
+$main_network_containers          = $main_network_json_configurations.Containers
 
 # Get EKS given port
 $eks_endpoint_uri              = ([System.UriBuilder]$eks_cluster_endpoint)
 $is_eks_endpoint_for_localhost = $eks_endpoint_uri.Host -in "localhost", "127.0.0.1", "::1", "0.0.0.0"
 
-# Find K3s container configurations that EKS spawned through Ministack
+# Find K3s container configurations that EKS spawned through MiniStack
 $k3s_container_port      = $null
 $k3s_container_host_port = $null
 $k3s_container_name = $null
 if ($is_eks_endpoint_for_localhost) {
     $k3s_container_host_port = $eks_endpoint_uri.Port
-    foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+    foreach ($container in $main_network_containers.PSObject.Properties.Value) {
         $container_json_configurations = (docker inspect $container.Name | ConvertFrom-Json)[0]
         $container_network_settings    = $container_json_configurations.NetworkSettings
         $container_ports               = $container_network_settings.Ports
@@ -54,7 +54,7 @@ if ($is_eks_endpoint_for_localhost) {
     }
 } else {
     $k3s_container_port = $eks_endpoint_uri.Port
-    foreach ($container in $ministack_network_containers.PSObject.Properties.Value) {
+    foreach ($container in $main_network_containers.PSObject.Properties.Value) {
         $container_json_configurations = (docker inspect $container.Name | ConvertFrom-Json)[0]
         $container_network_settings    = $container_json_configurations.NetworkSettings
         $container_ports               = $container_network_settings.Ports
@@ -68,7 +68,7 @@ if ($is_eks_endpoint_for_localhost) {
     }
 }
 if (-not $k3s_container_name) {
-    throw "No K3s container with port '$k3s_container_port' found in the network '$ministack_network_name'."
+    throw "No K3s container with port '$k3s_container_port' found in the network '$main_network_name'."
 }
 
 # Check K3s container ports
@@ -85,9 +85,9 @@ $k3s_container_network_settings    = $k3s_container_json_configurations.NetworkS
 $k3s_container_networks            = $k3s_container_network_settings.Networks
 
 # Get K3s container ip
-$k3s_container_ip = $k3s_container_networks.$ministack_network_name.IPAddress
+$k3s_container_ip = $k3s_container_networks.$main_network_name.IPAddress
 if (-not $k3s_container_ip) {
-    throw "No IP found for K3s container '$k3s_container_name' in network '$ministack_network_name'."
+    throw "No IP found for K3s container '$k3s_container_name' in network '$main_network_name'."
 }
 
 # Define configuration files directory path in K3s container

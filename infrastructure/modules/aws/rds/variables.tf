@@ -2,9 +2,9 @@
 # /services
 variable "iam_rds_role_name" { type = string }
 
-# Ministack
-# /network
-variable "ministack_network_name" { type = string }
+# Docker Network
+# /configurations
+variable "main_network_name" { type = string }
 
 # RDS
 # /service

@@ -21,7 +21,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 # Initialize EKS
 resource "aws_eks_cluster" "main" {
   name     = "eks"
-  version  = "v1.31.4-k3s1" # Fixed version, can only be changed in Ministack's container environment `EKS_K3S_IMAGE`
+  version  = "v1.31.4-k3s1" # Fixed version, can only be changed in MiniStack's container environment `EKS_K3S_IMAGE`
   role_arn = var.iam_eks_role_arn
 
   vpc_config {
@@ -51,13 +51,13 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.ecr_read_only,
   ]
 }
-# Setup and get Ministack's EKS configurations
+# Setup and get MiniStack's EKS configurations
 data "external" "k3s_configuration" {
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
 
   query = {
-    ministack_network_name             = var.ministack_network_name
-    ministack_network_gateway          = var.ministack_network_gateway
+    main_network_name                  = var.main_network_name
+    main_network_gateway               = var.main_network_gateway
     eks_cluster_endpoint               = aws_eks_cluster.main.endpoint # https://172.19.0.3:6443 or https://localhost:16443
     k3s_registries_file_path           = var.local_files_eks_registries_file_path
     kubeconfig_for_localhost_file_path = var.local_files_kubeconfig_for_localhost_file_path

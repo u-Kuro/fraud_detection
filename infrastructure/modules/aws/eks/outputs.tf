@@ -1,9 +1,10 @@
 # EKS
 # /cluster
 output "cluster_name" { value = aws_eks_cluster.main.name }
-# /urls
+# /configurations
 output "container_ip" { value = data.external.k3s_configuration.result.k3s_container_ip }
 output "container_host_port" { value = tonumber(data.external.k3s_configuration.result.k3s_container_host_port) }
+# /urls
 output "host_url" { value = "http://localhost:${data.external.k3s_configuration.result.k3s_container_host_port}" }
 
 # Local Files

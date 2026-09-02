@@ -14,6 +14,10 @@ variable "iam_teams_passwords" {
   sensitive = true
 }
 
+# Docker Network
+# /configurations
+variable "main_network_name" { type = string }
+
 # Local Files
 # /paths
 variable "local_files_kubeconfig_for_docker_file_path" { type = string }
@@ -21,10 +25,9 @@ variable "local_files_mwaa_requirements_file_path" { type = string }
 # /content
 variable "local_files_kubeconfig_for_docker_file_md5" { type = string }
 variable "local_files_mwaa_requirements_file_md5" { type = string }
-# Ministack
-# /container
-variable "ministack_network_name" { type = string }
-# /urls
+
+# MiniStack
+# /configurations
 variable "ministack_container_ip" { type = string }
 variable "ministack_container_port" { type = number }
 
