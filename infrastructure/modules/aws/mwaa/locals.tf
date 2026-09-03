@@ -23,3 +23,26 @@ locals {
     for k, v in local.mwaa_teams_airflow_secrets_backend_variables_prefixes : k => "${local.secrets_manager_base_arn}:${v}"
   }
 }
+# Initialize Apache Airflow's default configurations
+resource "local_sensitive_file" "mwaa_teams_aws_config" {
+  for_each        = aws_mwaa_environment.teams
+  filename        = "${var.local_files_directory_path}/aws/${each.key}/config"
+  file_permission = "0600"
+  content         = <<-EOF
+    [default]
+    region = ${var.iam_admin_region}
+    endpoint_url = ${var.secrets_manager_url}
+    request_checksum_calculation = when_required
+  EOF
+}
+# Initialize Apache Airflow's default credentials
+resource "local_sensitive_file" "mwaa_teams_aws_credentials" {
+  for_each        = aws_mwaa_environment.teams
+  filename        = "${var.local_files_directory_path}/aws/${each.key}/credentials"
+  file_permission = "0600"
+  content         = <<-EOF
+    [default]
+    aws_access_key_id = ${var.iam_teams_usernames[each.key]}
+    aws_secret_access_key = ${var.iam_teams_passwords[each.key]}
+  EOF
+}

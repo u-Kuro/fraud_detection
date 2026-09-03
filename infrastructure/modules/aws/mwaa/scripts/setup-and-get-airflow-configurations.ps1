@@ -4,27 +4,23 @@ $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPrefere
 
 # Get inputs
 $query = $Input | Out-String | ConvertFrom-Json
-$main_network_name                      = $query.main_network_name
-$airflow_container_url                  = $query.airflow_container_url
-$airflow_requirements_file_path         = $query.airflow_requirements_file_path
-$airflow_python_packages_constraint_url = $query.airflow_python_packages_constraint_url
-$kubeconfig_for_docker_file_path        = $query.kubeconfig_for_docker_file_path
-$secrets_manager_url                    = $query.secrets_manager_url
-$iam_admin_region                       = $query.iam_admin_region
-$aws_access_key_id                      = $query.aws_access_key_id
-$aws_secret_access_key                  = $query.aws_secret_access_key
+$main_network_name                       = $query.main_network_name
+$airflow_container_url                   = $query.airflow_container_url
+$airflow_requirements_file_path          = $query.airflow_requirements_file_path
+$airflow_python_packages_constraint_url  = $query.airflow_python_packages_constraint_url
+$kubeconfig_for_docker_file_path         = $query.kubeconfig_for_docker_file_path
+$aws_configurations_for_docker_file_path = $query.aws_configurations_for_docker_file_path
+$aws_credentials_for_docker_file_path    = $query.aws_credentials_for_docker_file_path
 
 # Validate inputs values
 $items = @{
-    main_network_name                      = $main_network_name
-    airflow_container_url                  = $airflow_container_url
-    airflow_requirements_file_path         = $airflow_requirements_file_path
-    airflow_python_packages_constraint_url = $airflow_python_packages_constraint_url
-    kubeconfig_for_docker_file_path        = $kubeconfig_for_docker_file_path
-    secrets_manager_url                    = $secrets_manager_url
-    iam_admin_region                       = $iam_admin_region
-    aws_access_key_id                      = $aws_access_key_id
-    aws_secret_access_key                  = $aws_secret_access_key
+    main_network_name                       = $main_network_name
+    airflow_container_url                   = $airflow_container_url
+    airflow_requirements_file_path          = $airflow_requirements_file_path
+    airflow_python_packages_constraint_url  = $airflow_python_packages_constraint_url
+    kubeconfig_for_docker_file_path         = $kubeconfig_for_docker_file_path
+    aws_configurations_for_docker_file_path = $aws_configurations_for_docker_file_path
+    aws_credentials_for_docker_file_path    = $aws_credentials_for_docker_file_path
 }.GetEnumerator()
 foreach ($item in $items) {
     if ([string]::IsNullOrWhiteSpace($item.Value)) {
@@ -67,27 +63,14 @@ $null = docker exec $airflow_container_name sh -c "pip install -r $airflow_conta
 $airflow_container_kubeconfig_file_path = "${airflow_container_persisted_directory}/kubeconfig.yaml"
 $null = docker cp $kubeconfig_for_docker_file_path "${airflow_container_name}:${airflow_container_kubeconfig_file_path}"
 
-# Initialize AWS credentials for Airflow's secrets backend (secrets manager)
-$null = docker exec $airflow_container_name sh -c @"
-set -e
+# Set Airflow container AWS paths
+$airflow_user_home_aws_directory_path      = "/home/airflow/.aws"
+$airflow_container_aws_configurations_path = "${airflow_user_home_aws_directory_path}/config"
+$airflow_container_aws_credentials_path    = "${airflow_user_home_aws_directory_path}/credentials"
 
-mkdir -p ~/.aws
-
-# AWS config
-cat > ~/.aws/config << EOF
-[default]
-region = $iam_admin_region
-endpoint_url = $secrets_manager_url
-request_checksum_calculation = when_required
-EOF
-
-# AWS credentials
-cat > ~/.aws/credentials << EOF
-[default]
-aws_access_key_id = $aws_access_key_id
-aws_secret_access_key = $aws_secret_access_key
-EOF
-"@
+# Initialize AWS config/credentials for Airflow's secrets backend (secrets manager)
+$null = docker cp $aws_configurations_for_docker_file_path "${airflow_container_name}:${airflow_container_aws_configurations_path}"
+$null = docker cp $aws_credentials_for_docker_file_path "${airflow_container_name}:${airflow_container_aws_credentials_path}"
 
 # Get Airflow container host port
 $airflow_container_host_port = $airflow_container_ports[0].PSobject.Properties.Value[0].HostPort

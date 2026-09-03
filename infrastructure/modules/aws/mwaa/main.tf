@@ -93,15 +93,13 @@ data "external" "airflow_configuration" {
   program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 
   query = {
-    main_network_name                      = var.main_network_name
-    airflow_container_url                  = local.mwaa_urls[each.key] # https://172.19.0.5:[8080|internal-port]
-    airflow_requirements_file_path         = var.local_files_mwaa_requirements_file_path
-    airflow_python_packages_constraint_url = local.mwaa_airflow_python_packages_constraint_url
-    kubeconfig_for_docker_file_path        = var.local_files_kubeconfig_for_docker_file_path
-    secrets_manager_url                    = var.secrets_manager_url # "http://ministack:4566
-    iam_admin_region                       = var.iam_admin_region
-    aws_access_key_id                      = var.iam_teams_usernames[each.key]
-    aws_secret_access_key                  = var.iam_teams_passwords[each.key]
+    main_network_name                       = var.main_network_name
+    airflow_container_url                   = local.mwaa_urls[each.key] # https://172.19.0.5:[8080|internal-port]
+    airflow_requirements_file_path          = var.local_files_mwaa_requirements_file_path
+    airflow_python_packages_constraint_url  = local.mwaa_airflow_python_packages_constraint_url
+    kubeconfig_for_docker_file_path         = var.local_files_kubeconfig_for_docker_file_path
+    aws_configurations_for_docker_file_path = local_sensitive_file.mwaa_teams_aws_config[each.key].filename
+    aws_credentials_for_docker_file_path    = local_sensitive_file.mwaa_teams_aws_credentials[each.key].filename
   }
 
   depends_on = [aws_mwaa_environment.teams]

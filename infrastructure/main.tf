@@ -298,6 +298,7 @@ module "mwaa" {
 
   # Local Files
   # /paths
+  local_files_directory_path                  = local.local_files_directory_path
   local_files_kubeconfig_for_docker_file_path = module.eks.local_files_kubeconfig_for_docker_file_path
   local_files_mwaa_requirements_file_path     = local_sensitive_file.mwaa_requirements.filename
   # /content

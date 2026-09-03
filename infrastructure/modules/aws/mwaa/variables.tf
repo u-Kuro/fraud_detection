@@ -20,6 +20,7 @@ variable "main_network_name" { type = string }
 
 # Local Files
 # /paths
+variable "local_files_directory_path" { type = string }
 variable "local_files_kubeconfig_for_docker_file_path" { type = string }
 variable "local_files_mwaa_requirements_file_path" { type = string }
 # /content
