@@ -5,8 +5,8 @@ from pandas import DataFrame
 from sqlalchemy import select, func
 
 from services.drift_check.src.repositories.postgres.postgres import sql_session
-from services.shared.modules.configs.dataset import DatasetConfig
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.configs.dataset import DatasetConfig
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def load_current_dataset(
     current_dataset_cutoff: datetime,

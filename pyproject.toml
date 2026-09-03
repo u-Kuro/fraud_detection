@@ -96,8 +96,60 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-env = []
+pythonpath = ["."]
+testpaths = [
+    "services/archive/tests/unit",
+    "services/drift_check/tests/unit",
+    "services/fraud_detection/tests/unit",
+    "services/train_model/tests/unit",
+    "services/shared/tests/unit",
+    "tests/dags/unit",
+]
+python_files = ["[a-z]*.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+env = [
+    # services/shared — MLflow
+    "MLFLOW_WORKSPACE=test_workspace",
+    # services/shared — S3
+    "S3_BUCKET_NAME=test-bucket",
+    # services/shared — Slack
+    "SLACK_BOT_TOKEN=xoxb-000000000000-000000000000-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "SLACK_APP_TOKEN=xapp-1-xxxxxxxx-0000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "SLACK_SIGNING_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "SLACK_CHANNEL_ID=C000000000",
+    # services/shared — MWAA
+    "MWAA_ENVIRONMENT_NAME=test-mwaa-environment",
+    # services/archive
+    "TRANSACTION_INFERENCES_ISO_DATETIME_CUTOFF=2025-01-01T00:00:00+00:00",
+    # services/drift_check
+    "ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID=test-run-id-000000000000",
+    # dags/shared — ECR
+    "DRIFT_CHECK_IMAGE=000000000000.dkr.ecr.us-east-1.amazonaws.com/drift-check:test",
+    "TRAIN_MODEL_IMAGE=000000000000.dkr.ecr.us-east-1.amazonaws.com/train-model:test",
+    "ARCHIVE_IMAGE=000000000000.dkr.ecr.us-east-1.amazonaws.com/archive:test",
+    # dags/shared — GitHub (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_GITHUB_CONNECTION_ID=github_default",
+    # dags/shared — K8s (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_K8S_CONNECTION_ID=kubernetes_default",
+    "AIRFLOW_VAR_K8S_NAMESPACE=airflow",
+    "AIRFLOW_VAR_K8S_BASE_CONFIG_MAP_NAME=base-config-map",
+    "AIRFLOW_VAR_K8S_BASE_SECRET_NAME=base-secret",
+    "AIRFLOW_VAR_K8S_DOCKER_REGISTRY_SECRET_NAME=docker-registry-secret",
+    # dags/shared — MLflow (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_MLFLOW_TRACKING_URI=http://localhost:5000",
+    "AIRFLOW_VAR_MLFLOW_TRACKING_USERNAME=mlflow",
+    "AIRFLOW_VAR_MLFLOW_TRACKING_PASSWORD=mlflow",
+    "AIRFLOW_VAR_MLFLOW_WORKSPACE=default",
+    # dags/shared — Postgres (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_POSTGRES_CONNECTION_ID=postgres_default",
+    # dags/shared — S3 (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_S3_CONNECTION_ID=aws_default",
+    "AIRFLOW_VAR_S3_BUCKET=mle",
+    # dags/shared — Slack (AIRFLOW_VAR_ prefix)
+    "AIRFLOW_VAR_SLACK_CONNECTION_ID=slack_default",
+    "AIRFLOW_VAR_SLACK_CHANNEL_ID=C000000000",
+]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }

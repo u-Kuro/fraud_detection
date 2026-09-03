@@ -1,8 +1,8 @@
 from mlflow.models import infer_signature
 from numpy import ndarray
 
-from services.shared.modules.configs.mlflow import MLFlowConfig
-from services.shared.repositories.mlflow.mlflow import mlflow_module
+from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.repositories import mlflow_module
 from services.train_model.src.modules.schemas.mlflow import MLFlowRegisteredModelInfo
 
 def save_and_register_model(

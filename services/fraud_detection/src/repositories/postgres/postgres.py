@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, QueuePool
 from sqlalchemy.orm import sessionmaker
 
-from services.shared.modules.environment.postgres import postgres_environment
+from services.shared.src.modules.environment.postgres import postgres_environment
 
 sql_session: sessionmaker = sessionmaker(
     create_engine(

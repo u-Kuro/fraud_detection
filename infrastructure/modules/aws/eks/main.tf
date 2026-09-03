@@ -53,7 +53,7 @@ resource "aws_eks_node_group" "main" {
 }
 # Setup and get MiniStack's EKS configurations
 data "external" "k3s_configuration" {
-  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
+  program = ["pwsh", "-File", "${path.module}/scripts/setup-and-get-k3s-configurations.ps1"]
 
   query = {
     main_network_name                  = var.main_network_name

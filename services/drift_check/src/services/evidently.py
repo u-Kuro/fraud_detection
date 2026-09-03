@@ -9,9 +9,9 @@ from services.drift_check.src.modules.configs.evidently import EvidentlyConfig
 from services.drift_check.src.repositories.mlflow.registered_model_dataset import load_reference_dataset
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
-from services.shared.modules.configs.dataset import DatasetConfig
-from services.shared.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.configs.dataset import DatasetConfig
+from services.shared.src.modules.schemas.models_dataset import FraudClassificationFeaturesKeys
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def run_drift_report(
     df_reference: DataFrame,

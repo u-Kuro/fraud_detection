@@ -1,4 +1,6 @@
+#requires -Version 7.4
 Set-StrictMode -Version Latest
+$PSNativeCommandUseErrorActionPreference = $true
 $ErrorActionPreference = "Stop"
 
 # Set default credentials

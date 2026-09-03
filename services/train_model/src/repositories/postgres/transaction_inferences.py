@@ -4,10 +4,10 @@ import pandas
 from pandas import DataFrame
 from sqlalchemy import select, func, or_
 
-from services.shared.modules.configs.dataset import DatasetConfig
-from services.shared.modules.configs.postgres import PostgresConfig
-from services.shared.modules.schemas.postgres.model_deployments import ModelDeployments
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.configs.dataset import DatasetConfig
+from services.shared.src.modules.configs.postgres import PostgresConfig
+from services.shared.src.modules.schemas import ModelDeployments
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 from services.train_model.src.modules.schemas.postgres.transaction_inferences import TransactionInferencesDatasetNow
 from services.train_model.src.repositories.postgres.postgres import sql_session
 

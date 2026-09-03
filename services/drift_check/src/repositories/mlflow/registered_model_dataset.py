@@ -3,10 +3,10 @@ from datetime import datetime, timezone, timedelta
 from pandas import DataFrame
 from pyarrow import parquet
 
-from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLFlowConfig
 from services.drift_check.src.modules.environment.drift_check import drift_check_environment
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
-from services.shared.repositories.mlflow.mlflow import mlflow_module
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.repositories import mlflow_module
 
 def load_reference_dataset() -> tuple[DataFrame, datetime]:
     reference_dataset_parquet = mlflow_module.artifacts.download_artifacts(

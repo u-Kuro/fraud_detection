@@ -1,15 +1,15 @@
 # Create MLflow schema
 resource "postgresql_schema" "mlflow" {
-  name  = "mlflow"
-  owner = var.rds_postgres_admin_username
+  name         = "mlflow"
+  owner        = var.rds_postgres_admin_username
+  drop_cascade = true # Unsafe for production
 }
 # Create Postgres role for MLflow schema
 resource "postgresql_role" "mlflow" {
-  name                = var.rds_postgres_mlflow_username
-  password            = var.rds_postgres_mlflow_password
-  login               = true
-  skip_reassign_owned = true
-  search_path         = [postgresql_schema.mlflow.name]
+  name        = var.rds_postgres_mlflow_username
+  password    = var.rds_postgres_mlflow_password
+  login       = true
+  search_path = [postgresql_schema.mlflow.name]
 }
 # Grant MLflow permission to connect to the database
 resource "postgresql_grant" "mlflow_database" {
@@ -42,18 +42,18 @@ resource "postgresql_grant" "mlflow_sequence" {
 }
 # Create teams schemas
 resource "postgresql_schema" "teams" {
-  for_each = var.rds_postgres_teams
-  name     = local.rds_postgres_teams_schemas[each.key]
-  owner    = var.rds_postgres_admin_username
+  for_each     = var.rds_postgres_teams
+  name         = local.rds_postgres_teams_schemas[each.key]
+  owner        = var.rds_postgres_admin_username
+  drop_cascade = true # Unsafe for production
 }
 # Create Postgres roles for each teams' schema
 resource "postgresql_role" "teams" {
-  for_each            = var.rds_postgres_teams
-  name                = local.rds_postgres_teams_usernames[each.key]
-  password            = local.rds_postgres_teams_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
-  login               = true
-  skip_reassign_owned = true
-  search_path         = [postgresql_schema.teams[each.key].name]
+  for_each    = var.rds_postgres_teams
+  name        = local.rds_postgres_teams_usernames[each.key]
+  password    = local.rds_postgres_teams_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
+  login       = true
+  search_path = [postgresql_schema.teams[each.key].name]
 }
 # Grant teams permissions to connect to the database
 resource "postgresql_grant" "teams_database" {
@@ -90,12 +90,11 @@ resource "postgresql_grant" "teams_sequence" {
 }
 # Create Postgres roles for each teams' schema for migration
 resource "postgresql_role" "teams_migration" {
-  for_each            = var.rds_postgres_teams
-  name                = local.rds_postgres_teams_migration_usernames[each.key]
-  password            = local.rds_postgres_teams_migration_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
-  login               = true
-  skip_reassign_owned = true
-  search_path         = [postgresql_schema.teams[each.key].name]
+  for_each    = var.rds_postgres_teams
+  name        = local.rds_postgres_teams_migration_usernames[each.key]
+  password    = local.rds_postgres_teams_migration_passwords[each.key] # Team can change it themselves (ALTER USER name WITH PASSWORD 'password')
+  login       = true
+  search_path = [postgresql_schema.teams[each.key].name]
 }
 # Grant teams' migration roles permissions to connect to the database
 resource "postgresql_grant" "teams_migration_database" {

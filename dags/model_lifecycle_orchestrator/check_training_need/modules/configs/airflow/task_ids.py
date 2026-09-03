@@ -13,4 +13,4 @@ class DispatchTrainingApprovalTaskIDs(StrEnum):
 
 class SetupTrainingApprovalTaskIDs(StrEnum):
     post = f"{setup_training_approval.__name__}.post"
-    replace = f"{dispatch_training_approval.__name__}.replace"
+    replace = f"{setup_training_approval.__name__}.replace"

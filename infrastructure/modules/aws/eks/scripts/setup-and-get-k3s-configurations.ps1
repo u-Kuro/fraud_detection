@@ -1,4 +1,6 @@
+#requires -Version 7.4
 Set-StrictMode -Version Latest
+$PSNativeCommandUseErrorActionPreference = $true
 $ErrorActionPreference = "Stop"
 $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
@@ -109,9 +111,8 @@ $raw_kubeconfig -replace `
     | Out-File $kubeconfig_for_docker_file_path -Encoding utf8
 
 # Copy registries.yaml into K3s container to redirect requests to ECR
-$null = docker cp `
-    $k3s_registries_file_path `
-    "${k3s_container_name}:${k3s_container_configuration_files_directory_path}/registries.yaml"
+$null = docker exec $k3s_container_name mkdir -p $k3s_container_configuration_files_directory_path
+$null = docker cp $k3s_registries_file_path "${k3s_container_name}:${k3s_container_configuration_files_directory_path}/registries.yaml"
 
 # Restart K3s container to apply registries.yaml
 $null = docker restart $k3s_container_name
@@ -122,7 +123,7 @@ $max_wait = 300; $elapsed = 0;
 do {
     Start-Sleep -Seconds 5
     $elapsed += 5
-    kubectl get nodes --request-timeout=5s *> $null
+    try { kubectl get nodes --request-timeout=5s *> $null } catch {}
 } until ($LASTEXITCODE -eq 0 -or $elapsed -ge $max_wait)
 
 # Inform K3s status

@@ -2,7 +2,7 @@ from imblearn.over_sampling import SMOTE
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs
 

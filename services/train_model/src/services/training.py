@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
-from services.shared.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLFlowConfig
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
 from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs

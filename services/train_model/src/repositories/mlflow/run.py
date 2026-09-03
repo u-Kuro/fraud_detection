@@ -9,8 +9,8 @@ from matplotlib.figure import Figure
 from pandas import DataFrame
 from pyarrow import parquet
 
-from services.shared.modules.configs.mlflow import MLFlowConfig
-from services.shared.repositories.mlflow.mlflow import mlflow_client, mlflow_module
+from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.repositories import mlflow_client, mlflow_module
 
 @contextmanager
 def transactional_mlflow_run(run_name: str):

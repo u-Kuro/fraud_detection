@@ -1,9 +1,9 @@
 from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
-from services.shared.controllers.airflow.xcom import xcom_push
-from services.shared.modules.configs.mlflow import MLFlowConfig
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.controllers.airflow.xcom import xcom_push
+from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 from services.train_model.src.modules.configs.airflow.xcom import TrainModelXComKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
 from services.train_model.src.modules.configs.training import TrainingConfig

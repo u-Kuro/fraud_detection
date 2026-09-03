@@ -1,4 +1,6 @@
+#requires -Version 7.4
 Set-StrictMode -Version Latest
+$PSNativeCommandUseErrorActionPreference = $true
 $ErrorActionPreference = "Stop"
 $WarningPreference = $VerbosePreference = $DebugPreference = $InformationPreference = $ProgressPreference = "SilentlyContinue"
 
@@ -56,11 +58,13 @@ $airflow_container_dag_directory_path  = "$airflow_container_persisted_directory
 
 # Install additional package and dependencies in Airflow container
 $airflow_container_requirements_file_path = "${airflow_container_persisted_directory}/requirements.txt"
+$null = docker exec $airflow_container_name mkdir -p $airflow_container_persisted_directory
 $null = docker cp $airflow_requirements_file_path "${airflow_container_name}:${airflow_container_requirements_file_path}"
 $null = docker exec $airflow_container_name sh -c "pip install -r $airflow_container_requirements_file_path --constraint '$airflow_python_packages_constraint_url' -qq"
 
 # Copy kubeconfig to Airflow container for K3s access
 $airflow_container_kubeconfig_file_path = "${airflow_container_persisted_directory}/kubeconfig.yaml"
+$null = docker exec $airflow_container_name mkdir -p $airflow_container_persisted_directory
 $null = docker cp $kubeconfig_for_docker_file_path "${airflow_container_name}:${airflow_container_kubeconfig_file_path}"
 
 # Set Airflow container AWS paths
@@ -69,6 +73,7 @@ $airflow_container_aws_configurations_path = "${airflow_user_home_aws_directory_
 $airflow_container_aws_credentials_path    = "${airflow_user_home_aws_directory_path}/credentials"
 
 # Initialize AWS config/credentials for Airflow's secrets backend (secrets manager)
+$null = docker exec $airflow_container_name mkdir -p $airflow_user_home_aws_directory_path
 $null = docker cp $aws_configurations_for_docker_file_path "${airflow_container_name}:${airflow_container_aws_configurations_path}"
 $null = docker cp $aws_credentials_for_docker_file_path "${airflow_container_name}:${airflow_container_aws_credentials_path}"
 

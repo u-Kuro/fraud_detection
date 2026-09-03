@@ -2,9 +2,9 @@ from sqlalchemy import select, insert
 
 from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationOutput
 from services.fraud_detection.src.repositories.postgres.postgres import sql_session
-from services.shared.modules.configs.postgres import PostgresConfig
-from services.shared.modules.schemas.postgres.model_deployments import ModelDeployments
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.configs.postgres import PostgresConfig
+from services.shared.src.modules.schemas import ModelDeployments
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def insert_transaction_inference(
     transaction_inference: FraudClassificationOutput,

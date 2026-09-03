@@ -4,8 +4,8 @@ from datetime import date
 from services.archive.src.repositories.postgres.postgres import sql_session
 from services.archive.src.repositories.postgres.transaction_inferences import get_transaction_inferences_batch, delete_transaction_inferences_batch
 from services.archive.src.repositories.s3.archive import upload_transaction_inference_batch
-from services.shared.modules.environment.s3 import s3_environment
-from services.shared.repositories.s3.bucket import ensure_bucket
+from services.shared.src.modules.environment.s3 import s3_environment
+from services.shared.src.repositories import ensure_bucket
 
 def archive_transaction_inferences():
     ensure_bucket(s3_environment.S3_BUCKET_NAME)

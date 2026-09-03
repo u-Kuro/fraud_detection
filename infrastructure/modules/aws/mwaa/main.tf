@@ -90,7 +90,7 @@ resource "aws_iam_user_policy" "teams" {
 data "external" "airflow_configuration" {
   for_each = aws_mwaa_environment.teams
 
-  program = ["powershell", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
+  program = ["pwsh", "-File", "${path.module}/scripts/setup-and-get-airflow-configurations.ps1"]
 
   query = {
     main_network_name                       = var.main_network_name

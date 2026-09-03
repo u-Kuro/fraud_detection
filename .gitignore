@@ -23,10 +23,6 @@ infrastructure/terraform.tfvars
 # Python dependencies
 .venv/
 
-# MLflow
-models
-mlflow.db
-
 # Others
 .idea
 .mypy_cache

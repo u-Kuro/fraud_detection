@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from services.archive.src.modules.configs.archive import ArchiveConfig
 from services.archive.src.modules.environment.archive import archive_environment
-from services.shared.modules.schemas.postgres.transaction_inferences import TransactionInferences
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def get_transaction_inferences_batch(session: Session) -> list[dict]:
     result = session.execute(

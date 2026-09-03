@@ -2,10 +2,12 @@
 
 cd infrastructure
 terraform init
+terraform destroy -auto-approve -parallelism=1
 terraform validate
 terraform apply -target="module.ministack_container.docker_container.ministack" -auto-approve -parallelism=1
 terraform apply -target="module.eks.data.external.k3s_configuration" -auto-approve -parallelism=1
 terraform apply -auto-approve -parallelism=1
+
 
 $env:KUBECONFIG = "C:\Projects\Personal\Practice\fraud_detection\infrastructure\local_files\kubeconfig_for_localhost.yaml"
 
