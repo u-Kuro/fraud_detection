@@ -1,3 +1,4 @@
+from pydantic import StrictStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
@@ -8,6 +9,6 @@ class PostgresEnvironment(BaseSettings):
         case_sensitive=True
     )
 
-    POSTGRES_CONNECTION_ID: str
+    POSTGRES_CONNECTION_ID: StrictStr
 
 postgres_environment = PostgresEnvironment()

@@ -1,5 +1,5 @@
 # TODO - Need to update all secret manager stuff in CI/CD as team manually creates secret manager e.g. "aws secretsmanager create-secret"
-
+# arigaio/atlas:1.3.2-community-alpine
 # Prerequisites — .secrets file (gitignored):
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test

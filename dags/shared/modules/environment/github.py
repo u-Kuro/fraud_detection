@@ -1,3 +1,4 @@
+from pydantic import StrictStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
@@ -8,7 +9,7 @@ class GitHubEnvironment(BaseSettings):
         case_sensitive=True
     )
 
-    GITHUB_CONNECTION_ID: str
-    GITHUB_TOKEN: str = "test" # Not needed for nektos/act
+    GITHUB_CONNECTION_ID: StrictStr
+    GITHUB_TOKEN: StrictStr = "test" # Not needed for nektos/act
 
 github_environment = GitHubEnvironment()

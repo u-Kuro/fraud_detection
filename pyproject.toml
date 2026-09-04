@@ -9,10 +9,14 @@ archive = [
     "pyarrow>=25.0.1",
     # Shared
     "boto3>=1.43.83",
-    # "mlflow-skinny>=3.15.2", # unused
+    "mlflow-skinny>=3.15.2",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.0.52",
+    # sqlalchemy dependendencies
+    "psycopg2-binary>=2.9.12",
+    # mlflow-skinny dependencies
+    "alembic>=1.19.1",
 ]
 drift_check = [
     "evidently>=0.7.21",
@@ -24,6 +28,10 @@ drift_check = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.0.52",
+    # sqlalchemy dependendencies
+    "psycopg2-binary>=2.9.12",
+    # mlflow-skinny dependencies
+    "alembic>=1.19.1",
 ]
 fraud_detection = [
     "fastapi>=0.136.3",
@@ -35,6 +43,10 @@ fraud_detection = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.0.52",
+    # sqlalchemy dependendencies
+    "psycopg2-binary>=2.9.12",
+    # mlflow-skinny dependencies
+    "alembic>=1.19.1",
 ]
 train_model = [
     "imbalanced-learn>=0.14.2",
@@ -51,6 +63,10 @@ train_model = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.0.52",
+    # sqlalchemy dependendencies
+    "psycopg2-binary>=2.9.12",
+    # mlflow-skinny dependencies
+    "alembic>=1.19.1",
 ]
 dags = [
     "apache-airflow>=3.3.1",
@@ -78,6 +94,7 @@ dev = [
     "numpy>=2.5.2",
     "optuna>=4.9.0",
     "pandas>=2.3.3",
+    "psycopg2-binary>=2.9.12",
     "scikit-learn>=1.9.0",
     "seaborn>=0.13.2",
     "sqlalchemy>=2.0.52",
@@ -110,7 +127,7 @@ python_functions = ["test_*"]
 python_classes = ["Test*"]
 env = [
     # services/shared — MLflow
-    "MLFLOW_WORKSPACE=test_workspace",
+    "MLFLOW_WORKSPACE=test-0123456789",
     # services/shared — S3
     "S3_BUCKET_NAME=test-bucket",
     # services/shared — Slack

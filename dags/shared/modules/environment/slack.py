@@ -1,3 +1,4 @@
+from pydantic import StrictStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dags.shared.modules.configs.airflow.airflow import AirflowConfig
@@ -8,7 +9,7 @@ class SlackEnvironment(BaseSettings):
         case_sensitive=True
     )
 
-    SLACK_CONNECTION_ID: str
-    SLACK_CHANNEL_ID: str
+    SLACK_CONNECTION_ID: StrictStr
+    SLACK_CHANNEL_ID: StrictStr
 
 slack_environment = SlackEnvironment()

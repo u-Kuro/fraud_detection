@@ -3,11 +3,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class PostgresEnvironment(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
 
-    # PGHOST: str
+    # PGHOST: StrictStr
     # PGPORT: int
-    # PGDATABASE: str
-    # PGUSER: str
-    # PGPASSWORD: str
+    # PGDATABASE: StrictStr
+    # PGUSER: StrictStr
+    # PGPASSWORD: StrictStr
 
     @property
     def DATABASE_URL(self) -> str:

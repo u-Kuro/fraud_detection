@@ -7,13 +7,13 @@ def test_mlflow_module_is_not_none():
     assert mlflow_module is not None
 
 def test_get_mlflow_returns_module(mocker):
-    mock_mlflow = mocker.patch("dags.shared.repositories.mlflow.mlflow.mlflow")
+    mock_mlflow = mocker.patch("dags.shared.repositories.mlflow.mlflow")
     from dags.shared.repositories.mlflow.mlflow import get_mlflow
     result = get_mlflow()
     assert result is mock_mlflow
 
 def test_get_mlflow_client_returns_client(mocker):
-    mocker.patch("dags.shared.repositories.mlflow.mlflow.mlflow")
+    mocker.patch("dags.shared.repositories.mlflow.mlflow")
     from dags.shared.repositories.mlflow.mlflow import get_mlflow_client
     from mlflow import MlflowClient
     result = get_mlflow_client()

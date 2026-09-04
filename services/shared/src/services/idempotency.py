@@ -40,9 +40,11 @@ class IdempotencyStore:
         self.start_cleanup_thread()
 
     def start_cleanup_thread(self) -> None:
-        t = threading.Thread(target=self.cleanup_loop, daemon=True)
-        t.name = "idempotency-cleanup"
-        t.start()
+        threading.Thread(
+            target=self.cleanup_loop,
+            daemon=True,
+            name="idempotency-cleanup"
+        ).start()
 
     def cleanup_loop(self) -> None:
         while True:
@@ -52,7 +54,7 @@ class IdempotencyStore:
     def purge_expired(self) -> int:
         now = time.monotonic()
         with self.lock:
-            expired = [k for k, exp in self.completed.items() if exp <= now]
+            expired = [key for key, expiration in self.completed.items() if expiration <= now]
             for k in expired:
                 del self.completed[k]
         return len(expired)

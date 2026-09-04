@@ -14,8 +14,8 @@ def make_body(workflow_id=None, ts="111.222"):
     }
 
 def test_module_registers_handlers_with_slack_app():
-    import services.fraud_detection.src.controllers.handlers.slack.training as mod
-    assert mod is not None
+    import services.fraud_detection.src.controllers.handlers.slack.training as module
+    assert module is not None
 
 def test_handler_module_imports_slack_app():
     from services.fraud_detection.src.controllers.handlers.slack.training import slack_app

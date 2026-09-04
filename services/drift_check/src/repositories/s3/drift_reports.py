@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from services.shared.src.modules.configs.s3 import S3Config
 from services.shared.src.modules.environment.s3 import s3_environment
-from services.shared.src.repositories import ensure_bucket
+from services.shared.src.repositories.s3.bucket import ensure_bucket
 from services.shared.src.repositories.s3.s3 import s3_client
 
 def upload_drift_report(html_bytes: bytes, json_bytes: bytes) -> None:

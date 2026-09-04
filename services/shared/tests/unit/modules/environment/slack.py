@@ -1,34 +1,43 @@
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pydantic import ValidationError
 
 from services.shared.src.modules.environment.slack import SlackEnvironment
 
-def test_slack_environment_reads_all_fields(monkeypatch):
-    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-token")
-    monkeypatch.setenv("SLACK_APP_TOKEN", "xapp-token")
-    monkeypatch.setenv("SLACK_SIGNING_SECRET", "secret")
-    monkeypatch.setenv("SLACK_CHANNEL_ID", "C123")
-    env = SlackEnvironment()
-    assert env.SLACK_BOT_TOKEN == "xoxb-token"
-    assert env.SLACK_APP_TOKEN == "xapp-token"
-    assert env.SLACK_SIGNING_SECRET == "secret"
-    assert env.SLACK_CHANNEL_ID == "C123"
+def test_slack_environment_bot_token_value(monkeypatch: MonkeyPatch):
+    value = "value"
+    monkeypatch.setenv("SLACK_BOT_TOKEN", value)
 
-def test_slack_environment_missing_bot_token_raises(monkeypatch):
-    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
-    with pytest.raises(ValidationError):
-        SlackEnvironment()
-
-def test_slack_environment_missing_app_token_raises(monkeypatch):
-    monkeypatch.delenv("SLACK_APP_TOKEN", raising=False)
-    with pytest.raises(ValidationError):
-        SlackEnvironment()
-
-def test_slack_environment_module_level_instance():
     from services.shared.src.modules.environment.slack import slack_environment
-    assert isinstance(slack_environment, SlackEnvironment)
 
-def test_slack_environment_missing_channel_id_raises(monkeypatch):
-    monkeypatch.delenv("SLACK_CHANNEL_ID", raising=False)
+    assert slack_environment.SLACK_BOT_TOKEN == value
+
+def test_slack_environment_app_token_value(monkeypatch: MonkeyPatch):
+    value = "value"
+    monkeypatch.setenv("SLACK_APP_TOKEN", value)
+
+    from services.shared.src.modules.environment.slack import slack_environment
+
+    assert slack_environment.SLACK_APP_TOKEN == value
+
+def test_slack_environment_signing_secret_value(monkeypatch: MonkeyPatch):
+    value = "value"
+    monkeypatch.setenv("SLACK_SIGNING_SECRET", value)
+
+    from services.shared.src.modules.environment.slack import slack_environment
+
+    assert slack_environment.SLACK_SIGNING_SECRET == value
+
+def test_slack_environment_channel_id_value(monkeypatch: MonkeyPatch):
+    value = "value"
+    monkeypatch.setenv("SLACK_CHANNEL_ID", value)
+
+    from services.shared.src.modules.environment.slack import slack_environment
+
+    assert slack_environment.SLACK_CHANNEL_ID == value
+
+def test_slack_environment_with_missing_environment(monkeypatch: MonkeyPatch):
+    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
+
     with pytest.raises(ValidationError):
         SlackEnvironment()

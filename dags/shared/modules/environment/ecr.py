@@ -1,12 +1,11 @@
+from pydantic import StrictStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ECREnvironment(BaseSettings):
-    model_config = SettingsConfigDict(
-        case_sensitive=True
-    )
+    model_config = SettingsConfigDict(case_sensitive=True)
 
-    DRIFT_CHECK_IMAGE: str
-    TRAIN_MODEL_IMAGE: str
-    ARCHIVE_IMAGE: str
+    DRIFT_CHECK_IMAGE: StrictStr
+    TRAIN_MODEL_IMAGE: StrictStr
+    ARCHIVE_IMAGE: StrictStr
 
 ecr_environment = ECREnvironment()

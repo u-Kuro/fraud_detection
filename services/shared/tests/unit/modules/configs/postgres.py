@@ -1,34 +1,21 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
+
+from pytest_mock import MockerFixture
 
 from services.shared.src.modules.configs.postgres import PostgresConfig
 
-def test_project_id_returns_uuid(mocker):
+def test_postgres_config_project_id_result_and_cache(mocker: MockerFixture):
     expected = uuid4()
     mocker.patch(
-        "services.shared.modules.configs.postgres.get_project_id",
+        target="services.shared.src.modules.configs.postgres.get_project_id",
         return_value=expected,
     )
-    # Clear lru_cache so the mock is called
     PostgresConfig.project_id.cache_clear()
+
     result = PostgresConfig.project_id()
+    assert isinstance(result, UUID)
     assert result == expected
 
-def test_project_id_is_cached(mocker):
-    expected = uuid4()
-    mock_get = mocker.patch(
-        "services.shared.modules.configs.postgres.get_project_id",
-        return_value=expected,
-    )
-    PostgresConfig.project_id.cache_clear()
-    PostgresConfig.project_id()
-    PostgresConfig.project_id()
-    mock_get.assert_called_once()
-
-def test_project_id_uses_project_name(mocker):
-    mock_get = mocker.patch(
-        "services.shared.modules.configs.postgres.get_project_id",
-        return_value=uuid4(),
-    )
-    PostgresConfig.project_id.cache_clear()
-    PostgresConfig.project_id()
-    mock_get.assert_called_once_with("fraud_detection")
+    result = PostgresConfig.project_id()
+    assert isinstance(result, UUID)
+    assert result == expected

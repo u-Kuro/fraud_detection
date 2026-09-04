@@ -1,23 +1,52 @@
+import sys
+
 import pytest
 from unittest.mock import MagicMock
 
-@pytest.fixture
-def mock_sql_session(mocker):
-    session_ctx = MagicMock()
-    session_ctx.__enter__ = MagicMock(return_value=MagicMock())
-    session_ctx.__exit__ = MagicMock(return_value=False)
-    mock_session = MagicMock()
-    mock_session.begin.return_value = session_ctx
-    return mock_session
+@pytest.fixture(autouse=True)
+def mock_boto3_module(mocker):
+    sys.modules.update({
+        # "boto3": MagicMock(),
+        # "boto3.client": MagicMock(),
+        "boto3.client.head_bucket": MagicMock(),
+        "boto3.client.create_bucket": MagicMock(),
+    })
 
-@pytest.fixture
-def mock_s3_client(mocker):
-    return MagicMock()
+    yield sys.modules["boto3"]
 
-@pytest.fixture
-def mock_mlflow_client(mocker):
-    return MagicMock()
+    del sys.modules["boto3"]
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_mlflow_module(mocker):
-    return MagicMock()
+    sys.modules.update({
+        # "mlflow": MagicMock(),
+    })
+
+    yield sys.modules["mlflow"]
+
+    del sys.modules["mlflow"]
+
+@pytest.fixture(autouse=True)
+def mock_slack_bolt_module():
+    sys.modules.update({
+        "slack_bolt": MagicMock(),
+        "slack_bolt.adapter": MagicMock(),
+        "slack_bolt.adapter.socket_mode": MagicMock(),
+    })
+
+    yield sys.modules["slack_bolt"]
+
+    del sys.modules["slack_bolt"]
+
+@pytest.fixture(autouse=True)
+def mock_sqlalchemy_module(mocker):
+    sys.modules.update({
+        # "sqlalchemy": MagicMock(),
+        # "sqlalchemy.orm.sessionmaker": MagicMock(),
+    })
+
+    yield sys.modules["sqlalchemy"]
+
+    del sys.modules["sqlalchemy"]
+
+

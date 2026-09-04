@@ -10,7 +10,7 @@ from services.drift_check.src.repositories.mlflow.registered_model_dataset impor
 from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
 from services.drift_check.src.repositories.s3.drift_reports import upload_drift_report
 from services.shared.src.modules.configs.dataset import DatasetConfig
-from services.shared.src.modules.schemas.models_dataset import FraudClassificationFeaturesKeys
+from services.shared.src.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
 def run_drift_report(

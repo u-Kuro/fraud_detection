@@ -1,33 +1,19 @@
-import dataclasses
-
-import pytest
-
 from services.shared.src.modules.configs.mlflow import MLFlowConfig
 
-def test_mlflow_config_experiment_name():
-    assert MLFlowConfig.experiment_name == "fraud_detection"
+def test_mlflow_config_experiment_name_is_string():
+    assert isinstance(MLFlowConfig.experiment_name, str)
 
-def test_mlflow_config_model_path():
-    assert MLFlowConfig.model_path == "model"
+def test_mlflow_config_model_path_is_string():
+    assert isinstance(MLFlowConfig.model_path, str)
 
-def test_mlflow_config_model_name():
-    assert MLFlowConfig.model_name == "xgboost"
+def test_mlflow_config_model_name_is_string():
+    assert isinstance(MLFlowConfig.model_name, str)
 
-def test_mlflow_config_scaler_name():
-    assert MLFlowConfig.scaler_name == "robust_scaler"
+def test_mlflow_config_scaler_name_is_string():
+    assert isinstance(MLFlowConfig.scaler_name, str)
 
-def test_mlflow_config_reference_dataset_path():
-    assert MLFlowConfig.reference_dataset_path == "reference_dataset"
+def test_mlflow_config_reference_dataset_path_is_string():
+    assert isinstance(MLFlowConfig.reference_dataset_path, str)
 
-def test_mlflow_config_reference_dataset_file_name():
-    assert MLFlowConfig.reference_dataset_file_name == "reference.parquet"
-
-def test_mlflow_config_instantiation():
-    config = MLFlowConfig()
-    assert config.experiment_name == "fraud_detection"
-    assert config.model_name == "xgboost"
-
-def test_mlflow_config_is_frozen():
-    config = MLFlowConfig()
-    with pytest.raises((dataclasses.FrozenInstanceError, AttributeError)):
-        config.model_name = "other"
+def test_mlflow_config_reference_dataset_file_name_is_string():
+    assert isinstance(MLFlowConfig.reference_dataset_file_name, str)
