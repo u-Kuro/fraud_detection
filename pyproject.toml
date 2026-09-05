@@ -80,6 +80,7 @@ dags = [
     "pydantic-settings>=2.15.0",
 ]
 test = [
+    "mock-open>=1.4.0",
     "pytest>=9.1.1",
     "pytest-env>=1.7.0",
     "pytest-mock>=3.15.1",
@@ -115,12 +116,12 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = [
-    "services/archive/tests/unit",
-    "services/drift_check/tests/unit",
-    "services/fraud_detection/tests/unit",
-    "services/train_model/tests/unit",
-    "services/shared/tests/unit",
-    "tests/dags/unit",
+    "services/archive/tests",
+    "services/drift_check/tests",
+    "services/fraud_detection/tests",
+    "services/train_model/tests",
+    "services/shared/tests",
+    "tests/dags",
 ]
 python_files = ["[a-z]*.py"]
 python_functions = ["test_*"]

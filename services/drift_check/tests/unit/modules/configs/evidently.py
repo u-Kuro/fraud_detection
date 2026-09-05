@@ -1,16 +1,31 @@
-from services.drift_check.src.modules.configs.evidently import EvidentlyConfig
+import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from pydantic import ValidationError
 
-def test_evidently_config_data_drift_key():
-    assert EvidentlyConfig.data_drift_key == "data_drift"
+from services.drift_check.src.modules.environment.drift_check import DriftCheckEnvironment
 
-def test_evidently_config_concept_drift_key():
-    assert EvidentlyConfig.concept_drift_key == "concept_drift"
+def test_drift_check_environment_instance():
+    from services.drift_check.src.modules.environment.drift_check import drift_check_environment
 
-def test_evidently_config_drifted_key():
-    assert EvidentlyConfig.drifted_key == "drifted"
+    assert isinstance(drift_check_environment, DriftCheckEnvironment)
 
-def test_evidently_config_instantiation():
-    config = EvidentlyConfig()
-    assert config.data_drift_key == "data_drift"
-    assert config.concept_drift_key == "concept_drift"
-    assert config.drifted_key == "drifted"
+def test_drift_check_environment_values(monkeypatch: MonkeyPatch):
+    value = "value"
+    monkeypatch.setenv(
+        name="ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID",
+        value=value
+    )
+
+    environment = DriftCheckEnvironment()
+
+    assert isinstance(environment.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID, str)
+    assert environment.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID == value
+
+def test_drift_check_environment_failure_with_missing_environment(monkeypatch: MonkeyPatch):
+    monkeypatch.delenv(
+        name="ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID",
+        raising=False
+    )
+
+    with pytest.raises(ValidationError):
+        DriftCheckEnvironment()

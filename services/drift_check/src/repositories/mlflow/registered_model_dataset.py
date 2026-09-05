@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
+import numpy
 from pandas import DataFrame
 from pyarrow import parquet
 
@@ -19,7 +20,7 @@ def load_reference_dataset() -> tuple[DataFrame, datetime]:
         raise ValueError(f"No reference dataset was found in 'runs:/{drift_check_environment.ACTIVE_MODEL_DEPLOYMENT_MLFLOW_RUN_ID}/{MLFlowConfig.reference_dataset_path}'.")
 
     df_reference_max_timestamp = df_reference[TransactionInferences.transaction_timestamp.key].max()
-    assert isinstance(df_reference_max_timestamp, float)
+    assert isinstance(df_reference_max_timestamp, numpy.int64)
 
     dataset_max_timestamp = datetime.fromtimestamp(
         df_reference_max_timestamp,

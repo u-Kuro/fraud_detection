@@ -1313,6 +1313,7 @@ fraud-detection = [
     { name = "sqlalchemy" },
 ]
 test = [
+    { name = "mock-open" },
     { name = "pytest" },
     { name = "pytest-env" },
     { name = "pytest-mock" },
@@ -1409,6 +1410,7 @@ fraud-detection = [
     { name = "sqlalchemy", specifier = ">=2.0.52" },
 ]
 test = [
+    { name = "mock-open", specifier = ">=1.4.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-env", specifier = ">=1.7.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
@@ -2364,6 +2366,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/82/f0/f4fe46156efd55561
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/1c/a5aea29667f3e46d279fe4ede21f58e5895b50c5de377acc523cb93ad385/mlflow_tracing-3.15.2-py3-none-any.whl", hash = "sha256:0969d43855d06e016607e90e6f212ab172952243eb71057b33ca9d845cb8bc08", size = 1786550, upload-time = "2026-08-26T06:06:26.569Z" },
 ]
+
+[[package]]
+name = "mock-open"
+version = "1.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/02/cef85a80ff6d3092a458448c46816656d1c532afd45aeeeb8f50a84aed35/mock-open-1.4.0.tar.gz", hash = "sha256:c3ecb6b8c32a5899a4f5bf4495083b598b520c698bba00e1ce2ace6e9c239100", size = 12127, upload-time = "2020-04-15T15:26:51.234Z" }
 
 [[package]]
 name = "more-itertools"

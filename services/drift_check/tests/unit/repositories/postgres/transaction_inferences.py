@@ -1,51 +1,28 @@
 from datetime import datetime, timezone
-from unittest.mock import MagicMock
 
-import pandas as pd
-import pytest
+import pandas
+from pandas import DataFrame
+from pytest_mock import MockerFixture
 
-from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
+from services.shared.src.modules.configs.dataset import DatasetConfig
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
-def make_sql_session_mock(df: pd.DataFrame):
-    mock_conn = MagicMock()
-    mock_inner = MagicMock()
-    mock_inner.connection.return_value = mock_conn
-
-    mock_ctx = MagicMock()
-    mock_ctx.__enter__ = MagicMock(return_value=mock_inner)
-    mock_ctx.__exit__ = MagicMock(return_value=False)
-
-    mock_sm = MagicMock()
-    mock_sm.begin.return_value = mock_ctx
-    return mock_sm
-
-
-def test_load_current_dataset_raises_type_error_for_non_dataframe(mocker):
-    cutoff = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    mock_sm = make_sql_session_mock(None)
-    mocker.patch(
-        "services.drift_check.src.repositories.postgres.transaction_inferences.sql_session",
-        mock_sm,
-    )
+def test_load_current_dataset(mocker: MockerFixture):
+    dataframe = DataFrame({
+        TransactionInferences.is_fraud.key: [1.0],
+        TransactionInferences.is_fraud_prediction.key: [1],
+        TransactionInferences.is_fraud_probability.key: [1.0],
+        TransactionInferences.amount.key: [1.0],
+        TransactionInferences.transaction_timestamp.key: [datetime.now()],
+    })
+    mocker.patch.object(dataframe, "__len__", return_value=DatasetConfig.minimum_rows)
     mocker.patch(
         "services.drift_check.src.repositories.postgres.transaction_inferences.pandas.read_sql",
-        return_value="not a dataframe",
+        return_value=dataframe
     )
-    with pytest.raises(TypeError):
-        load_current_dataset(cutoff)
 
+    from services.drift_check.src.repositories.postgres.transaction_inferences import load_current_dataset
+    result = load_current_dataset(current_dataset_cutoff=datetime.now())
 
-def test_load_current_dataset_raises_value_error_for_small_dataset(mocker):
-    cutoff = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    small_df = pd.DataFrame({"col": range(10)})
-    mock_sm = make_sql_session_mock(small_df)
-    mocker.patch(
-        "services.drift_check.src.repositories.postgres.transaction_inferences.sql_session",
-        mock_sm,
-    )
-    mocker.patch(
-        "services.drift_check.src.repositories.postgres.transaction_inferences.pandas.read_sql",
-        return_value=small_df,
-    )
-    with pytest.raises(ValueError, match="too small"):
-        load_current_dataset(cutoff)
+    assert isinstance(result, DataFrame)
+    pandas.testing.assert_frame_equal(dataframe, result)

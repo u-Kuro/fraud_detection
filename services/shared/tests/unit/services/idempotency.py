@@ -3,7 +3,11 @@ import time
 
 import pytest
 
-from services.shared.src.services.idempotency import AlreadyProcessed, IdempotencyGuard, IdempotencyStore
+from services.shared.src.services.idempotency import IdempotencyStore, AlreadyProcessed
+
+@pytest.fixture
+def idempotency_store() -> IdempotencyStore:
+    return IdempotencyStore(ttl=60, cleanup_interval=9999)
 
 def test_already_processed_is_exception():
     assert issubclass(AlreadyProcessed, Exception)
@@ -11,14 +15,6 @@ def test_already_processed_is_exception():
 def test_already_processed_can_be_raised():
     with pytest.raises(AlreadyProcessed):
         raise AlreadyProcessed()
-
-import threading
-import time
-import pytest
-
-@pytest.fixture
-def idempotency_store() -> IdempotencyStore:
-    return IdempotencyStore(ttl=60, cleanup_interval=9999)
 
 def test_usage(idempotency_store: IdempotencyStore):
     with idempotency_store.guard("k"):

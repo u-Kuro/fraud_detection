@@ -48,8 +48,8 @@ def load_current_dataset(
         )
         df_current = pandas.read_sql(
             sql=select(current_dataset_subquery)
-            .order_by(func.random())
-            .limit(DatasetConfig.maximum_dataset_rows),
+                .order_by(func.random())
+                .limit(DatasetConfig.maximum_dataset_rows),
             con=session.connection(),
        )
 
