@@ -10,7 +10,7 @@ from services.shared.src.modules.schemas.postgres.transaction_inferences import 
 
 class TestFraudClassificationRequest:
     @staticmethod
-    def make_request(**overrides):
+    def make_request(**overrides) -> dict:
         data = {
             TransactionInferences.transaction_id.key: str(uuid4()),
             FraudClassificationFeaturesKeys.transaction_timestamp: datetime.now().isoformat(),
@@ -49,7 +49,7 @@ class TestFraudClassificationRequest:
 
 class TestFraudClassificationResponse:
     @staticmethod
-    def make_response(**overrides):
+    def make_response(**overrides) -> dict:
         data = {
             TransactionInferences.is_fraud_prediction.key: True,
             TransactionInferences.is_fraud_probability.key: 1.0
@@ -67,7 +67,7 @@ class TestFraudClassificationResponse:
             if isinstance(expected, float):
                 assert actual == pytest.approx(expected)
             else:
-                assert actual == expected
+                assert expected == actual
 
         assert 1.0 >= getattr(values, TransactionInferences.is_fraud_probability.key) >= 0.0
 
@@ -78,7 +78,7 @@ class TestFraudClassificationResponse:
 
 class TestFraudClassificationOutput:
     @staticmethod
-    def make_output(**overrides):
+    def make_output(**overrides) -> dict:
         data = {
             **TestFraudClassificationRequest.make_request(),
             **TestFraudClassificationResponse.make_response()
@@ -96,7 +96,7 @@ class TestFraudClassificationOutput:
             if isinstance(expected, float):
                 assert actual == pytest.approx(expected)
             else:
-                assert actual == expected
+                assert expected == actual
 
     def test_failure_for_extra_field(self):
         data = self.make_output(extra=0)

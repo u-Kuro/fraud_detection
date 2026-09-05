@@ -5,7 +5,7 @@ from services.fraud_detection.src.modules.schemas.status import StatusResponse
 
 class TestStatusResponse:
     @staticmethod
-    def make_data(**overrides):
+    def make_data(**overrides) -> dict:
         data = {
             "status": "value"
         }
@@ -19,7 +19,7 @@ class TestStatusResponse:
         for key, expected in data.items():
             actual = getattr(values, key)
 
-            assert actual == expected
+            assert expected == actual
 
     def test_failure_for_extra_field(self):
         data = self.make_data(extra=0)

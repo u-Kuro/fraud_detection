@@ -1,3 +1,5 @@
+# TODO - 05/09/2026 - Continue here... finish all fraud_detection. rewrite all train_model and dags
+
 import pytest
 
 from services.fraud_detection.src.services.mwaa import trigger_airflow_dag

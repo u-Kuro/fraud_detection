@@ -8,7 +8,7 @@ from services.fraud_detection.src.modules.schemas.slack import TrainingValue, Pr
 
 class TestTrainingValue:
     @staticmethod
-    def make_data(**overrides):
+    def make_data(**overrides) -> dict:
         data = {
             "workflow_id": str(uuid4()),
             "should_train_for_promotion": json.dumps(True)
@@ -38,7 +38,7 @@ class TestTrainingValue:
 
 class TestPromotionValue:
     @staticmethod
-    def make_data(**overrides):
+    def make_data(**overrides) -> dict:
         data = {
             "workflow_id": str(uuid4())
         }

@@ -5,7 +5,7 @@ from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 
 class TestDeployedModel:
     @staticmethod
-    def make_data(**overrides):
+    def make_data(**overrides) -> dict:
         data = {
             "model_name": "value",
             "model_version": 1
@@ -20,7 +20,7 @@ class TestDeployedModel:
         for key, expected in data.items():
             actual = getattr(values, key)
 
-            assert actual == expected
+            assert expected == actual
 
     def test_failure_for_extra_field(self):
         data = self.make_data(extra=0)

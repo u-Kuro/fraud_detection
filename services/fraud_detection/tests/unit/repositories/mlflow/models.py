@@ -18,4 +18,4 @@ class TestMlflowModel:
         for key, expected in data.items():
             actual = getattr(values, key)
 
-            assert actual == expected
+            assert expected == actual
