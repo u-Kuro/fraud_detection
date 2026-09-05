@@ -1,17 +1,15 @@
 import json
 
-from mock_open import MockOpen
-from pytest_mock import MockerFixture
-
+import pytest
 from services.shared.src.controllers.airflow.xcom import xcom_push
+from services.shared.src.modules.configs.airflow import AirflowConfig
 
-def test_xcom_push(mocker: MockerFixture):
-    mocker.patch("os.makedirs")
-    opener = MockOpen()
-    mocker.patch("builtins.open", opener)
-
-    data = {"key": "value", "number": 42}
+@pytest.mark.usefixtures("fs")
+def test_xcom_push():
+    data = {"key": "value"}
     xcom_push(data)
 
-    with open("/airflow/xcom/return.json") as file:
-        assert json.loads(file.read()) == json.loads(json.dumps(data))
+    with open(AirflowConfig.xcom_file_path) as file:
+        result = json.loads(file.read())
+
+    assert result == json.loads(json.dumps(data))

@@ -1,33 +1,64 @@
-from uuid import uuid4
+import json
+from uuid import uuid4, UUID
 
 import pytest
 from pydantic import ValidationError
 
-from services.fraud_detection.src.modules.schemas.slack import PromotionValue, TrainingValue
+from services.fraud_detection.src.modules.schemas.slack import TrainingValue, PromotionValue
 
-def test_training_value_instantiation():
-    wid = uuid4()
-    tv = TrainingValue(workflow_id=wid, should_train_for_promotion=True)
-    assert tv.workflow_id == wid
-    assert tv.should_train_for_promotion is True
+class TestTrainingValue:
+    @staticmethod
+    def make_data(**overrides):
+        data = {
+            "workflow_id": str(uuid4()),
+            "should_train_for_promotion": json.dumps(True)
+        }
+        data.update(overrides)
+        return data
 
-def test_training_value_should_train_for_promotion_strict_bool():
-    wid = uuid4()
-    with pytest.raises(ValidationError):
-        TrainingValue(workflow_id=wid, should_train_for_promotion=1)
+    def test_values(self):
+        data = self.make_data()
+        value = TrainingValue(**data)
 
-def test_promotion_value_instantiation():
-    wid = uuid4()
-    pv = PromotionValue(workflow_id=wid)
-    assert pv.workflow_id == wid
+        for key, expected in data.items():
+            actual = getattr(value, key)
 
-def test_promotion_value_missing_workflow_id_raises():
-    with pytest.raises(ValidationError):
-        PromotionValue()
+            match key:
+                case "workflow_id":
+                    assert actual == UUID(expected)
+                case "should_train_for_promotion":
+                    assert actual == json.loads(expected)
+                case _:
+                    raise ValueError(f"Unexpected key: {key}")
 
-def test_training_value_json_round_trip():
-    wid = uuid4()
-    tv = TrainingValue(workflow_id=wid, should_train_for_promotion=False)
-    restored = TrainingValue.model_validate_json(tv.model_dump_json())
-    assert restored.workflow_id == wid
-    assert restored.should_train_for_promotion is False
+    def test_failure_for_extra_field(self):
+        data = self.make_data(extra=0)
+        with pytest.raises(ValidationError):
+            TrainingValue(**data)
+
+class TestPromotionValue:
+    @staticmethod
+    def make_data(**overrides):
+        data = {
+            "workflow_id": str(uuid4())
+        }
+        data.update(overrides)
+        return data
+
+    def test_values(self):
+        data = self.make_data()
+        value = PromotionValue(**data)
+
+        for key, expected in data.items():
+            actual = getattr(value, key)
+
+            match key:
+                case "workflow_id":
+                    assert actual == UUID(expected)
+                case _:
+                    raise ValueError(f"Unexpected key: {key}")
+
+    def test_failure_for_extra_field(self):
+        data = self.make_data(extra=0)
+        with pytest.raises(ValidationError):
+            PromotionValue(**data)

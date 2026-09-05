@@ -34,7 +34,7 @@ def approve_promotion(
 
 @slack_app.state("reject_promotion")
 def reject_promotion(
-    ack,
+    ack: Ack,
     body: dict,
     action: dict,
     client: WebClient

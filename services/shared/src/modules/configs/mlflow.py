@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class MLFlowConfig:
+class MLflowConfig:
     experiment_name: str = "fraud_detection"
 
     model_path:  str = "model"

@@ -2,7 +2,7 @@ from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
 from services.shared.src.controllers.airflow.xcom import xcom_push
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 from services.train_model.src.modules.configs.airflow.xcom import TrainModelXComKeys
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
@@ -22,7 +22,7 @@ def main() -> None:
     unused_dataset_outputs = get_timed_latest_unused_dataset()
     preprocess_outputs = preprocess(unused_dataset_outputs.dataset)
 
-    with transactional_mlflow_run(run_name=MLFlowConfig.model_name):
+    with transactional_mlflow_run(run_name=MLflowConfig.model_name):
         train_model_outputs = train_model(
             preprocess_outputs=preprocess_outputs,
             scaler=RobustScaler,

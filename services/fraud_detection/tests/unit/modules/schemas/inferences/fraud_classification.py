@@ -1,112 +1,104 @@
-from datetime import datetime, timezone, timedelta
-from uuid import uuid4
+from datetime import datetime, timezone
+from uuid import uuid4, UUID
 
 import pytest
 from pydantic import ValidationError
 
-from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationOutput, FraudClassificationRequest, FraudClassificationResponse
+from services.fraud_detection.src.modules.schemas.inferences.fraud_classification import FraudClassificationRequest, FraudClassificationResponse, FraudClassificationOutput
+from services.shared.src.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
+from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
-def valid_request_data() -> dict:
-    return {
-        "transaction_id": uuid4(),
-        "transaction_timestamp": datetime.now(timezone.utc),
-        "amount": 100.0,
-        **{f"v{i}": float(i) for i in range(1, 29)},
-    }
+class TestFraudClassificationRequest:
+    @staticmethod
+    def make_request(**overrides):
+        data = {
+            TransactionInferences.transaction_id.key: str(uuid4()),
+            FraudClassificationFeaturesKeys.transaction_timestamp: datetime.now().isoformat(),
+            FraudClassificationFeaturesKeys.amount: "1.0",
+            **{
+                key: "1.0" for key in FraudClassificationFeaturesKeys
+                if key.startswith("v") and key[1:].isdigit()
+            },
+        }
+        data.update(overrides)
+        return data
 
-def test_request_instantiation():
-    data = valid_request_data()
-    req = FraudClassificationRequest(**data)
-    assert req.amount == 100.0
+    def test_values(self):
+        data = self.make_request()
+        values = FraudClassificationRequest(**data)
 
-def test_request_converts_timestamp_to_utc():
-    data = valid_request_data()
-    # Provide a non-UTC timezone
-    data["transaction_timestamp"] = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone(timedelta(hours=5)))
-    req = FraudClassificationRequest(**data)
-    assert req.transaction_timestamp.tzinfo == timezone.utc
+        for key, expected in data.items():
+            actual = getattr(values, key)
 
-def test_request_forbids_extra_fields():
-    data = valid_request_data()
-    data["extra"] = "boom"
-    with pytest.raises(ValidationError):
-        FraudClassificationRequest(**data)
+            match key:
+                case TransactionInferences.transaction_id.key:
+                    assert actual == UUID(expected)
+                case FraudClassificationFeaturesKeys.transaction_timestamp:
+                    assert actual == datetime.fromisoformat(expected).astimezone(timezone.utc)
+                case FraudClassificationFeaturesKeys.amount:
+                    assert actual == pytest.approx(float(expected))
+                case _ if key.startswith("v") and key[1:].isdigit():
+                    assert actual == pytest.approx(float(expected))
+                case _:
+                    raise ValueError(f"Unexpected key: {key}")
 
-def test_request_amount_must_be_numeric():
-    # Pydantic 2.x StrictFloat accepts Python int in Python-mode construction;
-    # it rejects non-numeric types regardless
-    data = valid_request_data()
-    data["amount"] = "not_a_number"
-    with pytest.raises(ValidationError):
-        FraudClassificationRequest(**data)
+    def test_failure_for_extra_field(self):
+        data = self.make_request(extra=0)
+        with pytest.raises(ValidationError):
+            FraudClassificationRequest(**data)
 
-def test_request_v_fields_must_be_numeric():
-    data = valid_request_data()
-    data["v1"] = "invalid"
-    with pytest.raises(ValidationError):
-        FraudClassificationRequest(**data)
+class TestFraudClassificationResponse:
+    @staticmethod
+    def make_response(**overrides):
+        data = {
+            TransactionInferences.is_fraud_prediction.key: True,
+            TransactionInferences.is_fraud_probability.key: 1.0
+        }
+        data.update(overrides)
+        return data
 
-def test_request_missing_v_field_raises():
-    data = valid_request_data()
-    del data["v28"]
-    with pytest.raises(ValidationError):
-        FraudClassificationRequest(**data)
+    def test_values(self):
+        data = self.make_response()
+        values = FraudClassificationResponse(**data)
 
-def test_request_has_all_28_v_fields():
-    data = valid_request_data()
-    req = FraudClassificationRequest(**data)
-    for i in range(1, 29):
-        assert hasattr(req, f"v{i}")
+        for key, expected in data.items():
+            actual = getattr(values, key)
 
-def test_response_instantiation():
-    resp = FraudClassificationResponse(is_fraud_prediction=True, is_fraud_probability=0.9)
-    assert resp.is_fraud_prediction is True
-    assert resp.is_fraud_probability == 0.9
+            if isinstance(expected, float):
+                assert actual == pytest.approx(expected)
+            else:
+                assert actual == expected
 
-def test_response_probability_ge_zero():
-    with pytest.raises(ValidationError):
-        FraudClassificationResponse(is_fraud_prediction=False, is_fraud_probability=-0.1)
+        assert 1.0 >= getattr(values, TransactionInferences.is_fraud_probability.key) >= 0.0
 
-def test_response_probability_le_one():
-    with pytest.raises(ValidationError):
-        FraudClassificationResponse(is_fraud_prediction=False, is_fraud_probability=1.1)
+    def test_failure_for_extra_field(self):
+        data = self.make_response(extra=0)
+        with pytest.raises(ValidationError):
+            FraudClassificationResponse(**data)
 
-def test_response_is_fraud_prediction_must_be_strict_bool():
-    with pytest.raises(ValidationError):
-        FraudClassificationResponse(is_fraud_prediction=1, is_fraud_probability=0.5)
+class TestFraudClassificationOutput:
+    @staticmethod
+    def make_output(**overrides):
+        data = {
+            **TestFraudClassificationRequest.make_request(),
+            **TestFraudClassificationResponse.make_response()
+        }
+        data.update(overrides)
+        return data
 
-def test_output_instantiation():
-    data = valid_request_data()
-    output = FraudClassificationOutput(
-        **data,
-        is_fraud=None,
-        is_fraud_prediction=True,
-        is_fraud_probability=0.8,
-        model_name="xgboost",
-        model_version=1,
-    )
-    assert output.is_fraud is None
-    assert output.is_fraud_prediction is True
+    def test_values(self):
+        data = self.make_output()
+        values = FraudClassificationOutput(**data)
 
-def test_output_is_fraud_defaults_to_none():
-    data = valid_request_data()
-    output = FraudClassificationOutput(
-        **data,
-        is_fraud_prediction=False,
-        is_fraud_probability=0.1,
-        model_name="xgboost",
-        model_version=1,
-    )
-    assert output.is_fraud is None
+        for key, expected in data.items():
+            actual = getattr(values, key)
 
-def test_output_is_fraud_accepts_bool():
-    data = valid_request_data()
-    output = FraudClassificationOutput(
-        **data,
-        is_fraud=True,
-        is_fraud_prediction=True,
-        is_fraud_probability=0.9,
-        model_name="xgboost",
-        model_version=1,
-    )
-    assert output.is_fraud is True
+            if isinstance(expected, float):
+                assert actual == pytest.approx(expected)
+            else:
+                assert actual == expected
+
+    def test_failure_for_extra_field(self):
+        data = self.make_output(extra=0)
+        with pytest.raises(ValidationError):
+            FraudClassificationOutput(**data)

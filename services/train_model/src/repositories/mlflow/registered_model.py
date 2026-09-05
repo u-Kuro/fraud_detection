@@ -1,17 +1,17 @@
 from mlflow.models import infer_signature
 from numpy import ndarray
 
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 from services.shared.src.repositories import mlflow_module
-from services.train_model.src.modules.schemas.mlflow import MLFlowRegisteredModelInfo
+from services.train_model.src.modules.schemas.mlflow import MLflowRegisteredModelInfo
 
 def save_and_register_model(
     model: object,
     X_test_samples: ndarray,
-) -> MLFlowRegisteredModelInfo:
+) -> MLflowRegisteredModelInfo:
     model_info = mlflow_module.sklearn.log_model(
         sk_model=model,
-        registered_model_name=MLFlowConfig.model_name,
+        registered_model_name=MLflowConfig.model_name,
         signature=infer_signature(
             model_input=X_test_samples,
             model_output=model.predict(X_test_samples)
@@ -23,14 +23,14 @@ def save_and_register_model(
             "numpy==2.4.6",
             "pandas==2.3.3",
         ],
-        name=MLFlowConfig.model_path,
+        name=MLflowConfig.model_path,
     )
 
     if isinstance(model_info.registered_model_version, int):
-        return MLFlowRegisteredModelInfo(
+        return MLflowRegisteredModelInfo(
             run_id=model_info.run_id,
             model_id=model_info.model_id,
-            model_name=MLFlowConfig.model_name,
+            model_name=MLflowConfig.model_name,
             model_version=model_info.registered_model_version
         )
     else:

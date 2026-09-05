@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from pandas import DataFrame
 from pyarrow import parquet
 
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 from services.shared.src.repositories import mlflow_client, mlflow_module
 
 @contextmanager
@@ -37,7 +37,7 @@ def save_model_reference_dataset(
     try:
         dataset_reference_file_path = os.path.join(
             temporary_directory,
-            MLFlowConfig.reference_dataset_file_name
+            MLflowConfig.reference_dataset_file_name
         )
         parquet.write_table(
             table=pyarrow.Table.from_pandas(
@@ -48,7 +48,7 @@ def save_model_reference_dataset(
         )
         mlflow_module.log_artifact(
             local_path=dataset_reference_file_path,
-            artifact_path=MLFlowConfig.reference_dataset_path,
+            artifact_path=MLflowConfig.reference_dataset_path,
             run_id=mlflow_model_run_id
         )
     finally:

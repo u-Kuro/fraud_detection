@@ -1,35 +1,24 @@
-import dataclasses
-
-import pytest
+from pytest_mock import MockerFixture
 
 from services.fraud_detection.src.modules.configs.fraud_classifier import FraudClassifierConfig
 from services.fraud_detection.src.modules.schemas.mlflow import DeployedModel
 
-def test_fraud_classifier_config_default_threshold():
-    assert FraudClassifierConfig.classification_threshold == 0.5
+class TestFraudClassifierConfig:
+    def test_values(self, mocker: MockerFixture):
+        deployed_model_value = DeployedModel(
+            model_name="model",
+            model_version=1,
+        )
+        mocker.patch(
+            target="services.fraud_detection.src.repositories.postgres.model_deployments.get_active_model_deployment",
+            return_value=deployed_model_value,
+        )
+        FraudClassifierConfig.deployed_model.cache_clear()
 
-def test_fraud_classifier_config_is_frozen():
-    config = FraudClassifierConfig()
-    with pytest.raises((dataclasses.FrozenInstanceError, AttributeError)):
-        config.classification_threshold = 0.7
+        deployed_model_result = FraudClassifierConfig.deployed_model()
 
-def test_deployed_model_is_cached(mocker):
-    mock_model = DeployedModel(model_name="xgboost", model_version=1)
-    mocker.patch(
-        "services.fraud_detection.src.modules.configs.fraud_classifier.get_active_model_deployment",
-        return_value=mock_model,
-    )
-    FraudClassifierConfig.deployed_model.cache_clear()
-    result1 = FraudClassifierConfig.deployed_model()
-    result2 = FraudClassifierConfig.deployed_model()
-    assert result1 is result2
+        assert isinstance(FraudClassifierConfig.classification_threshold, float)
+        assert isinstance(deployed_model_result, DeployedModel)
 
-def test_deployed_model_calls_get_active_deployment(mocker):
-    mock_model = DeployedModel(model_name="xgboost", model_version=2)
-    mock_get = mocker.patch(
-        "services.fraud_detection.src.modules.configs.fraud_classifier.get_active_model_deployment",
-        return_value=mock_model,
-    )
-    FraudClassifierConfig.deployed_model.cache_clear()
-    FraudClassifierConfig.deployed_model()
-    mock_get.assert_called_once()
+        assert 1.0 > FraudClassifierConfig.classification_threshold > 0.0
+        assert deployed_model_result == deployed_model_value

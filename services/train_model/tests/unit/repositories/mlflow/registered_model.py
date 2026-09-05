@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from services.train_model.src.modules.schemas.mlflow import MLFlowRegisteredModelInfo
+from services.train_model.src.modules.schemas.mlflow import MLflowRegisteredModelInfo
 
 
 def test_save_and_register_model_returns_registered_model_info(mocker):
@@ -24,7 +24,7 @@ def test_save_and_register_model_returns_registered_model_info(mocker):
     mock_model = MagicMock()
     mock_model.predict.return_value = rng.random(4)
     result = save_and_register_model(model=mock_model, X_test_samples=rng.random((4, 3)))
-    assert isinstance(result, MLFlowRegisteredModelInfo)
+    assert isinstance(result, MLflowRegisteredModelInfo)
 
 
 def test_save_and_register_model_raises_on_non_int_version(mocker):

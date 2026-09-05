@@ -13,49 +13,6 @@ from services.shared.src.modules.configs.dataset import DatasetConfig
 from services.shared.src.modules.schemas.models_dataset.fraud_classification import FraudClassificationFeaturesKeys
 from services.shared.src.modules.schemas.postgres.transaction_inferences import TransactionInferences
 
-def run_drift_report(
-    df_reference: DataFrame,
-    df_current: DataFrame
-) -> tuple[dict[str, dict], bytes]:
-    data_definition = DataDefinition(
-        classification=[BinaryClassification(
-            target=TransactionInferences.is_fraud.key,
-            prediction_labels=TransactionInferences.is_fraud_prediction.key,
-            prediction_probas=TransactionInferences.is_fraud_probability.key,
-            labels={0: "Legitimate", 1: "Fraud"},
-        )],
-        numerical_columns=list(FraudClassificationFeaturesKeys),
-    )
-    reference_dataset = Dataset.from_pandas(
-        data=df_reference,
-        data_definition=data_definition
-    )
-    current_dataset = Dataset.from_pandas(
-        data=df_current,
-        data_definition=data_definition
-    )
-
-    # Only include ClassificationPreset if there's enough labeled data
-    # Fraud labels arrive earlier which skews concept drift
-    metrics: list[DataDriftPreset | ClassificationPreset] = [DataDriftPreset()]
-    if df_current[TransactionInferences.is_fraud.key].count() >= DatasetConfig.minimum_rows:
-        metrics.append(ClassificationPreset())
-
-    report = Report(
-        metrics=metrics
-    )
-    result = report.run(
-        reference_data=reference_dataset,
-        current_data=current_dataset
-    )
-    buffer = io.StringIO()
-    result.save_html(buffer)
-    summary = extract_drift_summary(
-        results=result.dict(),
-        feature_names=set(FraudClassificationFeaturesKeys)
-    )
-    return summary, buffer.getvalue().encode("utf-8")
-
 def extract_drift_summary(
     results: dict,
     feature_names: set[str]
@@ -114,6 +71,49 @@ def extract_drift_summary(
         # Concept drift (P(Y|X) shift: model quality on current data vs reference)
         EvidentlyConfig.concept_drift_key: concept_drift,
     }
+
+def run_drift_report(
+    df_reference: DataFrame,
+    df_current: DataFrame
+) -> tuple[dict[str, dict], bytes]:
+    data_definition = DataDefinition(
+        classification=[BinaryClassification(
+            target=TransactionInferences.is_fraud.key,
+            prediction_labels=TransactionInferences.is_fraud_prediction.key,
+            prediction_probas=TransactionInferences.is_fraud_probability.key,
+            labels={0: "Legitimate", 1: "Fraud"},
+        )],
+        numerical_columns=list(FraudClassificationFeaturesKeys),
+    )
+    reference_dataset = Dataset.from_pandas(
+        data=df_reference,
+        data_definition=data_definition
+    )
+    current_dataset = Dataset.from_pandas(
+        data=df_current,
+        data_definition=data_definition
+    )
+
+    # Only include ClassificationPreset if there's enough labeled data
+    # Fraud labels arrive earlier which skews concept drift
+    metrics: list[DataDriftPreset | ClassificationPreset] = [DataDriftPreset()]
+    if df_current[TransactionInferences.is_fraud.key].count() >= DatasetConfig.minimum_rows:
+        metrics.append(ClassificationPreset())
+
+    report = Report(
+        metrics=metrics
+    )
+    result = report.run(
+        reference_data=reference_dataset,
+        current_data=current_dataset
+    )
+    buffer = io.StringIO()
+    result.save_html(buffer)
+    summary = extract_drift_summary(
+        results=result.dict(),
+        feature_names=set(FraudClassificationFeaturesKeys)
+    )
+    return summary, buffer.getvalue().encode("utf-8")
 
 def drift_check() -> tuple[bool, dict[str, dict]]:
     df_reference, current_dataset_cutoff = load_reference_dataset()

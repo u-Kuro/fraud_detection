@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 from xgboost import XGBClassifier
 
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 from services.train_model.src.modules.configs.hyperparameters import XGBHyperparametersSampler
 from services.train_model.src.modules.configs.training import TrainingConfig
 from services.train_model.src.modules.schemas.preprocessing import PreprocessOutputs
@@ -29,9 +29,9 @@ def train_model(
     best_model_hyperparameters = model_results.best_params
     best_model = Pipeline(
         [
-            (MLFlowConfig.scaler_name, scaler()),
+            (MLflowConfig.scaler_name, scaler()),
             (
-                MLFlowConfig.model_name,
+                MLflowConfig.model_name,
                 model(
                     **best_model_hyperparameters,
                     scale_pos_weight=preprocess_outputs.original_y_train_positive_scale,
@@ -59,9 +59,9 @@ def optimize_model_hyperparameters(
 ) -> Study:
     def objective(trial: optuna.Trial) -> float:
         estimator = Pipeline([
-            (MLFlowConfig.scaler_name, scaler()),
+            (MLflowConfig.scaler_name, scaler()),
             (
-                MLFlowConfig.model_name,
+                MLflowConfig.model_name,
                 model(
                     **hyperparameters_sampler.resolve(trial),
                     scale_pos_weight=preprocessed_output.original_y_train_positive_scale,

@@ -1,9 +1,10 @@
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 
-def test_mlflow_config_values():
-    assert isinstance(MLFlowConfig.experiment_name, str)
-    assert isinstance(MLFlowConfig.model_path, str)
-    assert isinstance(MLFlowConfig.model_name, str)
-    assert isinstance(MLFlowConfig.scaler_name, str)
-    assert isinstance(MLFlowConfig.reference_dataset_path, str)
-    assert isinstance(MLFlowConfig.reference_dataset_file_name, str)
+class TestMLflowConfig:
+    def test_values(self):
+        assert isinstance(MLflowConfig.experiment_name, str)
+        assert isinstance(MLflowConfig.model_path, str)
+        assert isinstance(MLflowConfig.model_name, str)
+        assert isinstance(MLflowConfig.scaler_name, str)
+        assert isinstance(MLflowConfig.reference_dataset_path, str)
+        assert isinstance(MLflowConfig.reference_dataset_file_name, str)

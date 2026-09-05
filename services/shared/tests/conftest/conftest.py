@@ -4,12 +4,12 @@ import pytest
 from unittest.mock import MagicMock
 
 @pytest.fixture(autouse=True)
-def mock_boto3_module(mocker):
+def mock_boto3_module():
     sys.modules.update({
-        # "boto3": MagicMock(),
+        "boto3": MagicMock(),
         # "boto3.client": MagicMock(),
-        "boto3.client.head_bucket": MagicMock(),
-        "boto3.client.create_bucket": MagicMock(),
+        # "boto3.client.head_bucket": MagicMock(),
+        # "boto3.client.create_bucket": MagicMock(),
     })
 
     yield sys.modules["boto3"]
@@ -17,7 +17,7 @@ def mock_boto3_module(mocker):
     del sys.modules["boto3"]
 
 @pytest.fixture(autouse=True)
-def mock_mlflow_module(mocker):
+def mock_mlflow_module():
     sys.modules.update({
         # "mlflow": MagicMock(),
     })
@@ -28,10 +28,12 @@ def mock_mlflow_module(mocker):
 
 @pytest.fixture(autouse=True)
 def mock_slack_bolt_module():
+    slack_bolt_app = MagicMock()
+    slack_bolt_app.state.return_value = lambda fn: fn
+
     sys.modules.update({
-        "slack_bolt": MagicMock(),
-        "slack_bolt.adapter": MagicMock(),
-        "slack_bolt.adapter.socket_mode": MagicMock(),
+        # "slack_bolt": MagicMock(),
+        "slack_bolt.App": slack_bolt_app
     })
 
     yield sys.modules["slack_bolt"]
@@ -39,7 +41,7 @@ def mock_slack_bolt_module():
     del sys.modules["slack_bolt"]
 
 @pytest.fixture(autouse=True)
-def mock_sqlalchemy_module(mocker):
+def mock_sqlalchemy_module():
     sys.modules.update({
         # "sqlalchemy": MagicMock(),
         # "sqlalchemy.orm.sessionmaker": MagicMock(),
@@ -48,5 +50,6 @@ def mock_sqlalchemy_module(mocker):
     yield sys.modules["sqlalchemy"]
 
     del sys.modules["sqlalchemy"]
+
 
 

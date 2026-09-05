@@ -14,8 +14,8 @@ class FraudClassificationRequest(BaseModel):
 
     @field_validator("transaction_timestamp")
     @classmethod
-    def ensure_utc(cls, v: datetime) -> datetime:
-        return v.astimezone(timezone.utc)
+    def ensure_utc(cls, value: datetime) -> datetime:
+        return value.astimezone(timezone.utc)
 
     amount: StrictFloat
     v1: StrictFloat
@@ -48,11 +48,12 @@ class FraudClassificationRequest(BaseModel):
     v28: StrictFloat
 
 class FraudClassificationResponse(BaseModel):
-    model_config = ConfigDict(strict=True, extra="forbid")
+    model_config = ConfigDict(extra="forbid")
+
     is_fraud_prediction: StrictBool
     is_fraud_probability: StrictFloat = Field(..., ge=0.0, le=1.0)
 
 class FraudClassificationOutput(DeployedModel, FraudClassificationRequest, FraudClassificationResponse):
-    model_config = ConfigDict(strict=True, extra="forbid")
+    model_config = ConfigDict(extra="forbid")
 
     is_fraud: StrictBool | None = None

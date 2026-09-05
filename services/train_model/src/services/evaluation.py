@@ -3,7 +3,7 @@ from matplotlib import pyplot, ticker
 from numpy import ndarray
 from sklearn.metrics import f1_score, average_precision_score, recall_score, precision_score, roc_auc_score, accuracy_score, ConfusionMatrixDisplay
 
-from services.shared.src.modules.configs.mlflow import MLFlowConfig
+from services.shared.src.modules.configs.mlflow import MLflowConfig
 from services.train_model.src.modules.schemas.evaluation import EvaluateModelOutputs, ModelEvaluationMetrics, ModelEvaluationFigures
 
 def evaluate_model(
@@ -21,7 +21,7 @@ def evaluate_model(
         metric_figures=visualize_model_predictions(
             **model_predictions,
             y_true=y_test,
-            title=MLFlowConfig.model_name
+            title=MLflowConfig.model_name
         )
     )
 

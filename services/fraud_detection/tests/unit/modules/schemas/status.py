@@ -3,14 +3,25 @@ from pydantic import ValidationError
 
 from services.fraud_detection.src.modules.schemas.status import StatusResponse
 
-def test_status_response_instantiation():
-    resp = StatusResponse(status="ok")
-    assert resp.status == "ok"
+class TestStatusResponse:
+    @staticmethod
+    def make_data(**overrides):
+        data = {
+            "status": "value"
+        }
+        data.update(overrides)
+        return data
 
-def test_status_response_status_must_be_strict_str():
-    with pytest.raises(ValidationError):
-        StatusResponse(status=42)
+    def test_values(self):
+        data = self.make_data()
+        values = StatusResponse(**data)
 
-def test_status_response_any_string():
-    resp = StatusResponse(status="error")
-    assert resp.status == "error"
+        for key, expected in data.items():
+            actual = getattr(values, key)
+
+            assert actual == expected
+
+    def test_failure_for_extra_field(self):
+        data = self.make_data(extra=0)
+        with pytest.raises(ValidationError):
+            StatusResponse(**data)

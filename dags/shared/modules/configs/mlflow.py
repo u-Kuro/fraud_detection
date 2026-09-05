@@ -1,5 +1,5 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class MLFlowConfig:
+class MLflowConfig:
     challenger_alias: str = "challenger"
